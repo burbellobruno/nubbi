@@ -41,6 +41,11 @@ app.post("/api/chat", async (req, res) => {
       }),
     });
     if (stream) {
+      if (!r.ok) {
+        const txt = await r.text();
+        let j = null; try { j = JSON.parse(txt); } catch (e) {}
+        return res.status(r.status).json({ error: (j && j.error && j.error.message) || "Error de la API" });
+      }
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
@@ -98,5 +103,5 @@ app.post("/api/image", async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 app.listen(port, () => console.log("Nubbi en http://localhost:" + port));
