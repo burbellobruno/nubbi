@@ -22,23 +22,44 @@ app.use("/api/", (req, res, next) => {
 });
 
 // ---- Chat: cualquier servidor compatible con OpenAI (Ollama, OpenRouter, Groq...)
+function chatConfig() {
+  const baseUrl = (process.env.CHAT_BASE_URL || "").replace(/\/+$/, "");
+  const model = process.env.CHAT_MODEL || "";
+  const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(baseUrl);
+  const apiKey = process.env.CHAT_API_KEY || (isLocal ? "ollama" : "");
+  return { baseUrl, model, apiKey, isLocal };
+}
+
+app.get("/api/health", (req, res) => {
+  const { baseUrl, model, apiKey, isLocal } = chatConfig();
+  let provider = null;
+  try { provider = baseUrl ? new URL(baseUrl).host : null; } catch (e) {}
+  res.json({ ok: !!(baseUrl && model && apiKey), provider, model, hasApiKey: !!apiKey, local: isLocal });
+});
+
 app.post("/api/chat", async (req, res) => {
   try {
-    const baseUrl = process.env.CHAT_BASE_URL || "http://localhost:11434/v1";
+    const { baseUrl, model, apiKey } = chatConfig();
+    if (!baseUrl || !model) {
+      return res.status(500).json({ error: "Falta configurar CHAT_BASE_URL y CHAT_MODEL." });
+    }
+    if (!apiKey) {
+      return res.status(500).json({ error: "Falta configurar CHAT_API_KEY para el proveedor remoto." });
+    }
     const stream = !!req.body.stream;
     const r = await fetch(baseUrl + "/chat/completions", {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: "Bearer " + (process.env.CHAT_API_KEY || "ollama"),
+        authorization: "Bearer " + apiKey,
       },
       body: JSON.stringify({
-        model: process.env.CHAT_MODEL,
+        model: model,
         max_tokens: 1000,
         messages: [{ role: "user", content: String(req.body.prompt || "") }],
         ...(req.body.response_format ? { response_format: req.body.response_format } : {}),
         stream: stream,
-        ...(String(process.env.CHAT_MODEL || "").includes("gpt-oss") ? { reasoning_effort: "low" } : {}),
+        ...(model.includes("gpt-oss") ? { reasoning_effort: "low" } : {}),
       }),
     });
     if (stream) {
