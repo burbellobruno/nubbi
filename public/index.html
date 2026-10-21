@@ -22,8 +22,13 @@
 <div class="hero"><div><h1>Historias que se sienten</h1><p>Elegí un personaje o creá el tuyo, con emociones, acciones y escenas.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="heroNew">+ Crear personaje</button><button class="g" id="surprise">✨ Sorpréndeme</button></div></div>
 <div class="searchbox"><svg class="si" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><input id="q" placeholder="Buscar personajes, tags, roles..."></div>
 <div class="tabs" id="tabs"><button class="tab on" data-tab="explore">Explorar</button><button class="tab" data-tab="trend">Tendencias</button><button class="tab" data-tab="today">Hoy</button><button class="tab" data-tab="new">Nuevos</button></div>
+<div class="filterrow">
+<select id="sort" aria-label="Ordenar"><option value="reco">Recomendados</option><option value="pop">Populares</option><option value="new">Nuevos</option><option value="az">A-Z</option><option value="chats">Más chateados</option></select>
+<select id="origin" aria-label="Origen"><option value="all">Todos</option><option value="cat">Catálogo</option><option value="mine">Creados por mí</option></select>
+</div>
 <div class="pills" id="gp"></div>
 <div class="pills" id="tp"></div>
+<div class="railwrap"><h2>✨ Para vos</h2><div class="rail" id="forYou"></div></div>
 <div class="railwrap"><h2>🔥 Tendencias</h2><div class="rail" id="rail"></div></div>
 <h2>Catálogo</h2><div class="grid" id="grid"></div>
 <button class="g loadmore" id="loadMore">Ver más</button>
@@ -61,6 +66,7 @@
 <select id="pint"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, sin escenas explícitas)</option><option value="libre">Libre (el personaje toma la iniciativa)</option></select><br><br>
 <button class="g" id="theme">Cambiar tema claro/oscuro</button> <button class="g" id="wipe">Borrar chats</button>
 <button class="g" id="exportData">Exportar datos</button> <button class="g" id="importData">Importar datos</button>
+<button class="g" id="importChar">Importar personaje</button>
 <button class="g" id="syncUp">Subir a la nube</button> <button class="g" id="syncDown">Bajar de la nube</button>
 <input type="file" id="importFile" accept="application/json" style="display:none">
 <div class="pers">
@@ -73,6 +79,12 @@
 <label>Animaciones</label><select id="panim"><option value="on">Activadas</option><option value="off">Desactivadas</option></select>
 <label>Creatividad del personaje</label><select id="ptemp"><option value="precise">Preciso (más coherente)</option><option value="balanced">Equilibrado</option><option value="creative">Creativo</option><option value="wild">Impredecible (más libertad)</option></select>
 <label>Longitud de respuesta</label><select id="plen"><option value="short">Corta</option><option value="normal">Normal</option><option value="long">Larga</option></select>
+<label>Modelo de IA</label><select id="pmodel"><option value="">Automático (rápido)</option><option value="openai/gpt-oss-20b">Rápido · gpt-oss-20b</option><option value="openai/gpt-oss-120b">Profundo · gpt-oss-120b (más lento)</option></select>
+<label>Voz del personaje</label><select id="pvoice"><option value="">Automática</option></select>
+<label>Velocidad de voz</label><input id="pvoicerate" type="range" min="0.6" max="1.6" step="0.05" value="1">
+<label>Tono de voz</label><input id="pvoicepitch" type="range" min="0.5" max="1.6" step="0.05" value="1">
+<label>Leer respuestas automáticamente</label><select id="pvoiceauto"><option value="off">No</option><option value="on">Sí</option></select>
+<button class="g" id="pvoicetest" type="button">🔊 Probar voz</button>
 </div>
 <p class="note">Confirmo que tengo 18 años o más. Todos los personajes son adultos.</p>
 </div></section>
@@ -89,7 +101,7 @@
 <div id="chat">
 <header><button class="g" id="back">←</button><div class="av" id="hav"></div><div class="t"><b id="hname"></b><br><small id="hdesc"></small></div><button class="g" id="fv">♡</button><button class="g" id="cfg">Escena</button><button class="g" id="reset">↺</button></header>
 <div id="msgs"></div>
-<div class="chips"><button class="g" id="bAct">*Acción*</button><button class="g" id="bCont">Continuar historia</button><button class="g" id="bScene">Nueva escena</button><button class="g" id="bImpro">Improvisar</button><button class="g" id="bRegen">Regenerar</button></div>
+<div class="chips"><button class="g" id="bAct">*Acción*</button><button class="g" id="bCont">Continuar historia</button><button class="g" id="bScene">Nueva escena</button><button class="g" id="bImpro">Improvisar</button><button class="g" id="bRegen">Regenerar</button><button class="g" id="bMemory">🧠 Memoria</button><button class="g" id="bDirector">🎬 Director</button><button class="g" id="bRamas">🧬 Ramas</button><button class="g" id="bExport">📤 Exportar</button></div>
 <form id="f" class="pillform"><input id="inp" placeholder="Escribí un mensaje..." autocomplete="off"><button type="submit" class="send" aria-label="Enviar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button></form>
 </div>
 
@@ -114,7 +126,36 @@
 <label>Modo</label><select id="mode"><option value="chat">Chat directo</option><option value="story">Historia narrada</option></select>
 <label>Intensidad</label><select id="int"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, sin escenas explícitas)</option><option value="libre">Libre (el personaje toma la iniciativa)</option></select>
 <label>Persona (tu personaje en la historia)</label><select id="pcfg"><option value="">Perfil actual</option></select>
+<label>Instrucciones para la IA (opcional)</label><textarea id="ci" rows="2" maxlength="600" placeholder="Ej: no uses emojis, respondé en primera persona, no hagas saltos temporales..."></textarea>
+<label>Objetivo del personaje</label><input id="cgoal" placeholder="Ej: que el usuario confíe en él">
+<label>Secreto (se revela de a poco)</label><textarea id="csecret" rows="2" placeholder="Algo que el personaje sabe y no dice de golpe"></textarea>
+<label>Arco de la historia</label><input id="carc" placeholder="Ej: enemies to lovers en 3 actos">
+<label class="note" style="display:block;margin-top:14px">Diseño del chat</label>
+<label>Fondo del chat</label><input id="cbg" type="file" accept="image/*">
+<button class="g" id="cbgClear" type="button">Quitar fondo</button>
+<label>Estilo de burbujas</label><select id="cbubble"><option value="rounded">Redondeadas</option><option value="minimal">Minimal</option><option value="manga">Manga</option></select>
+<label>Oscurecer fondo</label><input id="cdim" type="range" min="0" max="0.7" step="0.05" value="0.2">
 <div class="drow"><button id="csave" type="button">Aplicar</button></div>
+</dialog>
+<dialog id="mdlg">
+<h3 style="margin:0">Memoria de la historia</h3>
+<div class="note">Hechos, relaciones, promesas y secretos que el personaje debe recordar.</div>
+<textarea id="mem" rows="6" placeholder="Ej: El usuario se llama..."></textarea>
+<div class="drow" style="justify-content:flex-start;flex-wrap:wrap"><button class="g" id="memSum" type="button">✨ Resumir conversación</button><button class="g" id="memClear" type="button">Limpiar</button></div>
+<div id="memNotes" class="memnotes"></div>
+<div class="drow"><button class="g" id="memCancel" type="button">Cerrar</button><button id="memSave" type="button">Guardar</button></div>
+</dialog>
+<dialog id="ddlg">
+<h3 style="margin:0">Director de escena</h3>
+<div class="note">Elegí el próximo giro de la historia.</div>
+<div id="dopts" class="dopts"></div>
+<div class="drow"><button class="g" id="dAgain" type="button">Otras opciones</button><button class="g" id="dClose" type="button">Cerrar</button></div>
+</dialog>
+<dialog id="brdlg">
+<h3 style="margin:0">Ramas de la historia</h3>
+<div class="note">Guardá una línea de tiempo y volvé a ella cuando quieras.</div>
+<div id="brlist"></div>
+<div class="drow"><button class="g" id="brSave" type="button">Guardar rama actual</button><button class="g" id="brClose" type="button">Cerrar</button></div>
 </dialog>
 
 <dialog id="sheet">
@@ -125,14 +166,21 @@
 <small id="shrole"></small>
 <p id="shdesc"></p>
 <div id="shtags" class="tags"></div>
-<div class="drow"><button class="g" id="shfav">♡</button><button class="g" id="shdel" style="display:none">Eliminar</button><button id="shchat">Chatear</button></div>
+<div id="shmeta" class="shmeta"></div>
+<div id="shgreet" class="shgreet"></div>
+<div id="shsimilar" class="shsimilar"></div>
+<div class="drow"><button class="g" id="shfav">♡</button><button class="g" id="shedit" style="display:none">Editar</button><button class="g" id="shshare">Compartir</button><button class="g" id="shdel" style="display:none">Eliminar</button><button id="shchat">Chatear</button></div>
 </div>
 </div>
 </dialog>
 <dialog id="pdlg">
 <h3 style="margin:0">Nueva persona</h3><div class="note">Representás al usuario dentro de la historia</div>
 <label>Nombre</label><input id="pname">
+<label>Edad</label><input id="page" inputmode="numeric" placeholder="Ej: 27">
+<label>Pronombres</label><input id="ppron" placeholder="Ej: ella, él, elle">
 <label>Sobre esta persona</label><textarea id="pbio" rows="2"></textarea>
+<label>Apariencia</label><textarea id="papp" rows="2" placeholder="Rasgos, ropa, detalles que el personaje puede notar"></textarea>
+<label>Relación con el personaje</label><input id="prel" placeholder="Ej: compañera de trabajo, ex, desconocida">
 <div class="drow"><button class="g" id="pcancel" type="button">Cancelar</button><button id="psave" type="button">Guardar</button></div>
 </dialog>
 <dialog id="onboard">

@@ -36,6 +36,19 @@ App de chat con personajes de IA (adultos), para móvil y PC.
   - **Longitud de respuesta**: corta, normal o larga.
 - En **Escena** podés elegir la intensidad, incluida **Libre** (el personaje toma la iniciativa y puede crear conflicto y tensión, sin contenido sexual explícito).
 - En el chat tenés **Improvisar** (el personaje propone un giro) y **Regenerar** (vuelve a responder el último mensaje).
+- En **Perfil → Modelo de IA** podés elegir **Automático (rápido)**, **gpt-oss-20b** o **gpt-oss-120b** (más lento y más profundo). Si no elegís nada, se usa `CHAT_MODEL`.
+
+## Funciones de historia
+
+- **Acciones por mensaje**: escuchar, guardar en memoria, editar, crear una rama, rebobinar o borrar.
+- **Memoria**: resumen automático de la conversación y recuerdos sueltos que se incluyen en el prompt.
+- **Director**: propone 3 próximos giros o acciones para elegir.
+- **Ramas**: guardá el estado actual y volvé a abrirlo cuando quieras (hasta 20 por personaje).
+- **Exportar**: descarga la conversación en Markdown.
+- **Escena**: instrucciones del chat, objetivo, secreto, arco, fondo, estilo de burbuja y atenuación del fondo.
+- **Personas**: edad, pronombres, apariencia y relación con el personaje.
+- **Voz**: elegí la voz del dispositivo, velocidad, tono y lectura automática.
+- **Personajes propios**: crealos, editalos, compartilos por código e importalos desde **Perfil**.
 
 ## Cuentas y sincronización
 

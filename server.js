@@ -27,6 +27,13 @@ function num(v, def, min, max) {
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def;
 }
 
+// Modelos permitidos desde el cliente. El servidor decide el modelo final:
+// si el pedido no está en la lista, usa CHAT_MODEL.
+const CHAT_MODELS = new Set([
+  "openai/gpt-oss-20b",
+  "openai/gpt-oss-120b",
+]);
+
 function chatConfig() {
   const baseUrl = (process.env.CHAT_BASE_URL || "").replace(/\/+$/, "");
   const model = process.env.CHAT_MODEL || "";
@@ -39,18 +46,20 @@ app.get("/api/health", (req, res) => {
   const { baseUrl, model, apiKey, isLocal } = chatConfig();
   let provider = null;
   try { provider = baseUrl ? new URL(baseUrl).host : null; } catch (e) {}
-  res.json({ ok: !!(baseUrl && model && apiKey), provider, model, hasApiKey: !!apiKey, local: isLocal });
+  res.json({ ok: !!(baseUrl && model && apiKey), provider, model, models: Array.from(CHAT_MODELS), hasApiKey: !!apiKey, local: isLocal });
 });
 
 app.post("/api/chat", async (req, res) => {
   try {
-    const { baseUrl, model, apiKey } = chatConfig();
-    if (!baseUrl || !model) {
+    const { baseUrl, model: defaultModel, apiKey } = chatConfig();
+    if (!baseUrl || !defaultModel) {
       return res.status(500).json({ error: "Falta configurar CHAT_BASE_URL y CHAT_MODEL." });
     }
     if (!apiKey) {
       return res.status(500).json({ error: "Falta configurar CHAT_API_KEY para el proveedor remoto." });
     }
+    const requestedModel = String(req.body.model || "");
+    const model = CHAT_MODELS.has(requestedModel) ? requestedModel : defaultModel;
     const stream = !!req.body.stream;
     const r = await fetch(baseUrl + "/chat/completions", {
       method: "POST",
