@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: nubbi
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: CHAT_BASE_URL
+        value: http://localhost:11434/v1
+      - key: CHAT_API_KEY
+        value: ollama
+      - key: CHAT_MODEL
+        value: qwen2.5:7b
+      - key: SD_URL
+        value: http://127.0.0.1:7860
+      - key: PORT
+        value: 3000

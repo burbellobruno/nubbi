@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nubbi · Chats con personajes</title>
+<meta name="theme-color" content="#8b6bff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="views">
+<section class="view on" id="v-home">
+<div class="top"><span class="logo"><img src="logo.png" alt="">Nubbi</span><span class="note">+18 · todos los personajes son adultos</span></div>
+<div class="hero"><div><h1>Historias que se sienten</h1><p>Elegí un personaje o creá el tuyo, con emociones, acciones y escenas.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="heroNew">+ Crear personaje</button><button class="g" id="surprise">✨ Sorpréndeme</button></div></div>
+<div class="searchbox"><svg class="si" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><input id="q" placeholder="Buscar personajes, tags, roles..."></div>
+<div class="tabs" id="tabs"><button class="tab on" data-tab="explore">Explorar</button><button class="tab" data-tab="trend">Tendencias</button><button class="tab" data-tab="today">Hoy</button><button class="tab" data-tab="new">Nuevos</button></div>
+<div class="pills" id="gp"></div>
+<div class="pills" id="tp"></div>
+<div class="railwrap"><h2>🔥 Tendencias</h2><div class="rail" id="rail"></div></div>
+<h2>Catálogo</h2><div class="grid" id="grid"></div>
+<button class="g loadmore" id="loadMore">Ver más</button>
+</section>
+<section class="view" id="v-chats"><h2>Tus chats</h2><div id="chl"></div></section>
+<section class="view" id="v-favs"><h2>Favoritos</h2><div class="grid" id="fg"></div></section>
+<section class="view" id="v-prof"><div class="prof">
+<div class="av" id="pav" style="background:linear-gradient(135deg,var(--ac),var(--ac2))"></div>
+<input type="file" id="pimg" accept="image/*" style="display:none">
+<input id="pn" placeholder="Tu nombre" style="text-align:center"><br><br>
+<textarea id="pb" rows="2" placeholder="Sobre vos (los personajes lo van a tener en cuenta)"></textarea>
+<div class="stats"><div><b id="s1">0</b>chats</div><div><b id="s2">0</b>creados</div><div><b id="s3">0</b>favoritos</div></div>
+<label class="note">Tus personas</label>
+<div id="plist"></div>
+<button class="g" id="newPersona" style="margin:8px 0">+ Nueva persona</button>
+<label class="note">Intensidad por defecto en chats nuevos</label>
+<select id="pint"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, sin escenas explícitas)</option></select><br><br>
+<button class="g" id="theme">Cambiar tema claro/oscuro</button> <button class="g" id="wipe">Borrar chats</button>
+<button class="g" id="exportData">Exportar datos</button> <button class="g" id="importData">Importar datos</button>
+<input type="file" id="importFile" accept="application/json" style="display:none">
+<div class="pers">
+<label class="note">Configuración</label>
+<label>Idioma del chat</label><select id="plang"><option value="es">Español (rioplatense)</option><option value="en">English</option></select>
+<label>Tema</label><select id="ptheme"><option value="system">Sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select>
+<label>Color de acento</label><div class="pills" id="paccent"></div>
+<label>Tamaño de texto</label><select id="pfont"><option value="sm">Pequeño</option><option value="md">Mediano</option><option value="lg">Grande</option></select>
+<label>Densidad</label><select id="pdensity"><option value="comfortable">Cómoda</option><option value="compact">Compacta</option></select>
+<label>Animaciones</label><select id="panim"><option value="on">Activadas</option><option value="off">Desactivadas</option></select>
+</div>
+<p class="note">Confirmo que tengo 18 años o más. Todos los personajes son adultos.</p>
+</div></section>
+</div>
+<nav>
+<div class="brand"><img src="logo.png" alt=""><b>Nubbi</b></div>
+<div data-v="home" class="on" aria-label="Inicio"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"></path><path d="M5 10v10h14V10"></path></svg><span class="l">Inicio</span></div>
+<div data-v="chats" aria-label="Chats"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><span class="l">Chats</span></div>
+<div class="plus" id="plus" aria-label="Crear personaje"><span>+</span><em>Crear</em></div>
+<div data-v="favs" aria-label="Favoritos"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg><span class="l">Favoritos</span></div>
+<div data-v="prof" aria-label="Perfil"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path></svg><span class="l">Perfil</span></div>
+</nav>
+
+<div id="chat">
+<header><button class="g" id="back">←</button><div class="av" id="hav"></div><div class="t"><b id="hname"></b><br><small id="hdesc"></small></div><button class="g" id="fv">♡</button><button class="g" id="cfg">Escena</button><button class="g" id="reset">↺</button></header>
+<div id="msgs"></div>
+<div class="chips"><button class="g" id="bAct">*Acción*</button><button class="g" id="bCont">Continuar historia</button><button class="g" id="bScene">Nueva escena</button></div>
+<form id="f" class="pillform"><input id="inp" placeholder="Escribí un mensaje..." autocomplete="off"><button type="submit" class="send" aria-label="Enviar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button></form>
+</div>
+
+<dialog id="dlg">
+<h3 style="margin:0">Crear personaje</h3><div class="note">Todos los personajes son adultos (18+)</div>
+<label>Idea para generarlo con IA</label><input id="idea" placeholder="Ej: rival de la academia, orgulloso pero leal">
+<button id="gen" type="button" style="margin-top:6px">✨ Generar con IA</button>
+<label>Emoji / foto</label><div style="display:flex;gap:8px"><input id="e" maxlength="4" value="🦇" style="width:80px"><input id="img" type="file" accept="image/*"></div>
+<label>Nombre</label><input id="n"><label>Descripción corta</label><input id="d"><label>Rol (novio, villano, mentor...)</label><input id="r">
+<label>Género</label><select id="gen2"><option>Masculino</option><option>Femenino</option><option>Otro</option></select>
+<label>Personalidad y reglas</label><textarea id="p" rows="3"></textarea><label>Primer mensaje</label><input id="gr">
+<label>Estilo de imagen</label><select id="sty"><option>anime</option><option>realista</option><option>semi-realista</option><option>pintura digital</option><option>manhwa</option></select>
+<label>Motor (modelo SD)</label><select id="sdm"><option value="counterfeit">Counterfeit (anime)</option><option value="anything">Anything V5 (anime)</option><option value="realistic">Realistic Vision (realista)</option><option value="chillout">ChilloutMix (semi-realista)</option><option value="dreamshaper">DreamShaper (pintura)</option><option value="manhwa">AImanhwa (manhwa)</option></select>
+<div class="pr" id="pr"></div>
+<button id="genImg" type="button" class="g" style="margin-top:8px">🎨 Generar imagen con IA</button>
+<div class="drow"><button class="g" id="cancel" type="button">Cancelar</button><button id="save" type="button">Guardar</button></div>
+</dialog>
+<dialog id="cdlg">
+<h3 style="margin:0">Escena e historia</h3>
+<label>Escenario</label><textarea id="sc" rows="3" placeholder="Ej: Academia de magia, noche de tormenta, biblioteca vacía"></textarea>
+<label>Tu rol en la historia</label><input id="ur">
+<label>Modo</label><select id="mode"><option value="chat">Chat directo</option><option value="story">Historia narrada</option></select>
+<label>Intensidad</label><select id="int"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, sin escenas explícitas)</option></select>
+<label>Persona (tu personaje en la historia)</label><select id="pcfg"><option value="">Perfil actual</option></select>
+<div class="drow"><button id="csave" type="button">Aplicar</button></div>
+</dialog>
+
+<dialog id="sheet">
+<div class="sheet">
+<div class="sheetimg" id="shimg"></div>
+<div class="sheetbody">
+<h3 id="shname"></h3>
+<small id="shrole"></small>
+<p id="shdesc"></p>
+<div id="shtags" class="tags"></div>
+<div class="drow"><button class="g" id="shfav">♡</button><button class="g" id="shdel" style="display:none">Eliminar</button><button id="shchat">Chatear</button></div>
+</div>
+</div>
+</dialog>
+<dialog id="pdlg">
+<h3 style="margin:0">Nueva persona</h3><div class="note">Representás al usuario dentro de la historia</div>
+<label>Nombre</label><input id="pname">
+<label>Sobre esta persona</label><textarea id="pbio" rows="2"></textarea>
+<div class="drow"><button class="g" id="pcancel" type="button">Cancelar</button><button id="psave" type="button">Guardar</button></div>
+</dialog>
+<dialog id="onboard">
+<div class="sheet">
+<h3>Bienvenido a Nubbi</h3>
+<p class="note">App de chat con personajes de IA. Todos los personajes son adultos (18+). Confirmás que tenés 18 años o más.</p>
+<ul class="note" style="text-align:left">
+<li>Elegí un personaje o creá el tuyo.</li>
+<li>Chateá, usá acciones entre *asteriscos* y escenas.</li>
+<li>Personalizá tema, acento y tamaño en Perfil.</li>
+</ul>
+<div class="drow"><button id="onbStart">Empezar</button></div>
+</div>
+</dialog>
+<script src="catalog.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
