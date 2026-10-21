@@ -70,7 +70,48 @@ const DEFAULT_CHECKPOINTS = {
   manhwa: "AImanhwa_v2"
 };
 
+const CF_DEFAULT_MODEL = "@cf/black-forest-labs/flux-1-schnell";
+const CF_API_BASE = "https://api.cloudflare.com/client/v4";
+
+function cloudflareConfig() {
+  const accountId = (process.env.CF_ACCOUNT_ID || "").trim();
+  const apiToken = (process.env.CF_API_TOKEN || "").trim();
+  const model = (process.env.CF_IMAGE_MODEL || CF_DEFAULT_MODEL).trim() || CF_DEFAULT_MODEL;
+  const steps = num(process.env.CF_IMAGE_STEPS, 4, 1, 8);
+  const timeoutMs = num(process.env.CF_TIMEOUT_MS, 60000, 5000, 120000);
+  let error = null;
+  if (!accountId) error = "Falta CF_ACCOUNT_ID (Account ID de Cloudflare).";
+  else if (!/^[a-f0-9]{32}$/i.test(accountId)) error = "CF_ACCOUNT_ID no parece válido: son 32 caracteres hexadecimales.";
+  else if (!apiToken) error = "Falta CF_API_TOKEN (token de Workers AI).";
+  else if (!/^@?[a-z0-9][a-z0-9._-]*(\/[a-z0-9][a-z0-9._-]*)+$/i.test(model)) error = "CF_IMAGE_MODEL no parece válido.";
+  const endpoint = !error
+    ? CF_API_BASE + "/accounts/" + accountId + "/ai/run/" + model
+    : "";
+  return { accountId, apiToken, model, steps, timeoutMs, endpoint, error };
+}
+
 function imageConfig() {
+  const cf = cloudflareConfig();
+  const requested = (process.env.IMAGE_PROVIDER || "").trim().toLowerCase();
+  const provider = requested === "forge" || requested === "cloudflare"
+    ? requested
+    : (cf.accountId || cf.apiToken ? "cloudflare" : "forge");
+
+  if (provider === "cloudflare") {
+    return {
+      provider: "cloudflare",
+      baseUrl: "",
+      endpoint: cf.endpoint,
+      isLocal: false,
+      auth: "",
+      timeoutMs: cf.timeoutMs,
+      checkpoints: DEFAULT_CHECKPOINTS,
+      host: "api.cloudflare.com",
+      urlError: cf.error,
+      cf,
+    };
+  }
+
   let raw = (process.env.SD_URL || "http://127.0.0.1:7860").trim();
   if (raw.startsWith("//")) raw = "https:" + raw;
   if (raw && !/^https?:\/\//i.test(raw)) {
@@ -102,6 +143,7 @@ function imageConfig() {
     }
   }
   return {
+    provider: "forge",
     baseUrl: urlError ? "" : baseUrl,
     endpoint: !urlError && baseUrl ? baseUrl + "/sdapi/v1/txt2img" : "",
     isLocal,
@@ -126,6 +168,20 @@ function sdHeaders() {
 
 function imageInfo() {
   const c = imageConfig();
+  if (c.provider === "cloudflare") {
+    return {
+      provider: "cloudflare",
+      configured: !!c.endpoint,
+      host: c.host,
+      local: false,
+      model: c.cf.model,
+      free: true,
+      hasAuth: !!c.cf.apiToken,
+      timeoutMs: c.timeoutMs,
+      urlError: c.urlError,
+      note: "Cloudflare Workers AI · FLUX.1 schnell · plan gratuito. No genera imágenes explícitas.",
+    };
+  }
   return {
     provider: "forge",
     configured: !!c.baseUrl,
@@ -227,9 +283,46 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// ---- Imágenes: Forge / A1111 remoto o local con --api
+// ---- Imágenes: Cloudflare Workers AI (gratis) o Forge / A1111
 app.get("/api/image/health", async (req, res) => {
   const c = imageConfig();
+  if (c.provider === "cloudflare") {
+    if (!c.endpoint) {
+      return res.status(500).json({
+        ok: false,
+        provider: "cloudflare",
+        error: c.urlError || "Falta configurar CF_ACCOUNT_ID y CF_API_TOKEN.",
+      });
+    }
+    try {
+      const r = await fetch(CF_API_BASE + "/user/tokens/verify", {
+        headers: { authorization: "Bearer " + c.cf.apiToken },
+        signal: AbortSignal.timeout(Math.min(c.timeoutMs, 15000)),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.success === false) {
+        const msg = (Array.isArray(j.errors) ? j.errors.map((e) => e.message).filter(Boolean).join("; ") : "") || ("HTTP " + r.status);
+        throw new Error(msg);
+      }
+      return res.json({
+        ok: true,
+        provider: "cloudflare",
+        host: c.host,
+        model: c.cf.model,
+        free: true,
+        status: (j.result && j.result.status) || "active",
+        note: "No se generó una imagen de prueba para no consumir la cuota diaria.",
+      });
+    } catch (e) {
+      return res.status(502).json({
+        ok: false,
+        provider: "cloudflare",
+        host: c.host,
+        error: "No pude verificar el token de Cloudflare. Revisá CF_API_TOKEN y que tenga permisos de Workers AI. " + e.message,
+      });
+    }
+  }
+
   if (!c.baseUrl) return res.status(500).json({ ok: false, error: c.urlError || "Falta configurar SD_URL." });
   try {
     const r = await fetch(c.baseUrl + "/sdapi/v1/options", {
@@ -252,8 +345,58 @@ app.get("/api/image/health", async (req, res) => {
   }
 });
 
+async function generateCloudflareImage(req, res, c) {
+  if (!c.endpoint) {
+    return res.status(500).json({ error: c.urlError || "Falta configurar CF_ACCOUNT_ID y CF_API_TOKEN." });
+  }
+  const prompt = String(req.body.prompt || "").trim();
+  if (!prompt) return res.status(400).json({ error: "Falta el prompt de la imagen." });
+  const adult = req.body.adult !== false;
+  const safePrompt = (adult && !/\badult\b/i.test(prompt) ? prompt + ", adult, 18+" : prompt).slice(0, 2048);
+  try {
+    const r = await fetch(c.endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: "Bearer " + c.cf.apiToken,
+      },
+      body: JSON.stringify({ prompt: safePrompt, steps: c.cf.steps }),
+      signal: AbortSignal.timeout(c.timeoutMs),
+    });
+    const ct = (r.headers.get("content-type") || "").toLowerCase();
+    if (ct.startsWith("image/")) {
+      const buf = Buffer.from(await r.arrayBuffer());
+      return res.json({
+        image: buf.toString("base64"),
+        mime: ct.split(";")[0] || "image/jpeg",
+        provider: "cloudflare",
+        model: c.cf.model,
+      });
+    }
+    const txt = await r.text().catch(() => "");
+    let j = null;
+    try { j = JSON.parse(txt); } catch (e) {}
+    if (!r.ok || (j && j.success === false)) {
+      const msg = (j && Array.isArray(j.errors) ? j.errors.map((e) => e.message).filter(Boolean).join("; ") : "")
+        || txt.slice(0, 300)
+        || ("HTTP " + r.status);
+      throw new Error("Cloudflare respondió " + r.status + ": " + msg);
+    }
+    const raw = (j && ((j.result && j.result.image) || j.image)) || "";
+    const b64 = String(raw).replace(/^data:image\/[a-z0-9.+-]+;base64,/i, "");
+    if (!b64) throw new Error("Cloudflare no devolvió ninguna imagen.");
+    res.json({ image: b64, mime: "image/jpeg", provider: "cloudflare", model: c.cf.model });
+  } catch (e) {
+    const filterHint = /NSFW|safety|content|policy|blocked|filter|sensitive/i.test(e.message)
+      ? " Cloudflare bloquea imágenes explícitas; probá un retrato sugerente o usá Forge."
+      : " Revisá CF_ACCOUNT_ID, CF_API_TOKEN y la cuota diaria de Workers AI.";
+    res.status(502).json({ error: "No pude generar la imagen con Cloudflare." + filterHint + " " + e.message });
+  }
+}
+
 app.post("/api/image", async (req, res) => {
   const c = imageConfig();
+  if (c.provider === "cloudflare") return generateCloudflareImage(req, res, c);
   if (!c.baseUrl) return res.status(500).json({ error: c.urlError || "Falta configurar SD_URL." });
   const prompt = String(req.body.prompt || "").trim();
   if (!prompt) return res.status(400).json({ error: "Falta el prompt de la imagen." });
@@ -287,7 +430,7 @@ app.post("/api/image", async (req, res) => {
     }
     const j = await r.json();
     if (!j.images || !j.images[0]) throw new Error("Forge no devolvió ninguna imagen.");
-    res.json({ image: j.images[0] });
+    res.json({ image: j.images[0], mime: "image/png", provider: "forge" });
   } catch (e) {
     const localHint = c.isLocal && process.env.RENDER
       ? " En Render no se puede usar localhost: configurá SD_URL con la URL pública del GPU."

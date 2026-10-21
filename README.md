@@ -14,7 +14,7 @@ App de chat con personajes de IA (adultos), para móvil y PC.
    - `CHAT_API_KEY=ollama`
    - `CHAT_MODEL=qwen2.5:7b`
    - y corré `ollama pull qwen2.5:7b`
-5. Imágenes: abrí Stable Diffusion WebUI Forge con `--api` y un modelo SD 1.5 de anime. En local podés usar `SD_URL=http://127.0.0.1:7860`; en producción apuntá `SD_URL` a un Forge/A1111 en GPU cloud (ver más abajo).
+5. Imágenes: la opción gratis es **Cloudflare Workers AI** (FLUX.1 schnell, sin GPU). Configurá `CF_ACCOUNT_ID` y `CF_API_TOKEN` en `.env`; si no, podés usar Forge/A1111 local con `SD_URL=http://127.0.0.1:7860`. En producción, mirá las secciones de abajo.
 6. `npm run dev` y entrá a **http://localhost:3001**.
 7. (Opcional) retratos del catálogo: `npm run portraits 3` para probar con 3, y sin número para todos.
 
@@ -26,10 +26,31 @@ App de chat con personajes de IA (adultos), para móvil y PC.
   - `CHAT_API_KEY` = tu clave de Groq (`gsk_...`)
   - `CHAT_MODEL` = `openai/gpt-oss-20b`
   - Opcional, para modo adulto: `ADULT_CHAT_BASE_URL`, `ADULT_CHAT_API_KEY`, `ADULT_CHAT_MODEL`
+  - Opcional, para imágenes gratis: `CF_ACCOUNT_ID` y `CF_API_TOKEN` (ver abajo)
 - **No definas `PORT` en Render**: Render lo asigna automáticamente y la app ya usa `process.env.PORT`.
 - Para verificar la configuración activa, abrí `https://TU-APP.onrender.com/api/health`. Incluye si el proveedor adulto está configurado y los datos del endpoint de imágenes.
 
-## Imágenes en GPU cloud (Forge / A1111)
+## Imágenes gratis con Cloudflare Workers AI
+
+La opción sin GPU es **Cloudflare Workers AI** con **FLUX.1 schnell**. No necesita tarjeta y el plan gratuito incluye **10.000 neuronas por día** (aproximadamente 100–170 imágenes). Cloudflare no genera imágenes sexuales explícitas: sirve para retratos y escenas sugerentes. El texto adulto del chat sigue funcionando igual.
+
+1. Creá una cuenta gratis en [Cloudflare](https://dash.cloudflare.com/sign-up/workers-and-pages).
+2. En el dashboard, entrá a **Workers AI → Use REST API**.
+3. Copiá el **Account ID** y creá un **API Token**. El token necesita permisos **Workers AI - Read** y **Workers AI - Edit**.
+4. En Render → **Environment**, agregá:
+   ```env
+   CF_ACCOUNT_ID=tu_account_id_de_32_caracteres
+   CF_API_TOKEN=tu_token_de_workers_ai
+   ```
+   Opcional: `CF_IMAGE_MODEL=@cf/black-forest-labs/flux-1-schnell`, `CF_IMAGE_STEPS=4`, `CF_TIMEOUT_MS=60000`.
+5. Guardá y esperá el redeploy. Verificá `https://TU-APP.onrender.com/api/image/health`: debe devolver `ok: true` con `provider: "cloudflare"`.
+6. En la app, creá o editá un personaje y usá **Generar imagen con IA**.
+
+- Si Cloudflare está configurado, se usa automáticamente en lugar de Forge. Para forzar uno: `IMAGE_PROVIDER=cloudflare` o `IMAGE_PROVIDER=forge`.
+- El servidor agrega `adult, 18+` al prompt cuando el modo adulto está activo. Cloudflare puede rechazar prompts explícitos; en ese caso probá un retrato sugerente.
+- La cuota se reinicia todos los días a las 00:00 UTC. Si se agota, la API devuelve un error hasta el día siguiente.
+
+## Imágenes con GPU cloud (Forge / A1111)
 
 El endpoint `/api/image` usa la API A1111 de **Forge** (también compatible con A1111). En Render no se puede usar `localhost`.
 
@@ -44,7 +65,7 @@ El endpoint `/api/image` usa la API A1111 de **Forge** (también compatible con 
 
 - En local: `SD_URL=http://127.0.0.1:7860` y Forge abierto con `--api`.
 - El servidor agrega `adult, 18+` al prompt y un negativo con `child, minor, underage, teen, loli, shota, kid`. No quites esas protecciones.
-- El backend implementado es Forge/A1111. **ComfyUI** usa otra API; si querés usarlo, hay que agregar un adaptador específico con tu workflow.
+- Para este proveedor, el backend implementado es Forge/A1111. **ComfyUI** usa otra API; si querés usarlo, hay que agregar un adaptador específico con tu workflow.
 
 ## Chat, libertad e idiomas
 

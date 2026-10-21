@@ -394,7 +394,7 @@ function shrink(dataUrl,w,cb){var im=new Image();im.onload=function(){var h=Math
 $("genImg").onclick=async function(){var base=$("pr").dataset.p||($("n").value+", "+$("d").value);if(!base.trim()){alert("Generá el personaje con IA o completá nombre y descripción primero.");return;}
 var b=$("genImg");b.textContent="Generando imagen...";
 try{var j=await api("/api/image",{prompt:base+", "+$("sty").value+" style, adult, high quality, portrait",style:$("sty").value,model:$("sdm").value,adult:adultOn()});
-shrink("data:image/png;base64,"+j.image,360,function(d){imgData=d;$("pr").style.display="block";$("pr").textContent="Imagen lista, se guarda con el personaje.";});}
+shrink("data:"+(j.mime||"image/png")+";base64,"+j.image,360,function(d){imgData=d;$("pr").style.display="block";$("pr").textContent="Imagen lista, se guarda con el personaje.";});}
 catch(e){alert("No se pudo generar la imagen: "+e.message);}b.textContent="🎨 Generar imagen con IA";};
 $("heroNew").onclick=function(){$("plus").click();};
 var surpriseIdeas=["rival de la academia, orgulloso pero leal","detective privado cínico y observador","maga elfa curiosa del mundo humano","mecánico rebelde con buen corazón","streamer gamer energética","médico de urgencias sereno","ladrona de guante blanco traviesa","CEO frío pero protector"];
@@ -406,7 +406,7 @@ try{
 var j=await genCharJSON(idea);
 var c={id:"c"+Date.now(),emoji:j.emoji||"",img:"",name:j.name||"Personaje",desc:j.desc||"",role:j.role||"",gender:normGender(j.gender),tags:"creado por IA",persona:j.persona||"",greeting:j.greeting||""};
 st.custom.unshift(c);save();renderAll();
-try{var ji=await api("/api/image",{prompt:(j.imagePrompt||c.name)+", anime style, adult, high quality, portrait",style:"anime",model:"counterfeit",adult:adultOn()});shrink("data:image/png;base64,"+ji.image,360,function(d){c.img=d;save();renderAll();});}catch(e){/* imagen opcional */}
+try{var ji=await api("/api/image",{prompt:(j.imagePrompt||c.name)+", anime style, adult, high quality, portrait",style:"anime",model:"counterfeit",adult:adultOn()});shrink("data:"+(ji.mime||"image/png")+";base64,"+ji.image,360,function(d){c.img=d;save();renderAll();});}catch(e){/* imagen opcional */}
 alert("Se creó: "+c.name);
 }catch(e){alert("No se pudo generar: "+e.message);}
 b.textContent="✨ Sorpréndeme";b.disabled=false;
@@ -426,7 +426,9 @@ else el.textContent="Proveedor adulto no configurado: se usa el general. Algunas
 var iel=$("imageStatusNote"),im=j.image||{};
 if(iel){
 if(im.urlError)iel.textContent="Imágenes: "+im.urlError;
+else if(im.configured&&im.provider==="cloudflare")iel.textContent="Imágenes: Cloudflare Workers AI (FLUX.1 schnell) gratis"+(im.model?" · "+im.model:"")+". Plan free: ~100-170 por día; no genera imágenes explícitas.";
 else if(im.configured)iel.textContent="Imágenes: Forge "+(im.local?"local":"remoto")+" configurado"+(im.host?" ("+im.host+")":"")+".";
+else if(im.provider==="cloudflare")iel.textContent="Imágenes: faltan CF_ACCOUNT_ID y CF_API_TOKEN en el servidor.";
 else iel.textContent="Imágenes: falta configurar SD_URL en el servidor.";
 }
 }).catch(function(){el.textContent="No se pudo verificar el proveedor de texto.";});
