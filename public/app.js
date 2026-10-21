@@ -4,6 +4,7 @@ var EMO={feliz:"😊",triste:"😢",enojado:"😠",celoso:"😒",timido:"😳",e
 var RAW=window.NUBBI_RAW||[];
 var CAT=RAW.map(function(r,i){return{id:"p"+i,emoji:r[0],name:r[1],desc:r[2],role:r[3],gender:r[4],tags:r[5],persona:r[6],greeting:r[7]};});
 var st={custom:[],chats:{},cfg:{},favs:[],personas:[],persona:null,prof:{name:"",bio:"",img:"",intensity:"rom",theme:"dark",accent:"violet",fontScale:"md",density:"comfortable",anim:true,lang:"es"},cur:null};
+window.st=st;
 try{var raw=localStorage.getItem(KEY)||localStorage.getItem("mochi-chat-v3");if(raw){var o=JSON.parse(raw);if(o)for(var k in o)st[k]=o[k];}}catch(e){}
 applyPrefs();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
@@ -103,6 +104,8 @@ $("wipe").onclick=function(){if(confirm("¿Borrar todos tus chats?")){st.chats={
 if($("exportData"))$("exportData").onclick=function(){var blob=new Blob([JSON.stringify(st)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="nubbi-backup.json";a.click();URL.revokeObjectURL(a.href);};
 if($("importData"))$("importData").onclick=function(){$("importFile").click();};
 if($("importFile"))$("importFile").onchange=function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);for(var k in o)st[k]=o[k];save();applyPrefs();renderAll();alert("Datos importados.");}catch(e){alert("Archivo inválido.");}};r.readAsText(f);};
+if($("syncUp"))$("syncUp").onclick=async function(){if(!window.cloudSync){alert("Configurá Firebase en firebase-config.js primero.");return;}try{await window.cloudSync.save();alert("Datos subidos a la nube.");}catch(e){alert("Error al subir: "+e.message);}};
+if($("syncDown"))$("syncDown").onclick=async function(){if(!window.cloudSync){alert("Configurá Firebase en firebase-config.js primero.");return;}try{await window.cloudSync.load();}catch(e){alert("Error al bajar: "+e.message);}};
 $("newPersona").onclick=function(){$("pdlg").showModal();};$("pcancel").onclick=function(){$("pdlg").close();};$("psave").onclick=function(){var n=$("pname").value.trim();if(!n)return;var per={id:"per"+Date.now(),name:n,bio:$("pbio").value.trim()};st.personas=st.personas||[];st.personas.unshift(per);st.persona=per.id;save();$("pdlg").close();$("pname").value="";$("pbio").value="";renderPersonas();renderProf();};
 
 $("plus").onclick=function(){imgData="";$("pr").style.display="none";$("dlg").showModal();};
@@ -138,5 +141,6 @@ $("q").oninput=function(){clearTimeout(searchTimer);searchTimer=setTimeout(funct
 document.querySelectorAll(".tab").forEach(function(t){t.onclick=function(){homeTab=t.dataset.tab;homeLimit=12;document.querySelectorAll(".tab").forEach(function(x){x.classList.toggle("on",x===t);});renderHome();};});
 if(!localStorage.getItem("nubbi-onboarded")){setTimeout(function(){if($("onboard"))$("onboard").showModal();},400);}
 if($("onbStart"))$("onbStart").onclick=function(){localStorage.setItem("nubbi-onboarded","1");$("onboard").close();};
+window.save=save; window.applyPrefs=applyPrefs; window.renderAll=renderAll;
 renderAll();
 })();

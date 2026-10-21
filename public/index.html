@@ -9,6 +9,11 @@
 <link rel="icon" href="favicon.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="firebase-sync.js"></script>
 </head>
 <body>
 <div id="views">
@@ -38,6 +43,7 @@
 <select id="pint"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, sin escenas explícitas)</option></select><br><br>
 <button class="g" id="theme">Cambiar tema claro/oscuro</button> <button class="g" id="wipe">Borrar chats</button>
 <button class="g" id="exportData">Exportar datos</button> <button class="g" id="importData">Importar datos</button>
+<button class="g" id="syncUp">Subir a la nube</button> <button class="g" id="syncDown">Bajar de la nube</button>
 <input type="file" id="importFile" accept="application/json" style="display:none">
 <div class="pers">
 <label class="note">Configuración</label>
