@@ -2,7 +2,7 @@
   "name": "nubbi",
   "version": "1.0.0",
   "private": true,
-  "scripts": { "start": "node server.js", "dev": "node --watch server.js", "portraits": "node scripts/generate-portraits.js" },
+  "scripts": { "start": "node server.js", "dev": "node --watch server.js", "portraits": "node scripts/generate-portraits.js", "deploy:rules": "firebase deploy --only firestore:rules" },
   "dependencies": { "dotenv": "^16.4.5", "express": "^4.19.2" },
   "engines": { "node": ">=18" }
 }

@@ -60,6 +60,31 @@ App de chat con personajes de IA (adultos), para móvil y PC.
 - Al crear la cuenta se suben los datos locales. Al iniciar sesión podés elegir bajar los datos de la nube o subir los de este dispositivo.
 - También podés usar **Subir a la nube** y **Bajar de la nube** manualmente.
 
+## Comunidad (Fase 2)
+
+La sección **Comunidad** permite explorar personajes públicos, publicar los tuyos, ver novedades, dar me gusta, comentar y reportar contenido. Todo el contenido es 18+ y no explícito.
+
+- **Explorar**: cualquiera puede ver personajes y novedades publicadas.
+- **Publicar, comentar, dar me gusta y reportar**: requiere una cuenta de email/contraseña (el modo invitado puede explorar, pero no escribir).
+- **Publicar un personaje**: desde **Comunidad → + Publicar personaje** o desde la ficha de un personaje propio → **Publicar en comunidad**. Se publican nombre, descripción, rol, tags, personalidad, primer mensaje y una imagen comprimida opcional. **No** se suben chats, memoria, escenas privadas ni configuraciones del chat.
+- **Perfil de creador**: en **Perfil → Perfil de creador** podés publicar tu nombre y bio. Se usa en tus personajes y publicaciones.
+- **Moderación**: cada personaje, publicación y comentario se puede reportar. Los reportes se guardan en la colección `reports` y se revisan desde **Firebase Console → Firestore**. También podés bloquear creadores; el bloqueo y el contenido oculto por reportes se guardan solo en tu dispositivo.
+- **Imágenes**: se redimensionan y comprimen antes de publicarse para no superar el límite de un documento de Firestore.
+
+### Activar las reglas de Firestore
+
+La primera vez hay que publicar las reglas incluidas en `firestore.rules`. Sin ellas, la comunidad muestra un error de permisos.
+
+1. Instalá Firebase CLI (`npm install -g firebase-tools`) si no lo tenés.
+2. Iniciá sesión: `firebase login`.
+3. Desde la carpeta del proyecto: `firebase use nubbi-d106b`.
+4. Publicá las reglas: `npm run deploy:rules` (o `firebase deploy --only firestore:rules`).
+5. Verificá en **Firebase Console → Firestore → Reglas** que estén activas.
+
+Si no podés usar la CLI, abrí **Firebase Console → Firestore → Reglas**, pegá el contenido de `firestore.rules` y publicá.
+
+Las reglas permiten lectura pública solo de contenido publicado, escritura solo a cuentas reales, y limitan quién puede editar o borrar cada documento. La colección `reports` es de solo escritura desde la app: se lee y modera desde la consola con permisos de administrador. No hace falta crear las colecciones a mano; Firestore las crea al publicar el primer personaje.
+
 ## Instalarla como app
 
 - PC (Chrome/Brave/Edge): ícono de instalar en la barra de direcciones.

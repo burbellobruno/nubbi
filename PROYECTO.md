@@ -15,4 +15,10 @@ Funciones: catálogo filtrable (género, tags, búsqueda), crear personaje (con 
 emociones en cada respuesta, acciones entre *asteriscos*, modo chat/historia, escena y rol, "continuar historia",
 intensidad Suave/Romántico/Intenso (sensual, sin escenas sexuales explícitas).
 
+Fase 2 (comunidad): `public/community.js` + colecciones Firestore `communityCharacters`, `communityPosts`,
+`communityPosts/{postId}/comments`, `creators` y `reports`. Reglas en `firestore.rules`; se publican con
+`npm run deploy:rules`. Cualquiera puede explorar; publicar, comentar, dar me gusta y reportar requiere cuenta
+real (no anónima). Las imágenes se comprimen en el cliente. Los bloqueos y el contenido oculto por reportes
+se guardan aparte en localStorage (`nubbi-mod-v1`), sin subirse a la nube. Moderación manual desde Firebase Console.
+
 Reglas: leer antes de cambiar, no tocar `.env`, personajes siempre adultos.

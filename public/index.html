@@ -34,6 +34,26 @@
 <button class="g loadmore" id="loadMore">Ver más</button>
 </section>
 <section class="view" id="v-chats"><h2>Tus chats</h2><div id="chl"></div></section>
+<section class="view" id="v-community">
+<div class="commhead">
+<div><h2>Comunidad</h2><p class="note">Personajes y novedades de la comunidad. Todo el contenido es 18+ y no explícito.</p></div>
+<div class="commacts"><button class="g" id="commRefresh" type="button">Actualizar</button><button id="commPublish" type="button">+ Publicar personaje</button></div>
+</div>
+<div class="searchbox"><svg class="si" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><input id="commQ" placeholder="Buscar personajes o creadores..."></div>
+<div class="tabs" id="commTabs"><button class="tab on" type="button" data-ctab="chars">Personajes</button><button class="tab" type="button" data-ctab="feed">Novedades</button></div>
+<div id="commStatus" class="note"></div>
+<div id="commCharsPanel"><div class="grid" id="commChars"></div></div>
+<div id="commFeedPanel" style="display:none">
+<div class="postcomposer" id="commComposer">
+<textarea id="commPostText" rows="3" maxlength="600" placeholder="Compartí una historia, una idea o tu personaje..."></textarea>
+<div class="postrow"><select id="commPostChar" aria-label="Personaje opcional"><option value="">Sin personaje</option></select><button id="commPostSend" type="button">Publicar</button></div>
+<div class="note" id="commPostGate"></div>
+<button class="g" id="commLogin" type="button" style="display:none">Crear cuenta / iniciar sesión</button>
+</div>
+<div id="commPosts"></div>
+</div>
+<div id="commBlocked"></div>
+</section>
 <section class="view" id="v-favs"><h2>Favoritos</h2><div class="grid" id="fg"></div></section>
 <section class="view" id="v-prof"><div class="prof">
 <div class="av" id="pav" style="background:linear-gradient(135deg,var(--ac),var(--ac2))"></div>
@@ -61,6 +81,15 @@
 <div class="note" id="accEmailShow"></div>
 <button class="g" id="accLogout" type="button">Cerrar sesión</button>
 </div>
+</div>
+<label class="note" style="display:block;margin-top:14px">Perfil de creador</label>
+<div class="account" id="creatorBox">
+<div class="acc-status" id="creatorStatus">Creá una cuenta para publicar personajes y tener perfil de creador.</div>
+<div class="acc-btns">
+<button class="g" id="creatorSave" type="button">Publicar perfil público</button>
+<button class="g" id="creatorView" type="button">Ver mi perfil</button>
+</div>
+<div class="note">Se usa tu nombre y bio del perfil. Solo se comparte lo que publicás en la comunidad.</div>
 </div>
 <label class="note">Intensidad por defecto en chats nuevos</label>
 <select id="pint"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, sin escenas explícitas)</option><option value="libre">Libre (el personaje toma la iniciativa)</option></select><br><br>
@@ -93,6 +122,7 @@
 <div class="brand"><img src="logo.png" alt=""><b>Nubbi</b></div>
 <div data-v="home" class="on" aria-label="Inicio"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"></path><path d="M5 10v10h14V10"></path></svg><span class="l">Inicio</span></div>
 <div data-v="chats" aria-label="Chats"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><span class="l">Chats</span></div>
+<div data-v="community" aria-label="Comunidad"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"></path></svg><span class="l">Comunidad</span></div>
 <div class="plus" id="plus" aria-label="Crear personaje"><span>+</span><em>Crear</em></div>
 <div data-v="favs" aria-label="Favoritos"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg><span class="l">Favoritos</span></div>
 <div data-v="prof" aria-label="Perfil"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path></svg><span class="l">Perfil</span></div>
@@ -169,7 +199,7 @@
 <div id="shmeta" class="shmeta"></div>
 <div id="shgreet" class="shgreet"></div>
 <div id="shsimilar" class="shsimilar"></div>
-<div class="drow"><button class="g" id="shfav">♡</button><button class="g" id="shedit" style="display:none">Editar</button><button class="g" id="shshare">Compartir</button><button class="g" id="shdel" style="display:none">Eliminar</button><button id="shchat">Chatear</button></div>
+<div class="drow"><button class="g" id="shfav">♡</button><button class="g" id="shedit" style="display:none">Editar</button><button class="g" id="shpub" style="display:none">Publicar en comunidad</button><button class="g" id="shshare">Compartir</button><button class="g" id="shdel" style="display:none">Eliminar</button><button id="shchat">Chatear</button></div>
 </div>
 </div>
 </dialog>
@@ -195,7 +225,82 @@
 <div class="drow"><button id="onbStart">Empezar</button></div>
 </div>
 </dialog>
+
+<dialog id="pubsheet">
+<div class="sheet">
+<div class="sheetimg" id="psimg"></div>
+<div class="sheetbody">
+<h3 id="psname"></h3>
+<small id="psrole"></small>
+<p id="psdesc"></p>
+<button class="g psby" id="psauthor" type="button"></button>
+<div id="pstags" class="tags"></div>
+<div id="psgreet" class="shgreet"></div>
+<div class="drow">
+<button class="g" id="pslike" type="button">♡ Me gusta</button>
+<button class="g" id="psreport" type="button">Reportar</button>
+<button class="g" id="psblock" type="button">Bloquear</button>
+<button class="g" id="psdelete" type="button" style="display:none">Eliminar</button>
+<button class="g" id="psclose" type="button">Cerrar</button>
+<button id="psuse" type="button">Usar personaje</button>
+</div>
+</div>
+</div>
+</dialog>
+
+<dialog id="pubdlg">
+<h3 style="margin:0">Publicar en comunidad</h3>
+<div class="note">Se publican el nombre, la descripción, la personalidad y el primer mensaje. No se suben tus chats, escenas privadas ni memoria.</div>
+<div class="note">No se permite contenido sexual explícito, menores de edad, acoso, discurso de odio ni spam.</div>
+<label>Personaje</label><select id="pubchar"></select>
+<label>Nombre público</label><input id="pubname" maxlength="80">
+<label>Rol</label><input id="pubrole" maxlength="80">
+<label>Descripción corta</label><input id="pubdesc" maxlength="300">
+<label>Tags</label><input id="pubtags" maxlength="120">
+<label>Personalidad y reglas</label><textarea id="pubpersona" rows="4" maxlength="5000"></textarea>
+<label>Primer mensaje</label><textarea id="pubgreet" rows="2" maxlength="2000"></textarea>
+<label class="chk"><input type="checkbox" id="pubadult"> Confirmo que el personaje es adulto (18+) y que el contenido no es sexualmente explícito.</label>
+<label class="chk"><input type="checkbox" id="pubterms"> Confirmo que tengo derecho a publicar este personaje y acepto las normas de la comunidad.</label>
+<div class="drow"><button class="g" id="pubcancel" type="button">Cancelar</button><button id="pubsend" type="button">Publicar</button></div>
+</dialog>
+
+<dialog id="repdlg">
+<h3 style="margin:0">Reportar contenido</h3>
+<div class="note" id="reptarget"></div>
+<label>Motivo</label>
+<select id="repreason">
+<option value="">Elegí un motivo</option>
+<option value="menor">Menor de edad</option>
+<option value="explicito">Contenido sexual explícito</option>
+<option value="acoso">Acoso o amenazas</option>
+<option value="odio">Discurso de odio</option>
+<option value="spam">Spam o estafa</option>
+<option value="otro">Otro</option>
+</select>
+<label>Detalle (opcional)</label><textarea id="repdetail" rows="3" maxlength="1000" placeholder="Contanos qué pasa. No incluyas datos personales sensibles."></textarea>
+<div class="drow"><button class="g" id="repcancel" type="button">Cancelar</button><button id="repsend" type="button">Enviar reporte</button></div>
+</dialog>
+
+<dialog id="cmdlg">
+<h3 style="margin:0">Comentarios</h3>
+<div class="note" id="cmtitle"></div>
+<div id="cmlist"></div>
+<div class="note" id="cmgate">Para comentar necesitás una cuenta.</div>
+<button class="g" id="cmlogin" type="button" style="display:none">Crear cuenta / iniciar sesión</button>
+<textarea id="cmtext" rows="2" maxlength="400" placeholder="Escribí un comentario respetuoso..."></textarea>
+<div class="drow"><button class="g" id="cmclose" type="button">Cerrar</button><button id="cmsend" type="button">Comentar</button></div>
+</dialog>
+
+<dialog id="crtdlg">
+<div class="crt">
+<div class="crt-head"><div class="av" id="crtav"></div><div><h3 id="crtname"></h3><small id="crtbio"></small></div></div>
+<div id="crtchars" class="crtchars"></div>
+<div class="drow"><button class="g" id="crtblock" type="button">Bloquear</button><button class="g" id="crtclose" type="button">Cerrar</button></div>
+</div>
+</dialog>
+
 <script src="catalog.js"></script>
 <script src="app.js"></script>
+<script src="community.js"></script>
 </body>
 </html>

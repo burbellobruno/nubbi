@@ -15,7 +15,7 @@ body{font-size:var(--fs)}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:radial-gradient(900px 520px at 5% -8%,#6aa8ff44,transparent),radial-gradient(800px 520px at 100% 0%,#ff8fd033,transparent),radial-gradient(700px 500px at 50% 115%,#8b6bff33,transparent),var(--bg);background-attachment:fixed;color:var(--tx);font:15px/1.45 'Roboto',system-ui,-apple-system,Segoe UI,sans-serif}
-button{font:inherit;cursor:pointer;border:0;border-radius:14px;padding:9px 15px;color:#fff;background:linear-gradient(135deg,var(--ac3),var(--ac));min-height:44px}
+button{font:inherit;cursor:pointer;border:0;border-radius:14px;padding:9px 15px;color:#fff;background:linear-gradient(135deg,var(--ac3),var(--ac));min-height:44px}button:disabled{opacity:.5;cursor:not-allowed}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 button.g{background:var(--sf);color:var(--tx);border:1px solid var(--bd)}
 input,textarea,select{font:inherit;color:var(--tx);background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:10px;width:100%}
@@ -142,3 +142,66 @@ dialog{overflow:auto}
 #chat[data-bubble="manga"] .m.u{background:#fff;color:#111}
 #chat[data-bubble="manga"] .m.b{background:#fff;color:#111}
 input[type=range]{padding:0;min-height:36px}
+.av img{width:100%;height:100%;object-fit:cover}
+.commhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin:2px 0 8px}
+.commhead h2{margin:0}
+.commhead p{margin:4px 0 0;max-width:560px}
+.commhead button{flex:none}
+.commacts{display:flex;gap:8px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+#commStatus{min-height:0;margin:2px 0 6px}
+#commStatus:empty{display:none}
+#commStatus button{min-height:32px;padding:4px 10px;font-size:12px}
+.pubcard .pubby{-webkit-line-clamp:1!important;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;font-size:11px;opacity:.8;margin-top:2px}
+.pubcard .publike{font-size:12px;padding:3px 7px}
+.postcomposer{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:12px;margin:0 0 12px;display:grid;gap:8px}
+.postcomposer textarea{min-height:72px;resize:vertical}
+.postrow{display:flex;gap:8px;align-items:center}
+.postrow select{flex:1;min-width:0;padding:8px 10px;font-size:13px;border-radius:12px}
+.postrow button{flex:none;min-height:40px}
+.post{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:12px;margin-bottom:12px}
+.posthead{display:flex;gap:9px;align-items:center}
+.posthead .av{width:38px;height:38px;font-size:18px;border-radius:12px}
+.postwho{min-width:0;line-height:1.25}
+.postwho b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.postwho small{display:block;color:var(--mut);font-size:11px}
+.posttext{white-space:pre-wrap;word-wrap:break-word;margin:9px 0;line-height:1.45}
+.postchar{display:flex;gap:8px;align-items:center;background:var(--bot);border-radius:12px;padding:7px 9px;margin:6px 0;cursor:pointer}
+.postchar .av{width:34px;height:34px;font-size:16px;border-radius:10px}
+.postchar b{display:block;font-size:13px}
+.postchar small{display:block;color:var(--mut);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:min(70vw,420px)}
+.postactions{display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.postactions button{min-height:32px;padding:4px 9px;font-size:12px;border-radius:10px}
+.psby{width:100%;text-align:left;font-size:12px;min-height:34px;margin-top:4px}
+.chk{display:flex!important;align-items:flex-start;gap:8px;color:var(--tx)!important;font-size:13px!important;line-height:1.35;margin:10px 0!important}
+.chk input{width:auto!important;min-height:0!important;margin-top:2px;flex:none}
+#cmlist{display:grid;gap:8px;max-height:42vh;overflow:auto;margin:8px 0}
+.comment{display:flex;gap:8px;align-items:flex-start;border-top:1px solid var(--bd);padding-top:8px}
+.comment .av{width:30px;height:30px;font-size:15px;border-radius:9px}
+.commentbody{min-width:0;flex:1}
+.commenthead{display:flex;gap:8px;align-items:baseline}
+.commenthead b{font-size:13px}
+.commenthead small{color:var(--mut);font-size:10px}
+.commenttext{white-space:pre-wrap;word-wrap:break-word;font-size:13px;margin-top:2px}
+.commenttools{display:flex;gap:2px;flex:none}
+.commenttools button{min-height:28px;padding:1px 6px;font-size:11px}
+#cmtext{min-height:58px;margin:4px 0 8px}
+.crt-head{display:flex;gap:12px;align-items:center;margin-bottom:10px}
+.crt-head .av{width:64px;height:64px;font-size:28px;border-radius:16px;flex:none}
+.crt-head h3{margin:0}
+.crt-head small{display:block;color:var(--mut);margin-top:3px;white-space:pre-wrap;word-wrap:break-word}
+.crtchars{display:grid;gap:6px;max-height:36vh;overflow:auto}
+.crtchars .row{margin:0;padding:7px}
+.crtchars .row small{max-width:none}
+.commblocked{margin-top:22px}
+.commblocked h2{margin-bottom:4px}
+.commblocked .row{cursor:default}
+.commblocked .row>div:first-child{flex:1;min-width:0}
+.commblocked .row small{color:var(--mut)}
+.commblocked .row button{flex:none;min-height:34px;padding:5px 10px;font-size:12px}
+@media (max-width:620px){
+.commhead{flex-direction:column}
+.commacts{width:100%;flex-direction:column}
+.commhead button{width:100%}
+.postrow{align-items:stretch;flex-direction:column}
+.postrow button{width:100%}
+}

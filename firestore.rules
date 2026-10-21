@@ -1,0 +1,229 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function realUser() {
+      return signedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    function own(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function textOk(value, max) {
+      return value is string && value.size() <= max;
+    }
+
+    function validLikeChange(oldLikes, newLikes) {
+      return newLikes is list && oldLikes is list
+        && newLikes.size() <= 100000
+        && (
+          (
+            newLikes.size() == oldLikes.size() + 1
+            && newLikes.hasAll(oldLikes)
+            && newLikes.hasAny([request.auth.uid])
+          )
+          ||
+          (
+            newLikes.size() + 1 == oldLikes.size()
+            && oldLikes.hasAll(newLikes)
+            && !newLikes.hasAny([request.auth.uid])
+          )
+        );
+    }
+
+    function validCharCreate(data) {
+      return data.keys().hasOnly([
+          'ownerUid', 'ownerName', 'name', 'desc', 'role', 'gender', 'tags',
+          'persona', 'greeting', 'emoji', 'img', 'likedBy', 'status',
+          'createdAt', 'updatedAt'
+        ])
+        && data.ownerUid == request.auth.uid
+        && data.status == 'published'
+        && textOk(data.ownerName, 80)
+        && data.ownerName.size() > 0
+        && textOk(data.name, 80)
+        && data.name.size() > 0
+        && textOk(data.desc, 300)
+        && textOk(data.role, 80)
+        && textOk(data.gender, 20)
+        && textOk(data.tags, 120)
+        && textOk(data.persona, 5000)
+        && textOk(data.greeting, 2000)
+        && textOk(data.emoji, 16)
+        && textOk(data.img, 200000)
+        && data.likedBy is list
+        && data.likedBy.size() == 0
+        && data.createdAt is int
+        && data.updatedAt is int;
+    }
+
+    function validCharUpdate(data, old) {
+      return data.keys().hasOnly([
+          'ownerUid', 'ownerName', 'name', 'desc', 'role', 'gender', 'tags',
+          'persona', 'greeting', 'emoji', 'img', 'likedBy', 'status',
+          'createdAt', 'updatedAt'
+        ])
+        && data.ownerUid == old.ownerUid
+        && data.ownerUid == request.auth.uid
+        && data.createdAt == old.createdAt
+        && data.likedBy == old.likedBy
+        && data.status == 'published'
+        && textOk(data.ownerName, 80)
+        && data.ownerName.size() > 0
+        && textOk(data.name, 80)
+        && data.name.size() > 0
+        && textOk(data.desc, 300)
+        && textOk(data.role, 80)
+        && textOk(data.gender, 20)
+        && textOk(data.tags, 120)
+        && textOk(data.persona, 5000)
+        && textOk(data.greeting, 2000)
+        && textOk(data.emoji, 16)
+        && textOk(data.img, 200000)
+        && data.likedBy is list
+        && data.updatedAt is int;
+    }
+
+    // ---- Datos privados de cada cuenta (snapshot completo de la app)
+    match /users/{userId} {
+      allow read, write: if own(userId);
+    }
+
+    // ---- Perfil público de creador
+    match /creators/{creatorId} {
+      allow read: if true;
+      allow create, update: if realUser()
+        && own(creatorId)
+        && request.resource.data.keys().hasOnly(['name', 'bio', 'photo', 'updatedAt'])
+        && textOk(request.resource.data.name, 80)
+        && request.resource.data.name.size() > 0
+        && textOk(request.resource.data.bio, 600)
+        && textOk(request.resource.data.photo, 120000)
+        && request.resource.data.updatedAt is int;
+      allow delete: if own(creatorId);
+    }
+
+    // ---- Personajes públicos
+    match /communityCharacters/{charId} {
+      allow read: if resource.data.status == 'published'
+        || own(resource.data.ownerUid);
+
+      allow create: if realUser()
+        && validCharCreate(request.resource.data);
+
+      allow update: if realUser() && (
+        (
+          own(resource.data.ownerUid)
+          && validCharUpdate(request.resource.data, resource.data)
+        )
+        ||
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy'])
+          && validLikeChange(resource.data.likedBy, request.resource.data.likedBy)
+        )
+      );
+
+      allow delete: if own(resource.data.ownerUid);
+    }
+
+    // ---- Muro / novedades
+    match /communityPosts/{postId} {
+      allow read: if resource.data.status == 'published'
+        || own(resource.data.authorUid);
+
+      allow create: if realUser()
+        && request.resource.data.keys().hasOnly([
+          'authorUid', 'authorName', 'text', 'charPubId', 'charName',
+          'charEmoji', 'charImg', 'charDesc', 'likedBy', 'status', 'createdAt'
+        ])
+        && request.resource.data.authorUid == request.auth.uid
+        && textOk(request.resource.data.authorName, 80)
+        && request.resource.data.authorName.size() > 0
+        && textOk(request.resource.data.text, 600)
+        && request.resource.data.text.size() > 0
+        && textOk(request.resource.data.charPubId, 200)
+        && textOk(request.resource.data.charName, 80)
+        && textOk(request.resource.data.charEmoji, 16)
+        && textOk(request.resource.data.charImg, 200000)
+        && textOk(request.resource.data.charDesc, 300)
+        && request.resource.data.likedBy is list
+        && request.resource.data.likedBy.size() == 0
+        && request.resource.data.status == 'published'
+        && request.resource.data.createdAt is int;
+
+      allow update: if realUser() && (
+        (
+          own(resource.data.authorUid)
+          && request.resource.data.keys().hasOnly([
+            'authorUid', 'authorName', 'text', 'charPubId', 'charName',
+            'charEmoji', 'charImg', 'charDesc', 'likedBy', 'status', 'createdAt'
+          ])
+          && request.resource.data.authorUid == resource.data.authorUid
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.likedBy == resource.data.likedBy
+          && request.resource.data.status == 'published'
+          && textOk(request.resource.data.authorName, 80)
+          && request.resource.data.authorName.size() > 0
+          && textOk(request.resource.data.text, 600)
+          && request.resource.data.text.size() > 0
+          && textOk(request.resource.data.charPubId, 200)
+          && textOk(request.resource.data.charName, 80)
+          && textOk(request.resource.data.charEmoji, 16)
+          && textOk(request.resource.data.charImg, 200000)
+          && textOk(request.resource.data.charDesc, 300)
+        )
+        ||
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy'])
+          && validLikeChange(resource.data.likedBy, request.resource.data.likedBy)
+        )
+      );
+
+      allow delete: if own(resource.data.authorUid);
+
+      match /comments/{commentId} {
+        allow read: if get(/databases/$(database)/documents/communityPosts/$(postId)).data.status == 'published';
+        allow create: if realUser()
+          && get(/databases/$(database)/documents/communityPosts/$(postId)).data.status == 'published'
+          && request.resource.data.keys().hasOnly(['authorUid', 'authorName', 'text', 'status', 'createdAt'])
+          && request.resource.data.authorUid == request.auth.uid
+          && textOk(request.resource.data.authorName, 80)
+          && request.resource.data.authorName.size() > 0
+          && textOk(request.resource.data.text, 400)
+          && request.resource.data.text.size() > 0
+          && request.resource.data.status == 'published'
+          && request.resource.data.createdAt is int;
+        allow update: if false;
+        allow delete: if realUser() && (
+          own(resource.data.authorUid)
+          || own(get(/databases/$(database)/documents/communityPosts/$(postId)).data.authorUid)
+        );
+      }
+    }
+
+    // ---- Reportes de moderación (se revisan desde Firebase Console)
+    match /reports/{reportId} {
+      allow create: if realUser()
+        && request.resource.data.keys().hasOnly([
+          'reporterUid', 'targetType', 'targetId', 'targetOwnerUid',
+          'reason', 'details', 'status', 'createdAt'
+        ])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.targetType in ['character', 'post', 'comment']
+        && textOk(request.resource.data.targetId, 200)
+        && request.resource.data.targetId.size() > 0
+        && textOk(request.resource.data.targetOwnerUid, 200)
+        && request.resource.data.reason in ['menor', 'explicito', 'acoso', 'odio', 'spam', 'otro']
+        && textOk(request.resource.data.details, 1000)
+        && request.resource.data.status == 'open'
+        && request.resource.data.createdAt is int;
+      allow read, update, delete: if false;
+    }
+  }
+}
