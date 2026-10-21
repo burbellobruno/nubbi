@@ -28,6 +28,25 @@ App de chat con personajes de IA (adultos), para móvil y PC.
 - **No definas `PORT` en Render**: Render lo asigna automáticamente y la app ya usa `process.env.PORT`.
 - Para verificar la configuración activa, abrí `https://TU-APP.onrender.com/api/health`.
 
+## Chat, libertad e idiomas
+
+- En **Perfil → Configuración** podés elegir:
+  - **Idioma del chat**: rioplatense, latinoamericano neutro, mexicano, colombiano, chileno, España, English o português (Brasil).
+  - **Creatividad**: preciso, equilibrado, creativo o impredecible.
+  - **Longitud de respuesta**: corta, normal o larga.
+- En **Escena** podés elegir la intensidad, incluida **Libre** (el personaje toma la iniciativa y puede crear conflicto y tensión, sin contenido sexual explícito).
+- En el chat tenés **Improvisar** (el personaje propone un giro) y **Regenerar** (vuelve a responder el último mensaje).
+
+## Cuentas y sincronización
+
+- La app funciona sin cuenta (modo invitado) y guarda todo en el dispositivo.
+- Para crear una cuenta:
+  1. En **Firebase Console → Authentication → Sign-in method**, habilitá **Email/Password**.
+  2. En **Authentication → Settings → Authorized domains**, agregá tu dominio de Render (por ejemplo `nubbi.onrender.com`) si no está.
+  3. En **Perfil → Cuenta**, completá email y contraseña, y tocá **Crear cuenta**.
+- Al crear la cuenta se suben los datos locales. Al iniciar sesión podés elegir bajar los datos de la nube o subir los de este dispositivo.
+- También podés usar **Subir a la nube** y **Bajar de la nube** manualmente.
+
 ## Instalarla como app
 
 - PC (Chrome/Brave/Edge): ícono de instalar en la barra de direcciones.

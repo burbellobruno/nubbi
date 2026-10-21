@@ -109,3 +109,8 @@ body.chat-open #views{margin-right:min(520px,44vw)}
 .grid{column-width:190px;column-gap:16px}.grid .card{margin-bottom:16px}.rail .card{width:170px}
 #chat{left:auto;width:min(520px,44vw);border-left:1px solid var(--bd)}
 }
+.account{display:grid;gap:8px;text-align:left;margin:8px 0 4px;padding:12px;border-radius:16px;background:var(--sf);border:1px solid var(--bd)}
+.acc-status{font-size:13px;color:var(--mut)}
+.acc-btns{display:flex;gap:8px;flex-wrap:wrap}
+.acc-btns button{flex:1;min-width:120px;font-size:13px;padding:8px 10px;min-height:40px}
+#accEmail,#accPass{text-align:left}

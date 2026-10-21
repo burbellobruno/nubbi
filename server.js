@@ -22,6 +22,11 @@ app.use("/api/", (req, res, next) => {
 });
 
 // ---- Chat: cualquier servidor compatible con OpenAI (Ollama, OpenRouter, Groq...)
+function num(v, def, min, max) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def;
+}
+
 function chatConfig() {
   const baseUrl = (process.env.CHAT_BASE_URL || "").replace(/\/+$/, "");
   const model = process.env.CHAT_MODEL || "";
@@ -55,11 +60,18 @@ app.post("/api/chat", async (req, res) => {
       },
       body: JSON.stringify({
         model: model,
-        max_tokens: 1000,
+        max_tokens: num(req.body.max_tokens, 1000, 200, 2000),
+        temperature: num(req.body.temperature, 0.9, 0, 1.5),
+        top_p: num(req.body.top_p, 1, 0, 1),
         messages: [{ role: "user", content: String(req.body.prompt || "") }],
         ...(req.body.response_format ? { response_format: req.body.response_format } : {}),
         stream: stream,
-        ...(model.includes("gpt-oss") ? { reasoning_effort: "low" } : {}),
+        ...(model.includes("gpt-oss")
+          ? { reasoning_effort: "low" }
+          : {
+              presence_penalty: num(req.body.presence_penalty, 0.2, -2, 2),
+              frequency_penalty: num(req.body.frequency_penalty, 0.2, -2, 2),
+            }),
       }),
     });
     if (stream) {

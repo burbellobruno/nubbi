@@ -39,20 +39,40 @@
 <label class="note">Tus personas</label>
 <div id="plist"></div>
 <button class="g" id="newPersona" style="margin:8px 0">+ Nueva persona</button>
+<label class="note">Cuenta</label>
+<div class="account" id="accBox">
+<div class="acc-status" id="accStatus">Invitado · tus datos se guardan en este dispositivo</div>
+<div id="accGuest">
+<input id="accEmail" type="email" placeholder="Email" autocomplete="email" inputmode="email">
+<input id="accPass" type="password" placeholder="Contraseña (mínimo 6)" autocomplete="current-password">
+<div class="acc-btns">
+<button id="accRegister" type="button">Crear cuenta</button>
+<button class="g" id="accLogin" type="button">Iniciar sesión</button>
+<button class="g" id="accReset" type="button">Olvidé mi contraseña</button>
+</div>
+<div class="note">Crear cuenta sincroniza tus chats entre dispositivos.</div>
+</div>
+<div id="accUser" style="display:none">
+<div class="note" id="accEmailShow"></div>
+<button class="g" id="accLogout" type="button">Cerrar sesión</button>
+</div>
+</div>
 <label class="note">Intensidad por defecto en chats nuevos</label>
-<select id="pint"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, sin escenas explícitas)</option></select><br><br>
+<select id="pint"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, sin escenas explícitas)</option><option value="libre">Libre (el personaje toma la iniciativa)</option></select><br><br>
 <button class="g" id="theme">Cambiar tema claro/oscuro</button> <button class="g" id="wipe">Borrar chats</button>
 <button class="g" id="exportData">Exportar datos</button> <button class="g" id="importData">Importar datos</button>
 <button class="g" id="syncUp">Subir a la nube</button> <button class="g" id="syncDown">Bajar de la nube</button>
 <input type="file" id="importFile" accept="application/json" style="display:none">
 <div class="pers">
 <label class="note">Configuración</label>
-<label>Idioma del chat</label><select id="plang"><option value="es">Español (rioplatense)</option><option value="en">English</option></select>
+<label>Idioma del chat</label><select id="plang"><option value="es-AR">Español rioplatense (Argentina)</option><option value="es-LAT">Español latinoamericano neutro</option><option value="es-MX">Español mexicano</option><option value="es-CO">Español colombiano</option><option value="es-CL">Español chileno</option><option value="es-ES">Español de España</option><option value="en">English</option><option value="pt-BR">Português (Brasil)</option></select>
 <label>Tema</label><select id="ptheme"><option value="system">Sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select>
 <label>Color de acento</label><div class="pills" id="paccent"></div>
 <label>Tamaño de texto</label><select id="pfont"><option value="sm">Pequeño</option><option value="md">Mediano</option><option value="lg">Grande</option></select>
 <label>Densidad</label><select id="pdensity"><option value="comfortable">Cómoda</option><option value="compact">Compacta</option></select>
 <label>Animaciones</label><select id="panim"><option value="on">Activadas</option><option value="off">Desactivadas</option></select>
+<label>Creatividad del personaje</label><select id="ptemp"><option value="precise">Preciso (más coherente)</option><option value="balanced">Equilibrado</option><option value="creative">Creativo</option><option value="wild">Impredecible (más libertad)</option></select>
+<label>Longitud de respuesta</label><select id="plen"><option value="short">Corta</option><option value="normal">Normal</option><option value="long">Larga</option></select>
 </div>
 <p class="note">Confirmo que tengo 18 años o más. Todos los personajes son adultos.</p>
 </div></section>
@@ -69,7 +89,7 @@
 <div id="chat">
 <header><button class="g" id="back">←</button><div class="av" id="hav"></div><div class="t"><b id="hname"></b><br><small id="hdesc"></small></div><button class="g" id="fv">♡</button><button class="g" id="cfg">Escena</button><button class="g" id="reset">↺</button></header>
 <div id="msgs"></div>
-<div class="chips"><button class="g" id="bAct">*Acción*</button><button class="g" id="bCont">Continuar historia</button><button class="g" id="bScene">Nueva escena</button></div>
+<div class="chips"><button class="g" id="bAct">*Acción*</button><button class="g" id="bCont">Continuar historia</button><button class="g" id="bScene">Nueva escena</button><button class="g" id="bImpro">Improvisar</button><button class="g" id="bRegen">Regenerar</button></div>
 <form id="f" class="pillform"><input id="inp" placeholder="Escribí un mensaje..." autocomplete="off"><button type="submit" class="send" aria-label="Enviar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button></form>
 </div>
 
@@ -92,7 +112,7 @@
 <label>Escenario</label><textarea id="sc" rows="3" placeholder="Ej: Academia de magia, noche de tormenta, biblioteca vacía"></textarea>
 <label>Tu rol en la historia</label><input id="ur">
 <label>Modo</label><select id="mode"><option value="chat">Chat directo</option><option value="story">Historia narrada</option></select>
-<label>Intensidad</label><select id="int"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, sin escenas explícitas)</option></select>
+<label>Intensidad</label><select id="int"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, sin escenas explícitas)</option><option value="libre">Libre (el personaje toma la iniciativa)</option></select>
 <label>Persona (tu personaje en la historia)</label><select id="pcfg"><option value="">Perfil actual</option></select>
 <div class="drow"><button id="csave" type="button">Aplicar</button></div>
 </dialog>
