@@ -136,10 +136,15 @@ function imageConfig() {
   } catch (e) {
     urlError = "SD_URL no es una URL válida. Usá la URL completa de Forge, por ejemplo https://tu-endpoint.proxy.runpod.net";
   }
+  if (!urlError && isLocal && process.env.RENDER) {
+    urlError = "En Render no se puede usar localhost. Configurá Cloudflare Workers AI o una URL pública de Forge.";
+  }
   if (!urlError && baseUrl && !isLocal) {
     const bare = baseUrl.replace(/^https?:\/\//i, "").replace(/\/.*$/, "");
     if (/^[a-f0-9]{24,}$/i.test(bare)) {
       urlError = "SD_URL parece un ID interno, no una URL pública. Configurá la URL completa de Forge, por ejemplo https://tu-endpoint.proxy.runpod.net";
+    } else if (/^(tu-endpoint|tu-url|tu-dominio|xxxx|abc123)/i.test(bare)) {
+      urlError = "SD_URL sigue siendo un ejemplo. Configurá una URL real de Forge o usá Cloudflare Workers AI.";
     }
   }
   return {
