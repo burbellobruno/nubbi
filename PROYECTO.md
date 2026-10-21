@@ -6,7 +6,7 @@ Estilo inspirado en apps de character chat. Diseño propio, violeta y celeste de
 Stack: Express (`server.js`) + front sin frameworks en `public/` (`index.html`, `style.css`, `app.js`, `catalog.js`).
 - `/api/chat`: cualquier API compatible con OpenAI (por defecto Groq). Config en `.env` (`CHAT_BASE_URL`, `CHAT_API_KEY`, `CHAT_MODEL`).
 - Modo adulto: `ADULT_CHAT_*` permite usar otro proveedor/modelo para pedidos con `adult:true`. Límites duros: +18, sin menores, sin no consentimiento, sin animales, sin personas reales.
-- `/api/image`: Cloudflare Workers AI (FLUX.1 schnell, plan free) o Forge/A1111 local/remoto (`--api`) con `SD_AUTH` opcional. `GET /api/image/health` verifica el proveedor activo.
+- `/api/image`: Cloudflare Workers AI (FLUX.1 schnell, plan free) o Forge/A1111 local/remoto (`--api`) con `SD_AUTH` opcional. El cliente puede elegir proveedor por imagen; `GET /api/image/models` lista los checkpoints de Forge. `GET /api/image/health` verifica el proveedor activo.
 - Estado en localStorage (`nubbi-v1`); migra de `mochi-chat-v3`.
 - Catálogo base en `public/catalog.js` (21 personajes, ids p0..p20). Retratos opcionales en `public/portraits/<id>.png`.
 - Responsive: celu con barra inferior y chat a pantalla completa; PC con menú lateral y chat en panel derecho.

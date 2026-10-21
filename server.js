@@ -90,9 +90,12 @@ function cloudflareConfig() {
   return { accountId, apiToken, model, steps, timeoutMs, endpoint, error };
 }
 
-function imageConfig() {
+function imageConfig(providerOverride) {
   const cf = cloudflareConfig();
-  const requested = (process.env.IMAGE_PROVIDER || "").trim().toLowerCase();
+  const override = String(providerOverride || "").trim().toLowerCase();
+  const requested = override === "forge" || override === "cloudflare"
+    ? override
+    : (process.env.IMAGE_PROVIDER || "").trim().toLowerCase();
   const provider = requested === "forge" || requested === "cloudflare"
     ? requested
     : (cf.accountId || cf.apiToken ? "cloudflare" : "forge");
@@ -289,8 +292,58 @@ app.post("/api/chat", async (req, res) => {
 });
 
 // ---- Imágenes: Cloudflare Workers AI (gratis) o Forge / A1111
+app.get("/api/image/models", async (req, res) => {
+  const cf = imageConfig("cloudflare");
+  const forge = imageConfig("forge");
+  const out = {
+    defaultProvider: imageConfig().provider,
+    providers: {
+      cloudflare: {
+        available: !!cf.endpoint,
+        configured: !!cf.endpoint,
+        model: cf.cf.model,
+        free: true,
+        note: "FLUX.1 schnell. No usa modelos locales ni genera imágenes explícitas.",
+        error: cf.urlError || null,
+      },
+      forge: {
+        available: false,
+        configured: !!forge.baseUrl,
+        host: forge.host,
+        local: forge.isLocal,
+        models: [],
+        error: forge.urlError || null,
+      },
+    },
+  };
+
+  if (forge.baseUrl) {
+    try {
+      const r = await fetch(forge.baseUrl + "/sdapi/v1/sd-models", {
+        headers: sdHeaders(),
+        signal: AbortSignal.timeout(Math.min(forge.timeoutMs, 6000)),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const list = await r.json();
+      out.providers.forge.models = (Array.isArray(list) ? list : []).map((m) => ({
+        title: String(m.title || m.model_name || ""),
+        name: String(m.model_name || m.title || ""),
+        filename: String(m.filename || ""),
+      })).filter((m) => m.title);
+      out.providers.forge.available = out.providers.forge.models.length > 0;
+      if (!out.providers.forge.available) out.providers.forge.error = "Forge no devolvió modelos.";
+    } catch (e) {
+      out.providers.forge.error = "No pude leer los modelos de Forge: " + e.message;
+    }
+  } else {
+    out.providers.forge.error = forge.urlError || "Falta configurar SD_URL.";
+  }
+
+  res.json(out);
+});
+
 app.get("/api/image/health", async (req, res) => {
-  const c = imageConfig();
+  const c = imageConfig(req.query.provider);
   if (c.provider === "cloudflare") {
     if (!c.endpoint) {
       return res.status(500).json({
@@ -408,14 +461,16 @@ async function generateCloudflareImage(req, res, c) {
 }
 
 app.post("/api/image", async (req, res) => {
-  const c = imageConfig();
+  const c = imageConfig(req.body.provider);
   if (c.provider === "cloudflare") return generateCloudflareImage(req, res, c);
   if (!c.baseUrl) return res.status(500).json({ error: c.urlError || "Falta configurar SD_URL." });
   const prompt = String(req.body.prompt || "").trim();
   if (!prompt) return res.status(400).json({ error: "Falta el prompt de la imagen." });
   try {
     const anime = req.body.style === "anime";
-    const checkpoint = c.checkpoints[String(req.body.model || "")];
+    const requestedModel = String(req.body.model || "").trim();
+    const checkpoint = c.checkpoints[requestedModel]
+      || (/\.(safetensors|ckpt)\b/i.test(requestedModel) ? requestedModel : "");
     const adult = req.body.adult !== false;
     const safePrompt = (adult && !/\badult\b/i.test(prompt) ? prompt + ", adult, 18+" : prompt).slice(0, 1800);
     const negative = (process.env.SD_NEGATIVE ||

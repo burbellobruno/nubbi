@@ -146,9 +146,10 @@
 <label>Nombre</label><input id="n"><label>Descripción corta</label><input id="d"><label>Rol (novio, villano, mentor...)</label><input id="r">
 <label>Género</label><select id="gen2"><option>Masculino</option><option>Femenino</option><option>Otro</option></select>
 <label>Personalidad y reglas</label><textarea id="p" rows="3"></textarea><label>Primer mensaje</label><input id="gr">
-<label>Estilo de imagen</label><select id="sty"><option>anime</option><option>realista</option><option>semi-realista</option><option>pintura digital</option><option>manhwa</option></select>
-<label>Motor (solo Forge)</label><select id="sdm"><option value="counterfeit">Counterfeit (anime)</option><option value="anything">Anything V5 (anime)</option><option value="realistic">Realistic Vision (realista)</option><option value="chillout">ChilloutMix (semi-realista)</option><option value="dreamshaper">DreamShaper (pintura)</option><option value="manhwa">AImanhwa (manhwa)</option></select>
-<div class="note" style="margin-top:4px">Con Cloudflare gratis se usa FLUX.1 schnell y este selector no aplica. Cloudflare no genera imágenes explícitas.</div>
+<label>Proveedor de imagen</label><select id="iprov"><option value="cloudflare">Cloudflare gratis · FLUX.1 schnell</option><option value="forge">Forge local · mis modelos</option></select>
+<label>Modelo de imagen</label><select id="sdm"><option value="">Automático</option></select>
+<div class="note" id="imageEngineNote" style="margin-top:4px">Cloudflare usa FLUX.1 schnell. No usa tus modelos locales ni genera imágenes explícitas.</div>
+<label>Estilo del prompt</label><select id="sty"><option>anime</option><option>realista</option><option>semi-realista</option><option>pintura digital</option><option>manhwa</option></select>
 <div class="pr" id="pr"></div>
 <button id="genImg" type="button" class="g" style="margin-top:8px">🎨 Generar imagen con IA</button>
 <div class="drow"><button class="g" id="cancel" type="button">Cancelar</button><button id="save" type="button">Guardar</button></div>

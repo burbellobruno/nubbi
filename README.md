@@ -50,6 +50,58 @@ La opción sin GPU es **Cloudflare Workers AI** con **FLUX.1 schnell**. No neces
 - En Cloudflare, el servidor quita etiquetas meta como `adult`, `adulta` y `18+` para evitar falsos positivos del filtro. El modo adulto del chat no cambia: Cloudflare sigue bloqueando descripciones explícitas.
 - La cuota se reinicia todos los días a las 00:00 UTC. Si se agota, la API devuelve un error hasta el día siguiente.
 
+## Usar tus modelos locales (Forge)
+
+La app ahora permite elegir el proveedor al generar cada imagen:
+
+- **Cloudflare**: gratis, sin GPU, FLUX.1 schnell. Bueno para retratos rápidos y sugerentes.
+- **Forge**: usa tus checkpoints y LoRAs locales. Mejor para anime, manhwa y realismo. Puede generar contenido adulto según tus modelos y la ley.
+
+En el diálogo de crear/editar personaje elegí **Proveedor de imagen → Forge**. La lista de modelos se lee automáticamente desde Forge (`/sdapi/v1/sd-models`).
+
+### Si corrés Nubbi en tu PC
+
+1. Abrí Forge con `--api` (tu `webui-user.bat` ya lo tiene).
+2. En `.env`:
+   ```env
+   SD_URL=http://127.0.0.1:7860
+   IMAGE_PROVIDER=forge
+   ```
+3. Corré `npm run dev` y entrá a `http://localhost:3001`.
+4. En el creador de personaje, elegí **Forge** y el modelo que quieras.
+
+### Si usás la app en Render con tu PC
+
+Render no puede acceder a `localhost`. Necesitás exponer Forge con un túnel mientras la PC y Forge estén prendidos:
+
+1. Instalá `cloudflared` (gratis, sin cuenta para el túnel rápido):
+   ```powershell
+   winget install --id Cloudflare.cloudflared
+   ```
+2. Con Forge corriendo en el puerto 7860, abrí otra terminal y ejecutá:
+   ```powershell
+   cloudflared tunnel --url http://127.0.0.1:7860
+   ```
+3. Copiá la URL `https://....trycloudflare.com` que aparece.
+4. En Render → **Environment**:
+   ```env
+   SD_URL=https://tu-url.trycloudflare.com
+   IMAGE_PROVIDER=forge
+   ```
+   Si Forge tiene autenticación, agregá `SD_AUTH=Basic usuario:clave`.
+5. Esperá el redeploy y en el creador elegí **Forge**. La lista de modelos debería aparecer.
+
+**Importante:** no expongas Forge sin autenticación. Usá `--api-auth usuario:clave` y `--gradio-auth usuario:clave` al iniciar Forge, o un proxy con Basic Auth. El túnel rápido cambia de URL cada vez que lo reiniciás; si querés una URL fija, usá un túnel nombrado de Cloudflare con un dominio o un dominio estático de ngrok.
+
+### Qué modelo usar
+
+- **Anime**: Counterfeit, Anything V5, OpenSolera, liveAnimeMix.
+- **Manhwa**: AImanhwa, manhwa-artstyle.
+- **Realismo**: RealisticVision, ChilloutMix.
+- **Ilustración/pintura**: DreamShaper.
+
+Cloudflare no puede usar estos checkpoints ni LoRAs: es un solo modelo. Para retratos realistas ficticios puede servir, pero no para imitar un estilo o un personaje con la consistencia de tus modelos. No generes contenido sexual con personas reales identificables ni suplantación.
+
 ## Imágenes con GPU cloud (Forge / A1111)
 
 El endpoint `/api/image` usa la API A1111 de **Forge** (también compatible con A1111). En Render no se puede usar `localhost`.
