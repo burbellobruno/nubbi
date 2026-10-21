@@ -13,15 +13,16 @@ var LANGS={
 };
 var RAW=window.NUBBI_RAW||[];
 var CAT=RAW.map(function(r,i){return{id:"p"+i,emoji:r[0],name:r[1],desc:r[2],role:r[3],gender:r[4],tags:r[5],persona:r[6],greeting:r[7]};});
-var st={custom:[],chats:{},cfg:{},favs:[],personas:[],persona:null,branches:{},prof:{name:"",bio:"",img:"",intensity:"rom",theme:"dark",accent:"violet",fontScale:"md",density:"comfortable",anim:true,lang:"es-AR",temp:"balanced",len:"normal"},cur:null};
+var st={custom:[],chats:{},cfg:{},favs:[],personas:[],persona:null,branches:{},prof:{name:"",bio:"",img:"",intensity:"rom",theme:"dark",accent:"violet",fontScale:"md",density:"comfortable",anim:true,lang:"es-AR",temp:"balanced",len:"normal",adult:true},cur:null};
 window.st=st;
 try{var raw=localStorage.getItem(KEY)||localStorage.getItem("mochi-chat-v3");if(raw){var o=JSON.parse(raw);if(o)for(var k in o)st[k]=o[k];}}catch(e){}
 applyPrefs();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
-function applyPrefs(){var p=st.prof=st.prof||{};if(p.lang==="es")p.lang="es-AR";p.temp=p.temp||"balanced";p.len=p.len||"normal";p.model=p.model||"";p.voice=p.voice||{};p.voice.enabled=p.voice.enabled!==false;p.voice.auto=!!p.voice.auto;p.voice.rate=Number(p.voice.rate)||1;p.voice.pitch=Number(p.voice.pitch)||1;p.voice.voiceURI=p.voice.voiceURI||"";var r=document.documentElement;p.theme=p.theme||"dark";p.accent=p.accent||"violet";p.fontScale=p.fontScale||"md";p.density=p.density||"comfortable";p.anim=(p.anim===false?false:true);if(p.theme==="system")delete r.dataset.theme;else r.dataset.theme=p.theme;r.dataset.accent=p.accent;r.dataset.density=p.density;r.dataset.anim=p.anim?"on":"off";var sizes={sm:"14px",md:"15px",lg:"17px"};r.style.setProperty("--fs",sizes[p.fontScale]||"15px");}
+function applyPrefs(){var p=st.prof=st.prof||{};if(p.lang==="es")p.lang="es-AR";p.temp=p.temp||"balanced";p.len=p.len||"normal";p.model=p.model||"";p.adult=p.adult!==false;p.voice=p.voice||{};p.voice.enabled=p.voice.enabled!==false;p.voice.auto=!!p.voice.auto;p.voice.rate=Number(p.voice.rate)||1;p.voice.pitch=Number(p.voice.pitch)||1;p.voice.voiceURI=p.voice.voiceURI||"";var r=document.documentElement;p.theme=p.theme||"dark";p.accent=p.accent||"violet";p.fontScale=p.fontScale||"md";p.density=p.density||"comfortable";p.anim=(p.anim===false?false:true);if(p.theme==="system")delete r.dataset.theme;else r.dataset.theme=p.theme;r.dataset.accent=p.accent;r.dataset.density=p.density;r.dataset.anim=p.anim?"on":"off";var sizes={sm:"14px",md:"15px",lg:"17px"};r.style.setProperty("--fs",sizes[p.fontScale]||"15px");}
 var $=function(i){return document.getElementById(i)};
 function langKey(){var l=(st.prof&&st.prof.lang)||"es-AR";if(l==="es")return"es-AR";return LANGS[l]?l:"es-AR";}
 function langInstr(){return LANGS[langKey()].instr;}
+function adultOn(){return !(st.prof&&st.prof.adult===false);}
 function tempValue(){var t=(st.prof&&st.prof.temp)||"balanced";return{precise:0.6,balanced:0.85,creative:1.0,wild:1.15}[t]||0.85;}
 function lenInstr(){var l=(st.prof&&st.prof.len)||"normal";return{short:"2 a 4 oraciones",normal:"3 a 6 oraciones",long:"6 a 10 oraciones"}[l]||"3 a 6 oraciones";}
 function lenMax(){var l=(st.prof&&st.prof.len)||"normal";return{short:700,normal:1000,long:1600}[l]||1000;}
@@ -57,7 +58,7 @@ function branchStore(id){if(!st.branches)st.branches={};if(!st.branches[id])st.b
 function saveBranchSnapshot(id,name,msgs){var bc=deepCopy(cfg(id));delete bc.bg;var b={id:"br"+Date.now()+Math.floor(Math.random()*99),name:name||("Rama "+new Date().toLocaleString()),ts:Date.now(),messages:deepCopy(msgs||hist(id)),cfg:bc};var arr=branchStore(id);arr.unshift(b);if(arr.length>20)arr.length=20;save();return b;}
 function api(url,body){return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(r){return r.text().then(function(t){var j=null;try{j=JSON.parse(t);}catch(e){}if(!j)throw new Error("El servidor no respondió. Cerrá Live Server, corré npm run dev y entrá a http://localhost:3000");if(j.error)throw new Error(j.error);return j;});},function(){throw new Error("No hay conexión con el servidor. Corré npm run dev y entrá a http://localhost:3000");});}
 var sample=null,busy=false,imgData="",editingId=null,gF="Todos",tF="",view="home",homeTab="explore",homeLimit=12;
-sample=function(prompt,opts){opts=opts||{};var body={prompt:prompt};if(st.prof&&st.prof.model)body.model=st.prof.model;if(opts.response_format)body.response_format=opts.response_format;if(opts.stream)body.stream=true;if(opts.temperature!=null)body.temperature=opts.temperature;if(opts.top_p!=null)body.top_p=opts.top_p;if(opts.max_tokens!=null)body.max_tokens=opts.max_tokens;if(opts.presence_penalty!=null)body.presence_penalty=opts.presence_penalty;if(opts.frequency_penalty!=null)body.frequency_penalty=opts.frequency_penalty;if(!opts.stream)return api("/api/chat",body).then(function(j){if(opts.onText)opts.onText({text:j.text});return{text:j.text};});return new Promise(function(resolve,reject){var full="";fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(r){if(!r.ok){return r.text().then(function(t){var j=null;try{j=JSON.parse(t);}catch(e){}throw new Error(j&&j.error?j.error:"Error de la API");});}var reader=r.body.getReader();var decoder=new TextDecoder();var buf="";function read(){reader.read().then(function(res){if(res.done){resolve({text:full});return;}buf+=decoder.decode(res.value,{stream:true});var lines=buf.split("\n");buf=lines.pop();for(var i=0;i<lines.length;i++){var line=lines[i];if(line.indexOf("data: ")===0){var data=line.slice(6).trim();if(data==="[DONE]")continue;try{var j=JSON.parse(data);var chunk=j.choices&&j.choices[0]&&j.choices[0].delta?j.choices[0].delta.content||"":"";if(chunk){full+=chunk;if(opts.onText)opts.onText({text:full});}}catch(e){}}}read();}).catch(reject);}read();}).catch(reject);});};
+sample=function(prompt,opts){opts=opts||{};var body={prompt:prompt,adult:adultOn()};if(st.prof&&st.prof.model)body.model=st.prof.model;if(opts.response_format)body.response_format=opts.response_format;if(opts.stream)body.stream=true;if(opts.temperature!=null)body.temperature=opts.temperature;if(opts.top_p!=null)body.top_p=opts.top_p;if(opts.max_tokens!=null)body.max_tokens=opts.max_tokens;if(opts.presence_penalty!=null)body.presence_penalty=opts.presence_penalty;if(opts.frequency_penalty!=null)body.frequency_penalty=opts.frequency_penalty;if(!opts.stream)return api("/api/chat",body).then(function(j){if(opts.onText)opts.onText({text:j.text});return{text:j.text};});return new Promise(function(resolve,reject){var full="";fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(r){if(!r.ok){return r.text().then(function(t){var j=null;try{j=JSON.parse(t);}catch(e){}throw new Error(j&&j.error?j.error:"Error de la API");});}var reader=r.body.getReader();var decoder=new TextDecoder();var buf="";function read(){reader.read().then(function(res){if(res.done){resolve({text:full});return;}buf+=decoder.decode(res.value,{stream:true});var lines=buf.split("\n");buf=lines.pop();for(var i=0;i<lines.length;i++){var line=lines[i];if(line.indexOf("data: ")===0){var data=line.slice(6).trim();if(data==="[DONE]")continue;try{var j=JSON.parse(data);var chunk=j.choices&&j.choices[0]&&j.choices[0].delta?j.choices[0].delta.content||"":"";if(chunk){full+=chunk;if(opts.onText)opts.onText({text:full});}}catch(e){}}}read();}).catch(reject);}read();}).catch(reject);});};
 function all(){return st.custom.concat(CAT);}
 function byId(id){return all().find(function(c){return c.id===id});}
 function userMsgCount(id){var h=st.chats[id];if(!h||!h.length)return 0;return h.filter(function(m){return m.role==="user";}).length;}
@@ -122,7 +123,7 @@ function fmtTime(ts){if(!ts)return"";var d=new Date(ts),now=new Date();var sameD
 function renderChats(){var l=$("chl");l.innerHTML="";var ids=Object.keys(st.chats).filter(function(i){return byId(i)});if(!ids.length){l.innerHTML='<div class="empty">Todavía no tenés chats. Elegí un personaje en Inicio.</div>';return;}
 ids.forEach(function(id){var c=byId(id),h=st.chats[id],r=document.createElement("div");r.className="row";var a=document.createElement("div");a.className="av square";av(a,c);var t=document.createElement("div");var b=document.createElement("b");b.textContent=c.name;var s=document.createElement("small");s.textContent=h.length?h[h.length-1].content.replace(/\*/g,""):c.desc;t.appendChild(b);t.appendChild(s);r.appendChild(a);r.appendChild(t);var time=document.createElement("span");time.className="time";time.textContent=fmtTime(h.length?h[h.length-1].ts:0);r.appendChild(time);r.onclick=function(){openChat(id)};l.appendChild(r);});}
 function renderFavs(){$("fg").innerHTML="";var l=st.favs.map(byId).filter(Boolean);if(!l.length)$("fg").innerHTML='<div class="empty">Tocá el corazón en un personaje para guardarlo acá.</div>';l.forEach(function(c){$("fg").appendChild(mkCard(c));});}
-function renderProf(){var p=st.prof;av($("pav"),{name:p.name||"yo",emoji:"👤",img:p.img});$("pav").style.background="linear-gradient(135deg,var(--ac),var(--ac2))";$("pn").value=p.name||"";$("pb").value=p.bio||"";$("pint").value=p.intensity||"rom";$("s1").textContent=Object.keys(st.chats).length;$("s2").textContent=st.custom.length;$("s3").textContent=st.favs.length;if($("ptheme"))$("ptheme").value=p.theme||"system";if($("pfont"))$("pfont").value=p.fontScale||"md";if($("pdensity"))$("pdensity").value=p.density||"comfortable";if($("plang"))$("plang").value=langKey();if($("ptemp"))$("ptemp").value=p.temp||"balanced";if($("plen"))$("plen").value=p.len||"normal";if($("pmodel"))$("pmodel").value=p.model||"";var v=voiceCfg();if($("pvoice"))$("pvoice").value=v.voiceURI||"";if($("pvoicerate"))$("pvoicerate").value=v.rate||1;if($("pvoicepitch"))$("pvoicepitch").value=v.pitch||1;if($("pvoiceauto"))$("pvoiceauto").value=v.auto?"on":"off";renderAccentPills();}
+function renderProf(){var p=st.prof;av($("pav"),{name:p.name||"yo",emoji:"👤",img:p.img});$("pav").style.background="linear-gradient(135deg,var(--ac),var(--ac2))";$("pn").value=p.name||"";$("pb").value=p.bio||"";$("pint").value=p.intensity||"rom";$("s1").textContent=Object.keys(st.chats).length;$("s2").textContent=st.custom.length;$("s3").textContent=st.favs.length;if($("ptheme"))$("ptheme").value=p.theme||"system";if($("pfont"))$("pfont").value=p.fontScale||"md";if($("pdensity"))$("pdensity").value=p.density||"comfortable";if($("plang"))$("plang").value=langKey();if($("ptemp"))$("ptemp").value=p.temp||"balanced";if($("plen"))$("plen").value=p.len||"normal";if($("pmodel"))$("pmodel").value=p.model||"";if($("padult"))$("padult").value=p.adult===false?"off":"on";var v=voiceCfg();if($("pvoice"))$("pvoice").value=v.voiceURI||"";if($("pvoicerate"))$("pvoicerate").value=v.rate||1;if($("pvoicepitch"))$("pvoicepitch").value=v.pitch||1;if($("pvoiceauto"))$("pvoiceauto").value=v.auto?"on":"off";renderAccentPills();}
 function renderAccentPills(){var el=$("paccent");if(!el)return;var accents=[{k:"violet",l:"Violeta"},{k:"blue",l:"Azul"},{k:"pink",l:"Rosa"},{k:"orange",l:"Naranja"},{k:"green",l:"Verde"}];el.innerHTML="";accents.forEach(function(a){var p=document.createElement("div");p.className="pill"+(st.prof.accent===a.k?" on":"");p.textContent=a.l;p.onclick=function(){st.prof.accent=a.k;save();applyPrefs();renderProf();};el.appendChild(p);});}
 function renderPersonas(){var l=$("plist");if(!l)return;l.innerHTML="";var ps=st.personas||[];if(!ps.length){l.innerHTML='<div class="empty">Todavía no creaste personas.</div>';return;}ps.forEach(function(p){var r=document.createElement("div");r.className="row";if(st.persona===p.id)r.style.borderColor="var(--ac)";var a=document.createElement("div");a.className="av square";a.textContent=(p.name?p.name.charAt(0):"👤");r.appendChild(a);var t=document.createElement("div");var b=document.createElement("b");b.textContent=p.name;var s=document.createElement("small");s.textContent=p.bio||"Sin descripción";t.appendChild(b);t.appendChild(s);r.appendChild(t);var del=document.createElement("button");del.className="g";del.textContent="✕";del.onclick=function(ev){ev.stopPropagation();st.personas=st.personas.filter(function(x){return x.id!==p.id});if(st.persona===p.id)st.persona=null;save();renderPersonas();};r.appendChild(del);r.onclick=function(){st.persona=p.id;save();renderPersonas();};l.appendChild(r);});}
 function renderAll(){renderHome();renderChats();renderFavs();renderProf();renderPersonas();renderAccount();if(cur())$("fv").textContent=st.favs.indexOf(st.cur)>=0?"♥":"♡";if(window.NubbiCommunity&&window.NubbiCommunity.render)window.NubbiCommunity.render();}
@@ -168,8 +169,14 @@ rom:"Podés ser romántico, coqueto y emocional, con miradas y gestos sutiles.",
 int:"Podés ser apasionado, sensual y con mucha tensión. No describas actos sexuales explícitos: cerrá esas escenas con elipsis o un corte de escena.",
 libre:"El personaje tiene libertad para tomar la iniciativa, mostrar deseo, humor, enojo o vulnerabilidad. Podés crear tensión y conflicto, pero sin describir actos sexuales explícitos; en esas escenas usá elipsis o corte."
 };
+var INT_ADULT={
+soft:"Tono suave y amistoso. Podés ser cálido y contener; no es necesario ir a lo explícito.",
+rom:"Podés ser romántico, coqueto y emocional, con miradas, gestos y tensión; la escena sexual explícita queda a criterio del usuario.",
+int:"Podés ser apasionado, sensual y explícito si la escena lo pide, siempre entre adultos y con consentimiento. Describí el deseo y los actos con naturalidad, sin vulgaridad gratuita.",
+libre:"El personaje tiene libertad para tomar la iniciativa, mostrar deseo, humor, enojo o vulnerabilidad. Podés iniciar y describir escenas sexuales explícitas entre adultos con consentimiento cuando la historia lo justifique."
+};
 function sys(c){
-var g=cfg(c.id),p=st.prof;
+var g=cfg(c.id),p=st.prof,adult=adultOn();
 var personaId=g.personaId||st.persona;
 var persona=(st.personas||[]).find(function(x){return x.id===personaId});
 var pname=persona?persona.name:(p.name||"");
@@ -181,6 +188,11 @@ var lang=langInstr();
 var modo=g.mode==="story"
 ?"Modo historia: narrá con ambiente, acciones y diálogo; hacé avanzar la trama con un hecho o un detalle nuevo."
 :"Modo chat: priorizá el diálogo y las acciones, como una conversación real; no escribas párrafos largos.";
+var intText=(adult?INT_ADULT:INT)[g.intensity]||(adult?INT_ADULT.rom:INT.rom);
+var adultRules=adult
+?"- Todos los personajes y el usuario son adultos (18+). La ficción sexual explícita entre adultos con consentimiento está permitida cuando la escena y la intensidad lo justifican.\n"
++"- Límites absolutos: nunca contenido sexual con menores, personajes que aparenten ser menores, personas reales, animales o situaciones no consentidas. Si aparece uno de esos elementos, rechazá la escena sexual y continuá la historia sin contenido sexual.\n"
+:"- No escribas contenido sexual explícito; si la escena sube de tono, usá elipsis o un corte.\n";
 return "Sos "+c.name+(c.role?" ("+c.role+")":"")+", un personaje adulto (18+) en un roleplay interactivo con el usuario"+(pname?", que se llama "+pname:"")+".\n"
 +"Descripción: "+(c.desc||"")+"\n"
 +"Personalidad y forma de ser: "+(c.persona||"")+"\n"
@@ -193,7 +205,7 @@ return "Sos "+c.name+(c.role?" ("+c.role+")":"")+", un personaje adulto (18+) en
 +(g.goal?"Objetivo del personaje en la historia: "+g.goal+"\n":"")
 +(g.secret?"Secreto del personaje (revelalo de a poco, no lo digas de golpe): "+g.secret+"\n":"")
 +(g.arc?"Arco de la historia: "+g.arc+"\n":"")
-+"Intensidad: "+(INT[g.intensity]||INT.rom)+"\n"
++"Intensidad: "+intText+"\n"
 +modo+"\n"
 +"Cómo interpretar:\n"
 +"- Hablá y actuá siempre como "+c.name+"; nunca como una IA o asistente. En modo historia podés narrar la escena, pero no los pensamientos ni las acciones del usuario.\n"
@@ -206,7 +218,7 @@ return "Sos "+c.name+(c.role?" ("+c.role+")":"")+", un personaje adulto (18+) en
 +"- Variá las respuestas: no repitas frases, estructuras ni muletillas.\n"
 +"- No escribas por el usuario, no decidas lo que siente, piensa o hace. Dejá espacio para que responda.\n"
 +"- Las acciones y descripciones van entre *asteriscos*.\n"
-+"- Nada de contenido sexual explícito; si la escena sube de tono, usá elipsis o un corte.\n"
++adultRules
 +"- Cerrá con una pregunta, una acción que invite a responder o un pequeño gancho, salvo que la escena esté cerrando.\n"
 +"- Extensión: "+lenInstr()+". Escribí al menos 2 oraciones completas; no respondas con una sola frase.\n"
 +"- Idioma: respondé SIEMPRE en "+lang+". Todo el diálogo, la narración y la emoción deben estar en ese idioma. Si el historial tiene mensajes en otro idioma, entendelos y respondé en el idioma elegido.\n"
@@ -260,7 +272,7 @@ function pic(inp,cb){var f=inp.files[0];if(!f)return;var r=new FileReader();r.on
 function bgPic(inp,cb){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var w=Math.min(720,im.width),h=Math.round(im.height*w/im.width);var cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(im,0,0,w,h);cb(cv.toDataURL("image/jpeg",.65));};im.src=r.result;};r.readAsDataURL(f);}
 $("pav").onclick=function(){$("pimg").click();};
 $("pimg").onchange=function(){pic(this,function(d){st.prof.img=d;save();renderProf();});};
-$("pn").oninput=function(){st.prof.name=this.value;save();};$("pb").oninput=function(){st.prof.bio=this.value;save();};$("pint").onchange=function(){st.prof.intensity=this.value;save();};if($("ptheme"))$("ptheme").onchange=function(){st.prof.theme=this.value;save();applyPrefs();};if($("pfont"))$("pfont").onchange=function(){st.prof.fontScale=this.value;save();applyPrefs();renderProf();};if($("pdensity"))$("pdensity").onchange=function(){st.prof.density=this.value;save();applyPrefs();renderProf();};if($("panim"))$("panim").onchange=function(){st.prof.anim=this.value==="on";save();applyPrefs();renderProf();};
+$("pn").oninput=function(){st.prof.name=this.value;save();};$("pb").oninput=function(){st.prof.bio=this.value;save();};$("pint").onchange=function(){st.prof.intensity=this.value;save();};if($("padult"))$("padult").onchange=function(){st.prof.adult=this.value!=="off";save();renderProf();};if($("ptheme"))$("ptheme").onchange=function(){st.prof.theme=this.value;save();applyPrefs();};if($("pfont"))$("pfont").onchange=function(){st.prof.fontScale=this.value;save();applyPrefs();renderProf();};if($("pdensity"))$("pdensity").onchange=function(){st.prof.density=this.value;save();applyPrefs();renderProf();};if($("panim"))$("panim").onchange=function(){st.prof.anim=this.value==="on";save();applyPrefs();renderProf();};
 if($("plang"))$("plang").onchange=function(){st.prof.lang=this.value;save();};
 if($("ptemp"))$("ptemp").onchange=function(){st.prof.temp=this.value;save();};
 if($("plen"))$("plen").onchange=function(){st.prof.len=this.value;save();};
@@ -336,35 +348,69 @@ if($("syncUp"))$("syncUp").onclick=async function(){if(!window.cloudSync){alert(
 if($("syncDown"))$("syncDown").onclick=async function(){if(!window.cloudSync){alert("Configurá Firebase en firebase-config.js primero.");return;}try{await window.cloudSync.load();renderAccount();}catch(e){alert("Error al bajar: "+e.message);}};
 $("newPersona").onclick=function(){["pname","pbio","page","ppron","papp","prel"].forEach(function(i){if($(i))$(i).value="";});$("pdlg").showModal();};$("pcancel").onclick=function(){$("pdlg").close();};$("psave").onclick=function(){var n=$("pname").value.trim();if(!n)return;var per={id:"per"+Date.now(),name:n,bio:$("pbio").value.trim(),age:($("page")?$("page").value.trim():""),pronouns:($("ppron")?$("ppron").value.trim():""),appearance:($("papp")?$("papp").value.trim():""),relation:($("prel")?$("prel").value.trim():"")};st.personas=st.personas||[];st.personas.unshift(per);st.persona=per.id;save();$("pdlg").close();["pname","pbio","page","ppron","papp","prel"].forEach(function(i){if($(i))$(i).value="";});renderPersonas();renderProf();};
 
-$("plus").onclick=function(){editingId=null;imgData="";$("pr").style.display="none";$("pr").dataset.p="";$("dlg").querySelector("h3").textContent="Crear personaje";["n","d","r","p","gr","idea"].forEach(function(i){if($(i))$(i).value="";});$("e").value="🦇";$("gen2").value="Masculino";$("dlg").showModal();};
-$("cancel").onclick=function(){$("dlg").close();};
+$("plus").onclick=function(){editingId=null;imgData="";$("pr").style.display="none";$("pr").dataset.p="";$("dlg").querySelector("h3").textContent="Crear personaje";["n","d","r","p","gr","idea"].forEach(function(i){if($(i))$(i).value="";});$("e").value="🦇";$("gen2").value="Masculino";if($("genStatus"))$("genStatus").textContent="";$("save").textContent="Guardar";$("dlg").showModal();};
+$("cancel").onclick=function(){if($("genStatus"))$("genStatus").textContent="";$("save").textContent="Guardar";$("dlg").close();};
 $("img").onchange=function(){pic(this,function(d){imgData=d;});};
 function showPr(){var p=$("pr").dataset.p;if(!p)return;$("pr").style.display="block";$("pr").textContent="Prompt de imagen ("+$("sty").value+"): "+p+", "+$("sty").value+" style, high quality";}
 $("sty").onchange=showPr;
-$("gen").onclick=async function(){var idea=$("idea").value.trim();if(!idea)return;if(!sample){alert("La IA no está disponible en esta vista.");return;}
-var b=$("gen");b.textContent="Generando...";
-try{var r=await sample('Tarea de escritura creativa para una app de ficción interactiva. Creá un personaje ficticio ADULTO (18+) de chat de roleplay a partir de esta idea: "'+idea+'". Devolvé SOLO un JSON con las claves: emoji, name, desc (máx 8 palabras, incluí la edad adulta), role, gender (Masculino, Femenino u Otro), persona (3 a 4 oraciones: personalidad, forma de hablar, motivaciones, cómo trata al usuario), greeting (primer mensaje con una acción entre *asteriscos*), imagePrompt (prompt en inglés para su retrato: adulto, pelo, ojos, ropa, ambiente, luz). Escribí name, desc, role, persona y greeting en ' + langInstr() + '; imagePrompt en inglés.',{cache:false,response_format:{type:"json_object"}});
-var m=r.text.match(/\{[\s\S]*\}/);if(!m)throw new Error("El modelo no devolvió datos válidos. Probá de nuevo o con otra idea.");var j=JSON.parse(m[0]);
+function setGenStatus(t,err){var el=$("genStatus");if(!el)return;el.textContent=t||"";el.style.color=err?"#ff8a8a":"";}
+function waitMs(ms){return new Promise(function(r){setTimeout(r,ms);});}
+function charPrompt(idea){return 'Tarea de escritura creativa para una app de ficción interactiva. Creá un personaje ficticio ADULTO (18+) de chat de roleplay a partir de esta idea. El personaje y cualquier persona involucrada deben ser mayores de 18; nunca generes un personaje menor ni sexualices a menores. Si la idea sugiere un personaje menor, convertílo en adulto o rechazá la idea: "'+idea+'". Devolvé SOLO un JSON con las claves: emoji, name, desc (máx 8 palabras, incluí la edad adulta), role, gender (Masculino, Femenino u Otro), persona (3 a 4 oraciones: personalidad, forma de hablar, motivaciones, cómo trata al usuario), greeting (primer mensaje con una acción entre *asteriscos*), imagePrompt (prompt en inglés para su retrato: adulto, pelo, ojos, ropa, ambiente, luz). Escribí name, desc, role, persona y greeting en ' + langInstr() + '; imagePrompt en inglés.';}
+async function genCharJSON(idea){
+var last=null;
+for(var attempt=0;attempt<2;attempt++){
+try{
+var opts={cache:false,max_tokens:1200};
+if(attempt===0)opts.response_format={type:"json_object"};
+var r=await sample(charPrompt(idea),opts);
+var m=r.text.match(/\{[\s\S]*\}/);
+if(!m)throw new Error("El modelo no devolvió datos válidos. Puede haber rechazado la idea; probá con otra idea o configurá un proveedor adulto.");
+return JSON.parse(m[0]);
+}catch(e){last=e;if(attempt===0)await waitMs(700);}
+}
+throw last;
+}
+$("gen").onclick=async function(){
+var idea=$("idea").value.trim();
+if(!idea){setGenStatus("Escribí una idea para que la IA cree el personaje.",true);$("idea").focus();return;}
+if(!sample){alert("La IA no está disponible en esta vista.");return;}
+var b=$("gen");b.textContent="Generando...";b.disabled=true;setGenStatus("La IA está creando el personaje...");
+try{
+var j=await genCharJSON(idea);
 $("e").value=j.emoji||"🙂";$("n").value=j.name||"";$("d").value=j.desc||"";$("r").value=j.role||"";$("p").value=j.persona||"";$("gr").value=j.greeting||"";$("gen2").value=normGender(j.gender);$("pr").dataset.p=j.imagePrompt||"";showPr();
-}catch(e){alert("No pude generarlo: "+e.message);}b.textContent="✨ Generar con IA";};
+setGenStatus("Borrador listo. Revisá los datos y tocá Guardar personaje.");
+$("save").textContent="Guardar personaje";$("save").focus();
+}catch(e){var msg=e.message||"Error desconocido";setGenStatus("No se pudo generar: "+msg,true);alert("No pude generarlo: "+msg);}
+b.textContent="✨ Generar con IA";b.disabled=false;
+};
 $("save").onclick=function(){var n=$("n").value.trim();if(!n)return;
 var data={emoji:$("e").value||"🙂",img:imgData,name:n,desc:$("d").value.trim(),role:$("r").value.trim(),gender:$("gen2").value,tags:"creado por vos",persona:$("p").value.trim(),greeting:$("gr").value.trim()};
 var cid=editingId,c=null;if(cid)c=st.custom.find(function(x){return x.id===cid});
 if(c){for(var k in data)c[k]=data[k];cid=c.id;}
 else{var nc={id:"c"+Date.now()+Math.floor(Math.random()*999)};for(var k2 in data)nc[k2]=data[k2];st.custom.unshift(nc);cid=nc.id;}
-editingId=null;save();$("dlg").close();["n","d","r","p","gr","idea"].forEach(function(i){if($(i))$(i).value="";});$("pr").style.display="none";$("dlg").querySelector("h3").textContent="Crear personaje";renderAll();if(cid)openChat(cid);};
+editingId=null;save();$("dlg").close();["n","d","r","p","gr","idea"].forEach(function(i){if($(i))$(i).value="";});$("pr").style.display="none";if($("genStatus"))$("genStatus").textContent="";$("save").textContent="Guardar";$("dlg").querySelector("h3").textContent="Crear personaje";renderAll();if(cid)openChat(cid);};
 
 function shrink(dataUrl,w,cb){var im=new Image();im.onload=function(){var h=Math.round(im.height*w/im.width),cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(im,0,0,w,h);cb(cv.toDataURL("image/jpeg",.8));};im.src=dataUrl;}
 $("genImg").onclick=async function(){var base=$("pr").dataset.p||($("n").value+", "+$("d").value);if(!base.trim()){alert("Generá el personaje con IA o completá nombre y descripción primero.");return;}
 var b=$("genImg");b.textContent="Generando imagen...";
-try{var j=await api("/api/image",{prompt:base+", "+$("sty").value+" style, adult, high quality, portrait",style:$("sty").value,model:$("sdm").value});
+try{var j=await api("/api/image",{prompt:base+", "+$("sty").value+" style, adult, high quality, portrait",style:$("sty").value,model:$("sdm").value,adult:adultOn()});
 shrink("data:image/png;base64,"+j.image,360,function(d){imgData=d;$("pr").style.display="block";$("pr").textContent="Imagen lista, se guarda con el personaje.";});}
 catch(e){alert("No se pudo generar la imagen: "+e.message);}b.textContent="🎨 Generar imagen con IA";};
 $("heroNew").onclick=function(){$("plus").click();};
 var surpriseIdeas=["rival de la academia, orgulloso pero leal","detective privado cínico y observador","maga elfa curiosa del mundo humano","mecánico rebelde con buen corazón","streamer gamer energética","médico de urgencias sereno","ladrona de guante blanco traviesa","CEO frío pero protector"];
-$("surprise").onclick=async function(){if(!sample){alert("La IA no está disponible.");return;}var b=$("surprise");b.textContent="Generando...";b.disabled=true;var idea=surpriseIdeas[Math.floor(Math.random()*surpriseIdeas.length)];try{var r=await sample('Tarea de escritura creativa para una app de ficción interactiva. Creá un personaje ficticio ADULTO (18+) de chat de roleplay a partir de esta idea: "'+idea+'". Devolvé SOLO un JSON con las claves: emoji, name, desc (máx 8 palabras, incluí la edad adulta), role, gender (Masculino, Femenino u Otro), persona (3 a 4 oraciones: personalidad, forma de hablar, motivaciones, cómo trata al usuario), greeting (primer mensaje con una acción entre *asteriscos*), imagePrompt (prompt en inglés para su retrato: adulto, pelo, ojos, ropa, ambiente, luz). Escribí name, desc, role, persona y greeting en ' + langInstr() + '; imagePrompt en inglés.',{cache:false,response_format:{type:"json_object"}});var m=r.text.match(/\{[\s\S]*\}/);if(!m)throw new Error("El modelo no devolvió datos válidos.");var j=JSON.parse(m[0]);var c={id:"c"+Date.now(),emoji:j.emoji||"",img:"",name:j.name||"Personaje",desc:j.desc||"",role:j.role||"",gender:normGender(j.gender),tags:"creado por IA",persona:j.persona||"",greeting:j.greeting||""};st.custom.unshift(c);save();renderAll();
-try{var ji=await api("/api/image",{prompt:(j.imagePrompt||c.name)+", anime style, adult, high quality, portrait",style:"anime",model:"counterfeit"});shrink("data:image/png;base64,"+ji.image,360,function(d){c.img=d;save();renderAll();});}catch(e){/* imagen opcional */}
-alert("Se creó: "+c.name);}catch(e){alert("No se pudo generar: "+e.message);}b.textContent="✨ Sorpréndeme";b.disabled=false;};
+$("surprise").onclick=async function(){
+if(!sample){alert("La IA no está disponible.");return;}
+var b=$("surprise");b.textContent="Generando...";b.disabled=true;
+var idea=surpriseIdeas[Math.floor(Math.random()*surpriseIdeas.length)];
+try{
+var j=await genCharJSON(idea);
+var c={id:"c"+Date.now(),emoji:j.emoji||"",img:"",name:j.name||"Personaje",desc:j.desc||"",role:j.role||"",gender:normGender(j.gender),tags:"creado por IA",persona:j.persona||"",greeting:j.greeting||""};
+st.custom.unshift(c);save();renderAll();
+try{var ji=await api("/api/image",{prompt:(j.imagePrompt||c.name)+", anime style, adult, high quality, portrait",style:"anime",model:"counterfeit",adult:adultOn()});shrink("data:image/png;base64,"+ji.image,360,function(d){c.img=d;save();renderAll();});}catch(e){/* imagen opcional */}
+alert("Se creó: "+c.name);
+}catch(e){alert("No se pudo generar: "+e.message);}
+b.textContent="✨ Sorpréndeme";b.disabled=false;
+};
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&$("chat").classList.contains("open"))$("back").click();});
 if("serviceWorker" in navigator&&location.protocol!=="file:"){navigator.serviceWorker.register("sw.js").catch(function(){});}
 var searchTimer=null;
@@ -372,10 +418,21 @@ $("q").oninput=function(){clearTimeout(searchTimer);searchTimer=setTimeout(funct
 document.querySelectorAll(".tab").forEach(function(t){t.onclick=function(){homeTab=t.dataset.tab;homeLimit=12;document.querySelectorAll(".tab").forEach(function(x){x.classList.toggle("on",x===t);});renderHome();};});
 if($("sort"))$("sort").onchange=function(){homeLimit=12;renderHome();};
 if($("origin"))$("origin").onchange=function(){homeLimit=12;renderHome();};
-if(!localStorage.getItem("nubbi-onboarded")){setTimeout(function(){if($("onboard"))$("onboard").showModal();},400);}
-if($("onbStart"))$("onbStart").onclick=function(){localStorage.setItem("nubbi-onboarded","1");$("onboard").close();};
+function refreshAdultProvider(){
+var el=$("adultProviderNote");if(!el)return;
+fetch("/api/health").then(function(r){return r.json();}).then(function(j){
+if(j.adultConfigured)el.textContent="Proveedor adulto configurado: "+(j.adultProvider||"")+(j.adultModel?" · "+j.adultModel:"")+".";
+else el.textContent="Proveedor adulto no configurado: se usa el general. Algunas escenas explícitas pueden ser rechazadas.";
+}).catch(function(){el.textContent="No se pudo verificar el proveedor de texto.";});
+}
+var adultGateOk=localStorage.getItem("nubbi-adult-ok")==="1";
+if(!adultGateOk){setTimeout(function(){if($("onboard")){if($("onbAdult"))$("onbAdult").checked=false;if($("onbStart"))$("onbStart").disabled=true;$("onboard").showModal();}},300);}
+if($("onbAdult"))$("onbAdult").onchange=function(){if($("onbStart"))$("onbStart").disabled=!this.checked;};
+if($("onbStart"))$("onbStart").onclick=function(){if($("onbAdult")&&!$("onbAdult").checked)return;localStorage.setItem("nubbi-adult-ok","1");localStorage.setItem("nubbi-onboarded","1");$("onboard").close();};
+if($("onboard"))$("onboard").addEventListener("cancel",function(e){if(localStorage.getItem("nubbi-adult-ok")!=="1")e.preventDefault();});
+refreshAdultProvider();
 window.save=save; window.applyPrefs=applyPrefs; window.renderAll=renderAll;
-window.NubbiApp={grad:grad,fmt:fmt,openChat:openChat,openSheet:openSheet,go:go,renderAll:renderAll,save:save};
+window.NubbiApp={grad:grad,fmt:fmt,openChat:openChat,openSheet:openSheet,go:go,renderAll:renderAll,save:save,adultOn:adultOn};
 if(window.cloudSync&&window.cloudSync.onAuth){window.cloudSync.onAuth(function(){renderAccount();});}
 renderAll();
 })();

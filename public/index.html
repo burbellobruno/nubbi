@@ -36,7 +36,7 @@
 <section class="view" id="v-chats"><h2>Tus chats</h2><div id="chl"></div></section>
 <section class="view" id="v-community">
 <div class="commhead">
-<div><h2>Comunidad</h2><p class="note">Personajes y novedades de la comunidad. Todo el contenido es 18+ y no explícito.</p></div>
+<div><h2>Comunidad</h2><p class="note">Personajes y novedades de la comunidad. Solo para mayores de 18 años. Puede incluir ficción adulta; no se permite contenido sexual con menores ni no consentido.</p></div>
 <div class="commacts"><button class="g" id="commRefresh" type="button">Actualizar</button><button id="commPublish" type="button">+ Publicar personaje</button></div>
 </div>
 <div class="searchbox"><svg class="si" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><input id="commQ" placeholder="Buscar personajes o creadores..."></div>
@@ -91,8 +91,11 @@
 </div>
 <div class="note">Se usa tu nombre y bio del perfil. Solo se comparte lo que publicás en la comunidad.</div>
 </div>
+<label>Contenido adulto en mis chats</label>
+<select id="padult"><option value="on">Permitido (18+)</option><option value="off">Solo sugerente, sin sexo explícito</option></select>
+<p class="note" id="adultProviderNote">Verificando el proveedor de texto...</p>
 <label class="note">Intensidad por defecto en chats nuevos</label>
-<select id="pint"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, sin escenas explícitas)</option><option value="libre">Libre (el personaje toma la iniciativa)</option></select><br><br>
+<select id="pint"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, puede ser explícito)</option><option value="libre">Libre (iniciativa; puede ser explícito)</option></select><br><br>
 <button class="g" id="theme">Cambiar tema claro/oscuro</button> <button class="g" id="wipe">Borrar chats</button>
 <button class="g" id="exportData">Exportar datos</button> <button class="g" id="importData">Importar datos</button>
 <button class="g" id="importChar">Importar personaje</button>
@@ -138,7 +141,7 @@
 <dialog id="dlg">
 <h3 style="margin:0">Crear personaje</h3><div class="note">Todos los personajes son adultos (18+)</div>
 <label>Idea para generarlo con IA</label><input id="idea" placeholder="Ej: rival de la academia, orgulloso pero leal">
-<button id="gen" type="button" style="margin-top:6px">✨ Generar con IA</button>
+<button id="gen" type="button" style="margin-top:6px">✨ Generar con IA</button>\n<div class="note" id="genStatus" style="margin-top:6px"></div>
 <label>Emoji / foto</label><div style="display:flex;gap:8px"><input id="e" maxlength="4" value="🦇" style="width:80px"><input id="img" type="file" accept="image/*"></div>
 <label>Nombre</label><input id="n"><label>Descripción corta</label><input id="d"><label>Rol (novio, villano, mentor...)</label><input id="r">
 <label>Género</label><select id="gen2"><option>Masculino</option><option>Femenino</option><option>Otro</option></select>
@@ -154,7 +157,7 @@
 <label>Escenario</label><textarea id="sc" rows="3" placeholder="Ej: Academia de magia, noche de tormenta, biblioteca vacía"></textarea>
 <label>Tu rol en la historia</label><input id="ur">
 <label>Modo</label><select id="mode"><option value="chat">Chat directo</option><option value="story">Historia narrada</option></select>
-<label>Intensidad</label><select id="int"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, sin escenas explícitas)</option><option value="libre">Libre (el personaje toma la iniciativa)</option></select>
+<label>Intensidad</label><select id="int"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, puede ser explícito)</option><option value="libre">Libre (iniciativa; puede ser explícito)</option></select>
 <label>Persona (tu personaje en la historia)</label><select id="pcfg"><option value="">Perfil actual</option></select>
 <label>Instrucciones para la IA (opcional)</label><textarea id="ci" rows="2" maxlength="600" placeholder="Ej: no uses emojis, respondé en primera persona, no hagas saltos temporales..."></textarea>
 <label>Objetivo del personaje</label><input id="cgoal" placeholder="Ej: que el usuario confíe en él">
@@ -216,13 +219,15 @@
 <dialog id="onboard">
 <div class="sheet">
 <h3>Bienvenido a Nubbi</h3>
-<p class="note">App de chat con personajes de IA. Todos los personajes son adultos (18+). Confirmás que tenés 18 años o más.</p>
+<p class="note">App de chat con personajes de IA. Es solo para mayores de 18 años.</p>
 <ul class="note" style="text-align:left">
 <li>Elegí un personaje o creá el tuyo.</li>
-<li>Chateá, usá acciones entre *asteriscos* y escenas.</li>
+<li>Podés escribir ficción adulta entre personajes mayores de 18.</li>
+<li>Prohibido: contenido sexual con menores, no consentido, con animales o con personas reales.</li>
 <li>Personalizá tema, acento y tamaño en Perfil.</li>
 </ul>
-<div class="drow"><button id="onbStart">Empezar</button></div>
+<label class="chk"><input type="checkbox" id="onbAdult"> Confirmo que tengo 18 años o más y que todos los personajes son adultos.</label>
+<div class="drow"><button id="onbStart" disabled>Entrar</button></div>
 </div>
 </dialog>
 
@@ -259,7 +264,7 @@
 <label>Tags</label><input id="pubtags" maxlength="120">
 <label>Personalidad y reglas</label><textarea id="pubpersona" rows="4" maxlength="5000"></textarea>
 <label>Primer mensaje</label><textarea id="pubgreet" rows="2" maxlength="2000"></textarea>
-<label class="chk"><input type="checkbox" id="pubadult"> Confirmo que el personaje es adulto (18+) y que el contenido no es sexualmente explícito.</label>
+<label class="chk"><input type="checkbox" id="pubadult"> Confirmo que el personaje es adulto (18+) y que no incluye contenido sexual con menores ni no consentido.</label>
 <label class="chk"><input type="checkbox" id="pubterms"> Confirmo que tengo derecho a publicar este personaje y acepto las normas de la comunidad.</label>
 <div class="drow"><button class="g" id="pubcancel" type="button">Cancelar</button><button id="pubsend" type="button">Publicar</button></div>
 </dialog>

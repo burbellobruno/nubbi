@@ -330,7 +330,7 @@
     var send = $("commPostSend");
     var sel = $("commPostChar");
     if(gate){
-      if(realUser()) gate.textContent = "Publicás como " + creatorName() + ". Sé respetuoso y no publiques contenido explícito.";
+      if(realUser()) gate.textContent = "Publicás como " + creatorName() + ". Sé respetuoso. No se permite contenido sexual con menores ni no consentido.";
       else gate.textContent = "Para publicar en el muro necesitás una cuenta.";
     }
     if(login) login.style.display = realUser() ? "none" : "inline-block";
@@ -728,7 +728,7 @@
     var name = ($("pubname").value || "").trim();
     if(!name){ alert("El personaje necesita un nombre público."); return; }
     if(!$("pubadult").checked || !$("pubterms").checked){
-      alert("Confirmá que el personaje es adulto, que el contenido no es explícito y que tenés derecho a publicarlo.");
+      alert("Confirmá que el personaje es adulto (18+), que no incluye contenido sexual con menores ni no consentido, y que tenés derecho a publicarlo.");
       return;
     }
     var b = $("pubsend");
