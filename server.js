@@ -38,6 +38,7 @@ app.post("/api/chat", async (req, res) => {
         messages: [{ role: "user", content: String(req.body.prompt || "") }],
         ...(req.body.response_format ? { response_format: req.body.response_format } : {}),
         stream: stream,
+        ...(String(process.env.CHAT_MODEL || "").includes("gpt-oss") ? { reasoning_effort: "low" } : {}),
       }),
     });
     if (stream) {
