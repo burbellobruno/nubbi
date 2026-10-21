@@ -356,8 +356,16 @@ async function generateCloudflareImage(req, res, c) {
   }
   const prompt = String(req.body.prompt || "").trim();
   if (!prompt) return res.status(400).json({ error: "Falta el prompt de la imagen." });
-  const adult = req.body.adult !== false;
-  const safePrompt = (adult && !/\badult\b/i.test(prompt) ? prompt + ", adult, 18+" : prompt).slice(0, 2048);
+  // Cloudflare bloquea imágenes explícitas. Además, su filtro confunde las
+  // etiquetas meta "adult"/"adulta"/"18+" con NSFW, así que las quitamos del
+  // prompt. No reescribimos descripciones explícitas: Cloudflare las sigue bloqueando.
+  const safePrompt = (prompt
+    .replace(/\b18\s*\+/gi, " ")
+    .replace(/\b(adult|adults|adulta|adultas|adulto|adultos|nsfw)\b/gi, " ")
+    .replace(/\s+([,.;:])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    || "retrato de personaje, alta calidad, portrait").slice(0, 2048);
   try {
     const r = await fetch(c.endpoint, {
       method: "POST",

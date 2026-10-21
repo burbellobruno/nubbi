@@ -47,7 +47,7 @@ La opción sin GPU es **Cloudflare Workers AI** con **FLUX.1 schnell**. No neces
 6. En la app, creá o editá un personaje y usá **Generar imagen con IA**.
 
 - Si Cloudflare está configurado, se usa automáticamente en lugar de Forge. Para forzar uno: `IMAGE_PROVIDER=cloudflare` o `IMAGE_PROVIDER=forge`. Si usás Cloudflare, podés borrar `SD_URL`: no hace falta.
-- El servidor agrega `adult, 18+` al prompt cuando el modo adulto está activo. Cloudflare puede rechazar prompts explícitos; en ese caso probá un retrato sugerente.
+- En Cloudflare, el servidor quita etiquetas meta como `adult`, `adulta` y `18+` para evitar falsos positivos del filtro. El modo adulto del chat no cambia: Cloudflare sigue bloqueando descripciones explícitas.
 - La cuota se reinicia todos los días a las 00:00 UTC. Si se agota, la API devuelve un error hasta el día siguiente.
 
 ## Imágenes con GPU cloud (Forge / A1111)
