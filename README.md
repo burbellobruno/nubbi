@@ -36,7 +36,7 @@ El endpoint `/api/image` usa la API A1111 de **Forge** (también compatible con 
 1. Levantá Forge en un GPU cloud (RunPod, Modal, Vast, etc.) con `--api --listen` y el checkpoint instalado.
 2. Exponé el puerto 7860 por HTTPS y protegelo con autenticación. No dejes el endpoint abierto.
 3. En Render → **Environment**:
-   - `SD_URL=https://tu-endpoint-publico`
+   - `SD_URL=https://tu-endpoint-publico` (URL completa; no un ID interno de Render)
    - `SD_AUTH=Basic usuario:clave` (o `Bearer token`, o solo el token)
    - Opcional: `SD_TIMEOUT_MS=120000`, `SD_NEGATIVE=...`, `SD_CHECKPOINTS={"counterfeit":"Counterfeit-V3.0_fp16"}`
 4. Verificá `https://TU-APP.onrender.com/api/image/health`. Debe devolver `ok: true` y el checkpoint activo.

@@ -423,6 +423,12 @@ var el=$("adultProviderNote");if(!el)return;
 fetch("/api/health").then(function(r){return r.json();}).then(function(j){
 if(j.adultConfigured)el.textContent="Proveedor adulto configurado: "+(j.adultProvider||"")+(j.adultModel?" · "+j.adultModel:"")+".";
 else el.textContent="Proveedor adulto no configurado: se usa el general. Algunas escenas explícitas pueden ser rechazadas.";
+var iel=$("imageStatusNote"),im=j.image||{};
+if(iel){
+if(im.urlError)iel.textContent="Imágenes: "+im.urlError;
+else if(im.configured)iel.textContent="Imágenes: Forge "+(im.local?"local":"remoto")+" configurado"+(im.host?" ("+im.host+")":"")+".";
+else iel.textContent="Imágenes: falta configurar SD_URL en el servidor.";
+}
 }).catch(function(){el.textContent="No se pudo verificar el proveedor de texto.";});
 }
 var adultGateOk=localStorage.getItem("nubbi-adult-ok")==="1";

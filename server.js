@@ -71,8 +71,13 @@ const DEFAULT_CHECKPOINTS = {
 };
 
 function imageConfig() {
-  let baseUrl = (process.env.SD_URL || "http://127.0.0.1:7860").trim();
-  baseUrl = baseUrl.replace(/\/sdapi\/v1\/txt2img\/?$/i, "").replace(/\/+$/, "");
+  let raw = (process.env.SD_URL || "http://127.0.0.1:7860").trim();
+  if (raw.startsWith("//")) raw = "https:" + raw;
+  if (raw && !/^https?:\/\//i.test(raw)) {
+    const localish = /^(localhost|127\.|\[::1\]|0\.0\.0\.0)/i.test(raw);
+    raw = (localish ? "http://" : "https://") + raw;
+  }
+  let baseUrl = raw.replace(/\/sdapi\/v1\/txt2img\/?$/i, "").replace(/\/+$/, "");
   const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(baseUrl);
   const auth = (process.env.SD_AUTH || "").trim();
   const timeoutMs = num(process.env.SD_TIMEOUT_MS, 120000, 5000, 300000);
@@ -84,15 +89,27 @@ function imageConfig() {
     }
   } catch (e) {}
   let host = null;
-  try { host = baseUrl ? new URL(baseUrl).host : null; } catch (e) {}
+  let urlError = null;
+  try {
+    host = baseUrl ? new URL(baseUrl).host : null;
+  } catch (e) {
+    urlError = "SD_URL no es una URL válida. Usá la URL completa de Forge, por ejemplo https://tu-endpoint.proxy.runpod.net";
+  }
+  if (!urlError && baseUrl && !isLocal) {
+    const bare = baseUrl.replace(/^https?:\/\//i, "").replace(/\/.*$/, "");
+    if (/^[a-f0-9]{24,}$/i.test(bare)) {
+      urlError = "SD_URL parece un ID interno, no una URL pública. Configurá la URL completa de Forge, por ejemplo https://tu-endpoint.proxy.runpod.net";
+    }
+  }
   return {
-    baseUrl,
-    endpoint: baseUrl ? baseUrl + "/sdapi/v1/txt2img" : "",
+    baseUrl: urlError ? "" : baseUrl,
+    endpoint: !urlError && baseUrl ? baseUrl + "/sdapi/v1/txt2img" : "",
     isLocal,
     auth,
     timeoutMs,
     checkpoints,
     host,
+    urlError,
   };
 }
 
@@ -109,7 +126,15 @@ function sdHeaders() {
 
 function imageInfo() {
   const c = imageConfig();
-  return { provider: "forge", host: c.host, local: c.isLocal, hasAuth: !!c.auth, timeoutMs: c.timeoutMs };
+  return {
+    provider: "forge",
+    configured: !!c.baseUrl,
+    host: c.host,
+    local: c.isLocal,
+    hasAuth: !!c.auth,
+    timeoutMs: c.timeoutMs,
+    urlError: c.urlError,
+  };
 }
 
 app.get("/api/health", (req, res) => {
@@ -205,7 +230,7 @@ app.post("/api/chat", async (req, res) => {
 // ---- Imágenes: Forge / A1111 remoto o local con --api
 app.get("/api/image/health", async (req, res) => {
   const c = imageConfig();
-  if (!c.baseUrl) return res.status(500).json({ ok: false, error: "Falta configurar SD_URL." });
+  if (!c.baseUrl) return res.status(500).json({ ok: false, error: c.urlError || "Falta configurar SD_URL." });
   try {
     const r = await fetch(c.baseUrl + "/sdapi/v1/options", {
       headers: sdHeaders(),
@@ -229,7 +254,7 @@ app.get("/api/image/health", async (req, res) => {
 
 app.post("/api/image", async (req, res) => {
   const c = imageConfig();
-  if (!c.baseUrl) return res.status(500).json({ error: "Falta configurar SD_URL." });
+  if (!c.baseUrl) return res.status(500).json({ error: c.urlError || "Falta configurar SD_URL." });
   const prompt = String(req.body.prompt || "").trim();
   if (!prompt) return res.status(400).json({ error: "Falta el prompt de la imagen." });
   try {
