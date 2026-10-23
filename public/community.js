@@ -11,6 +11,7 @@
   var MOD_KEY = "nubbi-mod-v1";
   var st = window.st;
   var $ = function(id){ return document.getElementById(id); };
+  var icon = function(name, cls){ return window.NubbiIcon ? window.NubbiIcon(name, cls) : ""; };
   var state = {
     loaded: false,
     loading: false,
@@ -116,12 +117,12 @@
       i.loading = "lazy";
       i.onerror = function(){
         i.remove();
-        el.textContent = emoji || (name ? String(name).charAt(0) : "👤");
+        el.textContent = (name ? String(name).charAt(0).toUpperCase() : "?");
       };
       i.src = img;
       el.appendChild(i);
     }else{
-      el.textContent = emoji || (name ? String(name).charAt(0) : "👤");
+      el.textContent = (name ? String(name).charAt(0).toUpperCase() : "?");
     }
   }
   function setSheetImage(el, name, img, emoji){
@@ -133,12 +134,12 @@
       i.alt = "";
       i.onerror = function(){
         i.remove();
-        el.textContent = emoji || (name ? String(name).charAt(0) : "👤");
+        el.textContent = (name ? String(name).charAt(0).toUpperCase() : "?");
       };
       i.src = img;
       el.appendChild(i);
     }else{
-      el.textContent = emoji || (name ? String(name).charAt(0) : "👤");
+      el.textContent = (name ? String(name).charAt(0).toUpperCase() : "?");
     }
   }
   function when(ts){
@@ -380,7 +381,7 @@
     d.style.background = grad(pub.name);
     var em = document.createElement("div");
     em.className = "em";
-    em.textContent = pub.emoji || (pub.name ? String(pub.name).charAt(0) : "👤");
+    em.textContent = (pub.name ? String(pub.name).charAt(0).toUpperCase() : "?");
     d.appendChild(em);
     if(pub.img){
       var im = document.createElement("img");
@@ -396,11 +397,23 @@
     var liked = uid && (pub.likedBy || []).indexOf(uid) >= 0;
     var like = document.createElement("div");
     like.className = "fav publike";
-    like.textContent = (liked ? "♥ " : "♡ ") + (pub.likedBy || []).length;
+    var likeCount = (pub.likedBy || []).length;
+    like.innerHTML = icon("heart", liked ? "is-filled" : "") + "<span>" + likeCount + "</span>";
     like.title = "Me gusta";
+    like.setAttribute("role", "button");
+    like.setAttribute("tabindex", "0");
+    like.setAttribute("aria-pressed", liked ? "true" : "false");
+    like.setAttribute("aria-label", (liked ? "Quitar me gusta" : "Dar me gusta") + " (" + likeCount + ")");
     like.onclick = function(ev){
       ev.stopPropagation();
       toggleCharLike(pub);
+    };
+    like.onkeydown = function(ev){
+      if(ev.key === "Enter" || ev.key === " "){
+        ev.preventDefault();
+        ev.stopPropagation();
+        toggleCharLike(pub);
+      }
     };
     d.appendChild(like);
     var b = document.createElement("b");
@@ -502,33 +515,38 @@
     actions.className = "postactions";
     var uid = currentUid();
     var liked = uid && (post.likedBy || []).indexOf(uid) >= 0;
-    action(actions, (liked ? "♥ " : "♡ ") + (post.likedBy || []).length, "Me gusta", function(){
+    action(actions, "heart", "Me gusta (" + (post.likedBy || []).length + ")", "Me gusta", function(){
       togglePostLike(post);
-    });
-    action(actions, "💬 Comentar", "Comentar", function(){ openComments(post); });
+    }, liked);
+    action(actions, "comment", "Comentar", "Comentar", function(){ openComments(post); });
     if(post.authorUid !== uid){
-      action(actions, "⚑ Reportar", "Reportar", function(){
+      action(actions, "flag", "Reportar", "Reportar", function(){
         openReport("post", post.id, post.authorUid, "Publicación de " + (post.authorName || "Creador"));
       });
-      action(actions, "Bloquear", "Bloquear creador", function(){
+      action(actions, "lock", "Bloquear", "Bloquear creador", function(){
         if(!confirm("¿Bloquear a " + (post.authorName || "este creador") + "? No vas a ver su contenido en este dispositivo.")) return;
         addBlock(post.authorUid, post.authorName);
         render();
         if(state.commentsPost) renderComments();
       });
     }else{
-      action(actions, "🗑 Eliminar", "Eliminar publicación", function(){ deletePost(post); });
+      action(actions, "trash", "Eliminar", "Eliminar publicación", function(){ deletePost(post); });
     }
     d.appendChild(actions);
     return d;
   }
 
-  function action(parent, label, title, fn){
+  function action(parent, iconName, label, title, fn, active){
     var b = document.createElement("button");
     b.type = "button";
     b.className = "g";
-    b.textContent = label;
-    b.title = title || "";
+    b.innerHTML = iconName ? icon(iconName, active ? "is-filled" : "") : "";
+    var sp = document.createElement("span");
+    sp.textContent = label;
+    b.appendChild(sp);
+    b.title = title || label || "";
+    b.setAttribute("aria-label", title || label || "");
+    if(active !== undefined) b.setAttribute("aria-pressed", active ? "true" : "false");
     b.onclick = fn;
     parent.appendChild(b);
   }
@@ -642,7 +660,10 @@
     if(!force && state.selected !== pub.id) return;
     var uid = currentUid();
     var liked = uid && (pub.likedBy || []).indexOf(uid) >= 0;
-    btn.textContent = (liked ? "♥ " : "♡ ") + "Me gusta (" + (pub.likedBy || []).length + ")";
+    var likeCount = (pub.likedBy || []).length;
+    btn.innerHTML = icon("heart", liked ? "is-filled" : "") + "<span>Me gusta (" + likeCount + ")</span>";
+    btn.setAttribute("aria-pressed", liked ? "true" : "false");
+    btn.setAttribute("aria-label", (liked ? "Quitar me gusta" : "Dar me gusta") + " (" + likeCount + ")");
   }
 
   function importPub(pub){
@@ -1024,9 +1045,10 @@
       if(c.authorUid !== uid){
         var rep = document.createElement("button");
         rep.type = "button";
-        rep.className = "g";
-        rep.textContent = "⚑";
+        rep.className = "g icon-btn sm";
+        rep.innerHTML = icon("flag");
         rep.title = "Reportar comentario";
+        rep.setAttribute("aria-label", "Reportar comentario");
         rep.onclick = function(){
           openReport("comment", c.id, c.authorUid, "Comentario de " + (c.authorName || "Creador"));
         };
@@ -1035,9 +1057,10 @@
       if(c.authorUid === uid || (post && post.authorUid === uid)){
         var del = document.createElement("button");
         del.type = "button";
-        del.className = "g";
-        del.textContent = "✕";
+        del.className = "g icon-btn sm";
+        del.innerHTML = icon("close");
         del.title = "Eliminar comentario";
+        del.setAttribute("aria-label", "Eliminar comentario");
         del.onclick = function(){ deleteComment(c); };
         tools.appendChild(del);
       }

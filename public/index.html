@@ -9,6 +9,7 @@
 <link rel="icon" href="favicon.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="ui-v2.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -16,11 +17,45 @@
 <script src="firebase-sync.js"></script>
 </head>
 <body>
+<svg class="svg-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+<symbol id="i-community" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.8 5.6a5.4 5.4 0 0 0-7.7 0L12 6.7l-1.1-1.1a5.4 5.4 0 0 0-7.7 7.7l1.1 1.1L12 21l7.7-6.6 1.1-1.1a5.4 5.4 0 0 0 0-7.7z"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+<symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.2 3.6L17 8l-3.8 1.4L12 13l-1.2-3.6L7 8l3.8-1.4z"/><path d="m18.5 14 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/><path d="m5 14 .6 1.6L7.2 16l-1.6.6L5 18.2l-.6-1.6L2.8 16l1.6-.4z"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="8.5" cy="10" r="1.5"/><path d="m21 15-5-5L5 21"/></symbol>
+<symbol id="i-speaker" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6 4h12v17l-6-4-6 4z"/></symbol>
+<symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></symbol>
+<symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10M8 7h6a4 4 0 0 1 4 4v3"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 20h16"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></symbol>
+<symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></symbol>
+<symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m5 12 7 7 7-7"/></symbol>
+<symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h10l-1.5 4L15 12H5"/></symbol>
+<symbol id="i-comment" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" style="stroke-width:3"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></symbol>
+</defs>
+</svg>
 <div id="views">
 <section class="view on" id="v-home">
 <div class="top"><span class="logo"><img src="logo.png" alt="">Nubbi</span><span class="note">+18 · todos los personajes son adultos</span></div>
-<div class="hero"><div><h1>Historias que se sienten</h1><p>Elegí un personaje o creá el tuyo, con emociones, acciones y escenas.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="heroNew">+ Crear personaje</button><button class="g" id="surprise">✨ Sorpréndeme</button></div></div>
-<div class="searchbox"><svg class="si" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><input id="q" placeholder="Buscar personajes, tags, roles..."></div>
+<div class="hero"><div><h1>Historias que se sienten</h1><p>Elegí un personaje o creá el tuyo, con emociones, acciones y escenas.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="heroNew"><svg class="icon"><use href="#i-plus"></use></svg><span>Crear personaje</span></button><button class="g" id="surprise"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Sorpréndeme</span></button></div></div>
+<div class="searchbox"><svg class="icon"><use href="#i-search"></use></svg><input id="q" placeholder="Buscar personajes, tags, roles..."></div>
 <div class="tabs" id="tabs"><button class="tab on" data-tab="explore">Explorar</button><button class="tab" data-tab="trend">Tendencias</button><button class="tab" data-tab="today">Hoy</button><button class="tab" data-tab="new">Nuevos</button></div>
 <div class="filterrow">
 <select id="sort" aria-label="Ordenar"><option value="reco">Recomendados</option><option value="pop">Populares</option><option value="new">Nuevos</option><option value="az">A-Z</option><option value="chats">Más chateados</option></select>
@@ -28,8 +63,8 @@
 </div>
 <div class="pills" id="gp"></div>
 <div class="pills" id="tp"></div>
-<div class="railwrap"><h2>✨ Para vos</h2><div class="rail" id="forYou"></div></div>
-<div class="railwrap"><h2>🔥 Tendencias</h2><div class="rail" id="rail"></div></div>
+<div class="railwrap"><h2>Para vos</h2><div class="rail" id="forYou"></div></div>
+<div class="railwrap"><h2>Tendencias</h2><div class="rail" id="rail"></div></div>
 <h2>Catálogo</h2><div class="grid" id="grid"></div>
 <button class="g loadmore" id="loadMore">Ver más</button>
 </section>
@@ -37,9 +72,9 @@
 <section class="view" id="v-community">
 <div class="commhead">
 <div><h2>Comunidad</h2><p class="note">Personajes y novedades de la comunidad. Solo para mayores de 18 años. Puede incluir ficción adulta; no se permite contenido sexual con menores ni no consentido.</p></div>
-<div class="commacts"><button class="g" id="commRefresh" type="button">Actualizar</button><button id="commPublish" type="button">+ Publicar personaje</button></div>
+<div class="commacts"><button class="g" id="commRefresh" type="button">Actualizar</button><button id="commPublish" type="button"><svg class="icon"><use href="#i-plus"></use></svg><span>Publicar personaje</span></button></div>
 </div>
-<div class="searchbox"><svg class="si" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><input id="commQ" placeholder="Buscar personajes o creadores..."></div>
+<div class="searchbox"><svg class="icon"><use href="#i-search"></use></svg><input id="commQ" placeholder="Buscar personajes o creadores..."></div>
 <div class="tabs" id="commTabs"><button class="tab on" type="button" data-ctab="chars">Personajes</button><button class="tab" type="button" data-ctab="feed">Novedades</button></div>
 <div id="commStatus" class="note"></div>
 <div id="commCharsPanel"><div class="grid" id="commChars"></div></div>
@@ -93,7 +128,8 @@
 </div>
 <label>Contenido adulto en mis chats</label>
 <select id="padult"><option value="on">Permitido (18+)</option><option value="off">Solo sugerente, sin sexo explícito</option></select>
-<p class="note" id="adultProviderNote">Verificando el proveedor de texto...</p>\n<p class="note" id="imageStatusNote"></p>
+<p class="note" id="adultProviderNote">Verificando el proveedor de texto...</p>
+<p class="note" id="imageStatusNote"></p>
 <label class="note">Intensidad por defecto en chats nuevos</label>
 <select id="pint"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, puede ser explícito)</option><option value="libre">Libre (iniciativa; puede ser explícito)</option></select><br><br>
 <button class="g" id="theme">Cambiar tema claro/oscuro</button> <button class="g" id="wipe">Borrar chats</button>
@@ -116,32 +152,33 @@
 <label>Velocidad de voz</label><input id="pvoicerate" type="range" min="0.6" max="1.6" step="0.05" value="1">
 <label>Tono de voz</label><input id="pvoicepitch" type="range" min="0.5" max="1.6" step="0.05" value="1">
 <label>Leer respuestas automáticamente</label><select id="pvoiceauto"><option value="off">No</option><option value="on">Sí</option></select>
-<button class="g" id="pvoicetest" type="button">🔊 Probar voz</button>
+<button class="g" id="pvoicetest" type="button"><svg class="icon"><use href="#i-speaker"></use></svg><span>Probar voz</span></button>
 </div>
 <p class="note">Confirmo que tengo 18 años o más. Todos los personajes son adultos.</p>
 </div></section>
 </div>
 <nav>
 <div class="brand"><img src="logo.png" alt=""><b>Nubbi</b></div>
-<div data-v="home" class="on" aria-label="Inicio"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"></path><path d="M5 10v10h14V10"></path></svg><span class="l">Inicio</span></div>
-<div data-v="chats" aria-label="Chats"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><span class="l">Chats</span></div>
-<div data-v="community" aria-label="Comunidad"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"></path></svg><span class="l">Comunidad</span></div>
-<div class="plus" id="plus" aria-label="Crear personaje"><span>+</span><em>Crear</em></div>
-<div data-v="favs" aria-label="Favoritos"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg><span class="l">Favoritos</span></div>
-<div data-v="prof" aria-label="Perfil"><svg class="i" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path></svg><span class="l">Perfil</span></div>
+<div data-v="home" class="on" aria-label="Inicio"><svg class="icon"><use href="#i-home"></use></svg><span class="l">Inicio</span></div>
+<div data-v="chats" aria-label="Chats"><svg class="icon"><use href="#i-chat"></use></svg><span class="l">Chats</span></div>
+<div data-v="community" aria-label="Comunidad"><svg class="icon"><use href="#i-community"></use></svg><span class="l">Comunidad</span></div>
+<div class="plus" id="plus" aria-label="Crear personaje"><span><svg class="icon"><use href="#i-plus"></use></svg></span><em>Crear</em></div>
+<div data-v="favs" aria-label="Favoritos"><svg class="icon"><use href="#i-heart"></use></svg><span class="l">Favoritos</span></div>
+<div data-v="prof" aria-label="Perfil"><svg class="icon"><use href="#i-user"></use></svg><span class="l">Perfil</span></div>
 </nav>
 
 <div id="chat">
-<header><button class="g" id="back">←</button><div class="av" id="hav"></div><div class="t"><b id="hname"></b><br><small id="hdesc"></small></div><button class="g" id="fv">♡</button><button class="g" id="cfg">Escena</button><button class="g" id="reset">↺</button></header>
+<header><button class="g icon-btn" id="back" type="button" aria-label="Volver"><svg class="icon"><use href="#i-arrow-left"></use></svg></button><div class="av" id="hav"></div><div class="t"><b id="hname"></b><br><small id="hdesc"></small></div><button class="g icon-btn" id="fv" type="button" aria-label="Favorito" aria-pressed="false"><svg class="icon"><use href="#i-heart"></use></svg></button><button class="g" id="cfg" type="button"><svg class="icon"><use href="#i-film"></use></svg><span>Escena</span></button><button class="g icon-btn" id="reset" type="button" aria-label="Reiniciar chat"><svg class="icon"><use href="#i-rotate"></use></svg></button></header>
 <div id="msgs"></div>
-<div class="chips"><button class="g" id="bAct">*Acción*</button><button class="g" id="bCont">Continuar historia</button><button class="g" id="bScene">Nueva escena</button><button class="g" id="bImpro">Improvisar</button><button class="g" id="bRegen">Regenerar</button><button class="g" id="bMemory">🧠 Memoria</button><button class="g" id="bDirector">🎬 Director</button><button class="g" id="bRamas">🧬 Ramas</button><button class="g" id="bExport">📤 Exportar</button></div>
-<form id="f" class="pillform"><input id="inp" placeholder="Escribí un mensaje..." autocomplete="off"><button type="submit" class="send" aria-label="Enviar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button></form>
+<div class="chips"><button class="g" id="bAct" type="button">*Acción*</button><button class="g" id="bCont" type="button">Continuar historia</button><button class="g" id="bScene" type="button">Nueva escena</button><button class="g" id="bImpro" type="button">Improvisar</button><button class="g" id="bRegen" type="button">Regenerar</button><button class="g" id="bMemory" type="button"><svg class="icon"><use href="#i-bookmark"></use></svg><span>Memoria</span></button><button class="g" id="bDirector" type="button"><svg class="icon"><use href="#i-film"></use></svg><span>Director</span></button><button class="g" id="bRamas" type="button"><svg class="icon"><use href="#i-branch"></use></svg><span>Ramas</span></button><button class="g" id="bExport" type="button"><svg class="icon"><use href="#i-download"></use></svg><span>Exportar</span></button></div>
+<form id="f" class="pillform"><input id="inp" placeholder="Escribí un mensaje..." autocomplete="off"><button type="submit" class="send" aria-label="Enviar"><svg class="icon"><use href="#i-send"></use></svg></button></form>
 </div>
 
 <dialog id="dlg">
 <h3 style="margin:0">Crear personaje</h3><div class="note">Todos los personajes son adultos (18+)</div>
 <label>Idea para generarlo con IA</label><input id="idea" placeholder="Ej: rival de la academia, orgulloso pero leal">
-<button id="gen" type="button" style="margin-top:6px">✨ Generar con IA</button>\n<div class="note" id="genStatus" style="margin-top:6px"></div>
+<button id="gen" type="button" style="margin-top:6px"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Generar con IA</span></button>
+<div class="note" id="genStatus" style="margin-top:6px"></div>
 <label>Emoji / foto</label><div style="display:flex;gap:8px"><input id="e" maxlength="4" value="🦇" style="width:80px"><input id="img" type="file" accept="image/*"></div>
 <label>Nombre</label><input id="n"><label>Descripción corta</label><input id="d"><label>Rol (novio, villano, mentor...)</label><input id="r">
 <label>Género</label><select id="gen2"><option>Masculino</option><option>Femenino</option><option>Otro</option></select>
@@ -151,7 +188,7 @@
 <div class="note" id="imageEngineNote" style="margin-top:4px">Cloudflare usa FLUX.1 schnell. No usa tus modelos locales ni genera imágenes explícitas.</div>
 <label>Estilo del prompt</label><select id="sty"><option>anime</option><option>realista</option><option>semi-realista</option><option>pintura digital</option><option>manhwa</option></select>
 <div class="pr" id="pr"></div>
-<button id="genImg" type="button" class="g" style="margin-top:8px">🎨 Generar imagen con IA</button>
+<button id="genImg" type="button" class="g" style="margin-top:8px"><svg class="icon"><use href="#i-image"></use></svg><span>Generar imagen con IA</span></button>
 <div class="drow"><button class="g" id="cancel" type="button">Cancelar</button><button id="save" type="button">Guardar</button></div>
 </dialog>
 <dialog id="cdlg">
@@ -176,7 +213,7 @@
 <h3 style="margin:0">Memoria de la historia</h3>
 <div class="note">Hechos, relaciones, promesas y secretos que el personaje debe recordar.</div>
 <textarea id="mem" rows="6" placeholder="Ej: El usuario se llama..."></textarea>
-<div class="drow" style="justify-content:flex-start;flex-wrap:wrap"><button class="g" id="memSum" type="button">✨ Resumir conversación</button><button class="g" id="memClear" type="button">Limpiar</button></div>
+<div class="drow" style="justify-content:flex-start;flex-wrap:wrap"><button class="g" id="memSum" type="button"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Resumir conversación</span></button><button class="g" id="memClear" type="button">Limpiar</button></div>
 <div id="memNotes" class="memnotes"></div>
 <div class="drow"><button class="g" id="memCancel" type="button">Cerrar</button><button id="memSave" type="button">Guardar</button></div>
 </dialog>
@@ -204,7 +241,7 @@
 <div id="shmeta" class="shmeta"></div>
 <div id="shgreet" class="shgreet"></div>
 <div id="shsimilar" class="shsimilar"></div>
-<div class="drow"><button class="g" id="shfav">♡</button><button class="g" id="shedit" style="display:none">Editar</button><button class="g" id="shpub" style="display:none">Publicar en comunidad</button><button class="g" id="shshare">Compartir</button><button class="g" id="shdel" style="display:none">Eliminar</button><button id="shchat">Chatear</button></div>
+<div class="drow"><button class="g icon-btn" id="shfav" type="button" aria-label="Favorito" aria-pressed="false"><svg class="icon"><use href="#i-heart"></use></svg></button><button class="g" id="shedit" style="display:none"><svg class="icon"><use href="#i-pencil"></use></svg><span>Editar</span></button><button class="g" id="shpub" style="display:none">Publicar en comunidad</button><button class="g" id="shshare"><svg class="icon"><use href="#i-share"></use></svg><span>Compartir</span></button><button class="g" id="shdel" style="display:none"><svg class="icon"><use href="#i-trash"></use></svg><span>Eliminar</span></button><button id="shchat">Chatear</button></div>
 </div>
 </div>
 </dialog>
@@ -244,10 +281,10 @@
 <div id="pstags" class="tags"></div>
 <div id="psgreet" class="shgreet"></div>
 <div class="drow">
-<button class="g" id="pslike" type="button">♡ Me gusta</button>
-<button class="g" id="psreport" type="button">Reportar</button>
+<button class="g" id="pslike" type="button"><svg class="icon"><use href="#i-heart"></use></svg><span>Me gusta</span></button>
+<button class="g" id="psreport" type="button"><svg class="icon"><use href="#i-flag"></use></svg><span>Reportar</span></button>
 <button class="g" id="psblock" type="button">Bloquear</button>
-<button class="g" id="psdelete" type="button" style="display:none">Eliminar</button>
+<button class="g" id="psdelete" type="button" style="display:none"><svg class="icon"><use href="#i-trash"></use></svg><span>Eliminar</span></button>
 <button class="g" id="psclose" type="button">Cerrar</button>
 <button id="psuse" type="button">Usar personaje</button>
 </div>
@@ -309,5 +346,6 @@
 <script src="catalog.js"></script>
 <script src="app.js"></script>
 <script src="community.js"></script>
+<script src="ui-v2.js"></script>
 </body>
 </html>

@@ -29,6 +29,9 @@ const EN = [
 "adult woman homicide detective, dark blazer, sharp eyes, notebook, night city street",
 "adult young man street musician, acoustic guitar, scarf, flirty smile, evening plaza"
 ];
+if (EN.length !== RAW.length) {
+  throw new Error("Faltan prompts de retrato: " + EN.length + " para " + RAW.length + " personajes.");
+}
 const limit = Number(process.argv[2]) || RAW.length;
 const dir = path.join(__dirname, "../public/portraits"); fs.mkdirSync(dir, { recursive: true });
 (async () => {

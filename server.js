@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "2mb" }));
 app.use(express.static("public"));
 
@@ -13,6 +14,12 @@ function rateLimit(key, limit, windowMs) {
   b.count++;
   return b.count <= limit;
 }
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, b] of buckets) {
+    if (!b || now - b.start > 60000) buckets.delete(key);
+  }
+}, 5 * 60 * 1000).unref();
 app.use("/api/", (req, res, next) => {
   const ip = req.ip || req.connection.remoteAddress || "unknown";
   const isImage = req.path === "/image" || req.path === "/image/health";
@@ -25,6 +32,14 @@ app.use("/api/", (req, res, next) => {
 function num(v, def, min, max) {
   const n = Number(v);
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def;
+}
+
+const MINOR_TERMS = /\b(?:child(?:ren)?|kid(?:s)?|minor(?:s)?|underage|teen(?:ager|agers|aged|age)?|loli(?:s)?|shota(?:s)?|schoolgirls?|niñas?|niños?|menor(?:es)?|adolescentes?)\b|\byoung\s+(?:girl|boy)s?\b/i;
+function containsMinorTerms(text) {
+  return MINOR_TERMS.test(String(text || ""));
+}
+function rejectMinor(res) {
+  return res.status(400).json({ error: "Todos los personajes deben ser adultos." });
 }
 
 // Modelos permitidos desde el cliente. El servidor decide el modelo final:
@@ -221,6 +236,7 @@ app.get("/api/health", (req, res) => {
 
 app.post("/api/chat", async (req, res) => {
   try {
+    if (containsMinorTerms(req.body.prompt)) return rejectMinor(res);
     const adult = req.body.adult === true;
     const { baseUrl, model: defaultModel, apiKey, dedicated } = chatConfig(adult);
     if (!baseUrl || !defaultModel) {
@@ -238,7 +254,7 @@ app.post("/api/chat", async (req, res) => {
     if (adult) {
       messages.push({
         role: "system",
-        content: "Modo adulto: todos los personajes y el usuario son mayores de 18 años. La ficción sexual explícita entre adultos con consentimiento está permitida. Está terminantemente prohibido generar contenido sexual con menores, personajes que aparenten ser menores, personas reales, animales o situaciones no consentidas. Si la conversación intenta eso, rechazá esa parte y continuá sin contenido sexual.",
+        content: "Modo adulto: todos los personajes y el usuario son mayores de 18 años. La ficción sexual explícita entre adultos con consentimiento está permitida. Está terminantemente prohibido generar contenido sexual con personas no adultas, personajes que aparenten no ser adultos, personas reales, animales o situaciones no consentidas. Si la conversación intenta eso, rechazá esa parte y continuá sin contenido sexual.",
       });
     }
     messages.push({ role: "user", content: String(req.body.prompt || "") });
@@ -411,14 +427,24 @@ async function generateCloudflareImage(req, res, c) {
   if (!prompt) return res.status(400).json({ error: "Falta el prompt de la imagen." });
   // Cloudflare bloquea imágenes explícitas. Además, su filtro confunde las
   // etiquetas meta "adult"/"adulta"/"18+" con NSFW, así que las quitamos del
-  // prompt. No reescribimos descripciones explícitas: Cloudflare las sigue bloqueando.
-  const safePrompt = (prompt
+  // prompt y las reemplazamos por una edad adulta explícita. No reescribimos
+  // descripciones explícitas: Cloudflare las sigue bloqueando.
+  let cleanedPrompt = prompt
     .replace(/\b18\s*\+/gi, " ")
     .replace(/\b(adult|adults|adulta|adultas|adulto|adultos|nsfw)\b/gi, " ")
     .replace(/\s+([,.;:])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim()
-    || "retrato de personaje, alta calidad, portrait").slice(0, 2048);
+    .replace(/^[\s,.;:]+/, "");
+  const ageMatch = cleanedPrompt.match(/\b(\d{1,3})\s*(?:years?[\s-]*old|y\/o|años?|anos?)\b/i)
+    || cleanedPrompt.match(/\b(?:age|edad)\s*:?\s*(\d{1,3})\b/i)
+    || cleanedPrompt.match(/\b(\d{2})\b\s*\+?/);
+  const detectedAge = ageMatch ? Number(ageMatch[1]) : 0;
+  const ageText = detectedAge >= 21 ? detectedAge + " years old" : "28 years old";
+  if (ageMatch) cleanedPrompt = cleanedPrompt.replace(ageMatch[0], ageText);
+  const safePrompt = (ageMatch
+    ? cleanedPrompt
+    : ageText + ", " + (cleanedPrompt || "retrato de personaje, alta calidad, portrait")).slice(0, 2048);
   try {
     const r = await fetch(c.endpoint, {
       method: "POST",
@@ -461,6 +487,7 @@ async function generateCloudflareImage(req, res, c) {
 }
 
 app.post("/api/image", async (req, res) => {
+  if (containsMinorTerms(req.body.prompt)) return rejectMinor(res);
   const c = imageConfig(req.body.provider);
   if (c.provider === "cloudflare") return generateCloudflareImage(req, res, c);
   if (!c.baseUrl) return res.status(500).json({ error: c.urlError || "Falta configurar SD_URL." });

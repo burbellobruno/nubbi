@@ -1,6 +1,6 @@
 # Nubbi
 
-App de chat con personajes de IA (adultos), para móvil y PC.
+App de chat con personajes de IA (adultos), para móvil y PC. El catálogo base tiene 24 personajes (p0 a p23).
 
 ## Desarrollo local
 
@@ -47,7 +47,7 @@ La opción sin GPU es **Cloudflare Workers AI** con **FLUX.1 schnell**. No neces
 6. En la app, creá o editá un personaje y usá **Generar imagen con IA**.
 
 - Si Cloudflare está configurado, se usa automáticamente en lugar de Forge. Para forzar uno: `IMAGE_PROVIDER=cloudflare` o `IMAGE_PROVIDER=forge`. Si usás Cloudflare, podés borrar `SD_URL`: no hace falta.
-- En Cloudflare, el servidor quita etiquetas meta como `adult`, `adulta` y `18+` para evitar falsos positivos del filtro. El modo adulto del chat no cambia: Cloudflare sigue bloqueando descripciones explícitas.
+- En Cloudflare, el servidor reemplaza etiquetas meta como `adult`, `adulta` y `18+` por una edad adulta explícita (`28 years old` si el prompt no indica una edad de 21 o más). El modo adulto del chat no cambia: Cloudflare sigue bloqueando descripciones explícitas.
 - La cuota se reinicia todos los días a las 00:00 UTC. Si se agota, la API devuelve un error hasta el día siguiente.
 
 ## Usar tus modelos locales (Forge)
