@@ -1,6 +1,17 @@
 # Nubbi
 
-App de chat con personajes de IA (adultos), para móvil y PC. El catálogo base tiene 24 personajes (p0 a p23).
+## Actualización de experiencia e imágenes
+
+- Diseño e intro: consulta `DISENO-EXPERIENCIA.md`. El audio original está en `public/nubbi-intro.mp3`.
+- Memoria y relaciones: consulta `MEJORAS-V5-INTEGRACION.md`.
+- En Render, configura `FIREBASE_API_KEY` con la clave API del mismo proyecto Firebase usado por el cliente. No se modifican las credenciales automáticamente.
+- Las imágenes requieren una cuenta Firebase no anónima. `IMAGE_DAILY_LIMIT` vale 5 por defecto; el límite se reinicia a las 00:00 UTC. La cuota vive en memoria: se pierde al reiniciar y no se comparte entre instancias. Los intentos consumen cuota.
+- `IMAGE_PROVIDER=cloudflare|forge|huggingface` selecciona el proveedor predeterminado; el selector del creador permite elegir entre los disponibles.
+- Para HuggingFace configura `HF_TOKEN`, `HF_IMAGE_MODEL` (predeterminado `cagliostrolab/animagine-xl-3.1`) y opcionalmente `HF_TIMEOUT_MS` (120000). El modelo debe estar disponible para inferencia en `hf-inference` y accesible con el token; tener una ficha pública no garantiza disponibilidad.
+- Chat de texto: se conserva el límite por IP, sin cuota diaria por usuario.
+- Pruebas: `node scripts/test-v5.js` y `node scripts/test-image-auth.js`.
+
+App de chat con personajes de IA (adultos), para móvil y PC. El catálogo base tiene 27 personajes (p0 a p26).
 
 ## Desarrollo local
 
@@ -134,7 +145,8 @@ El endpoint `/api/image` usa la API A1111 de **Forge** (también compatible con 
 - Al entrar, la app pide confirmar que tenés **18 años o más**. Es un gate simple: no verifica identidad.
 - En **Perfil → Contenido adulto** podés permitir ficción sexual explícita entre adultos o dejar el modo solo sugerente.
 - Está permitida la ficción sexual entre personajes **mayores de 18** y con consentimiento.
-- **No está permitido**: contenido sexual con menores o personajes que aparenten ser menores, contenido no consentido, con animales o con personas reales. Esas prohibiciones están en el prompt del cliente y en el servidor.
+- **No está permitido**: contenido sexual con menores o personajes que aparenten ser menores, contenido no consentido o con personas reales. Prohibido el contenido sexual con animales reales (zoofilia). Los personajes antropomórficos adultos (furry) están permitidos como cualquier otro personaje. Esas prohibiciones están en el prompt del cliente y en el servidor.
+- El tag **furry** agrupa personajes antropomórficos adultos y se puede filtrar como cualquier otro tag.
 - El contenido explícito depende del proveedor de texto. Groq permite contenido adulto legal según su política, pero sus modelos pueden rechazar algunas escenas. Para mayor consistencia, configurá un proveedor alternativo solo para el modo adulto:
 
 ```env

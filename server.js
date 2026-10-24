@@ -34,9 +34,100 @@ function num(v, def, min, max) {
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def;
 }
 
+// ---- Cuota diaria de imágenes por usuario ----
+const imageQuota = new Map();
+function utcDay() {
+  return new Date().toISOString().slice(0, 10);
+}
+function imageQuotaFor(uid) {
+  const day = utcDay();
+  let q = imageQuota.get(uid);
+  if (!q || q.day !== day) {
+    q = { day, count: 0 };
+    imageQuota.set(uid, q);
+  }
+  return q;
+}
+function takeImageQuota(uid) {
+  const limit = num(process.env.IMAGE_DAILY_LIMIT, 5, 1, 1000);
+  const q = imageQuotaFor(uid);
+  if (q.count >= limit) return false;
+  q.count++;
+  return true;
+}
+const quotaCleanup = setInterval(() => {
+  const day = utcDay();
+  for (const [uid, q] of imageQuota) {
+    if (!q || q.day !== day) imageQuota.delete(uid);
+  }
+}, 60 * 60 * 1000);
+if (quotaCleanup.unref) quotaCleanup.unref();
+
+// ---- Sesión de Firebase para /api/image ----
+function bearerToken(req) {
+  const raw = String(req.headers.authorization || "");
+  const m = raw.match(/^Bearer\s+(.+)$/i);
+  return m ? m[1].trim() : "";
+}
+async function verifyFirebaseToken(idToken) {
+  const apiKey = (process.env.FIREBASE_API_KEY || "").trim();
+  if (!apiKey) {
+    const err = new Error("Falta configurar FIREBASE_API_KEY en el servidor.");
+    err.code = "FIREBASE_CONFIG";
+    throw err;
+  }
+  const r = await fetch(
+    "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=" + encodeURIComponent(apiKey),
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ idToken }),
+      signal: AbortSignal.timeout(15000),
+    }
+  );
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const err = new Error(r.status >= 500 ? "No se pudo verificar la sesión. Intenta de nuevo." : "La sesión no es válida. Inicia sesión de nuevo.");
+    err.code = r.status >= 500 ? "FIREBASE_LOOKUP" : "FIREBASE_INVALID_TOKEN";
+    throw err;
+  }
+  const user = Array.isArray(j.users) ? j.users[0] : null;
+  if (!user || !user.localId || user.disabled) return null;
+  const providers = Array.isArray(user.providerUserInfo) ? user.providerUserInfo : [];
+  const anonymous = !user.email && providers.length === 0;
+  return { uid: String(user.localId), anonymous, email: user.email || null };
+}
+
+// ---- Prompt de imagen compartido: edad numérica adulta + anthro ----
+function prepareImagePrompt(raw, style, tags, opts) {
+  const cloudflare = !!(opts && opts.cloudflare);
+  const adult = !opts || opts.adult !== false;
+  let cleaned = String(raw || "")
+    .replace(/\b18\s*\+/gi, " ")
+    .replace(/\b(adult|adults|adulta|adultas|adulto|adultos|nsfw)\b/gi, " ")
+    .replace(/\s+([,.;:])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .replace(/^[\s,.;:]+/, "");
+  const ageMatch = cleaned.match(/\b(\d{1,3})\s*(?:years?[\s-]*old|y\/o|años?|anos?)\b/i)
+    || cleaned.match(/\b(?:age|edad)\s*:?\s*(\d{1,3})\b/i)
+    || cleaned.match(/\b(\d{2})\b\s*\+?/);
+  const detectedAge = ageMatch ? Number(ageMatch[1]) : 0;
+  const ageText = detectedAge >= 21 ? detectedAge + " years old" : "28 years old";
+  if (ageMatch) cleaned = cleaned.replace(ageMatch[0], ageText);
+  else cleaned = ageText + ", " + (cleaned || "retrato de personaje, alta calidad, portrait");
+  if (!cloudflare && adult) cleaned += ", adult";
+  return addAnthro(cleaned, style, tags).slice(0, cloudflare ? 2048 : 1800);
+}
+
 const MINOR_TERMS = /\b(?:child(?:ren)?|kid(?:s)?|minor(?:s)?|underage|teen(?:ager|agers|aged|age)?|loli(?:s)?|shota(?:s)?|schoolgirls?|niñas?|niños?|menor(?:es)?|adolescentes?)\b|\byoung\s+(?:girl|boy)s?\b/i;
 function containsMinorTerms(text) {
   return MINOR_TERMS.test(String(text || ""));
+}
+function addAnthro(prompt, style, tags) {
+  const furry = /\bfurry\b/i.test(String(style || "")) || /\bfurry\b/i.test(String(tags || ""));
+  if (!furry || /\banthro(?:pomorphic)?\b/i.test(prompt)) return prompt;
+  return prompt + ", anthro, anthropomorphic";
 }
 function rejectMinor(res) {
   return res.status(400).json({ error: "Todos los personajes deben ser adultos." });
@@ -87,6 +178,20 @@ const DEFAULT_CHECKPOINTS = {
 
 const CF_DEFAULT_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 const CF_API_BASE = "https://api.cloudflare.com/client/v4";
+const HF_DEFAULT_MODEL = "cagliostrolab/animagine-xl-3.1";
+
+function huggingFaceConfig() {
+  const token = (process.env.HF_TOKEN || "").trim();
+  const model = (process.env.HF_IMAGE_MODEL || HF_DEFAULT_MODEL).trim() || HF_DEFAULT_MODEL;
+  const timeoutMs = num(process.env.HF_TIMEOUT_MS, 120000, 5000, 300000);
+  let error = null;
+  if (!token) error = "Falta HF_TOKEN (token de HuggingFace).";
+  else if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(model)) error = "HF_IMAGE_MODEL debe tener el formato usuario/modelo.";
+  const endpoint = !error
+    ? "https://router.huggingface.co/hf-inference/models/" + model.split("/").map(encodeURIComponent).join("/")
+    : "";
+  return { token, model, timeoutMs, endpoint, error };
+}
 
 function cloudflareConfig() {
   const accountId = (process.env.CF_ACCOUNT_ID || "").trim();
@@ -107,13 +212,30 @@ function cloudflareConfig() {
 
 function imageConfig(providerOverride) {
   const cf = cloudflareConfig();
+  const hf = huggingFaceConfig();
   const override = String(providerOverride || "").trim().toLowerCase();
-  const requested = override === "forge" || override === "cloudflare"
+  const envProvider = (process.env.IMAGE_PROVIDER || "").trim().toLowerCase();
+  const requested = ["forge", "cloudflare", "huggingface"].includes(override)
     ? override
-    : (process.env.IMAGE_PROVIDER || "").trim().toLowerCase();
-  const provider = requested === "forge" || requested === "cloudflare"
+    : envProvider;
+  const provider = ["forge", "cloudflare", "huggingface"].includes(requested)
     ? requested
-    : (cf.accountId || cf.apiToken ? "cloudflare" : "forge");
+    : (cf.accountId || cf.apiToken ? "cloudflare" : hf.token ? "huggingface" : "forge");
+
+  if (provider === "huggingface") {
+    return {
+      provider: "huggingface",
+      baseUrl: "",
+      endpoint: hf.endpoint,
+      isLocal: false,
+      auth: "",
+      timeoutMs: hf.timeoutMs,
+      checkpoints: DEFAULT_CHECKPOINTS,
+      host: "router.huggingface.co",
+      urlError: hf.error,
+      hf,
+    };
+  }
 
   if (provider === "cloudflare") {
     return {
@@ -205,6 +327,20 @@ function imageInfo() {
       note: "Cloudflare Workers AI · FLUX.1 schnell · plan gratuito. No genera imágenes explícitas.",
     };
   }
+  if (c.provider === "huggingface") {
+    return {
+      provider: "huggingface",
+      configured: !!c.endpoint,
+      host: c.host,
+      local: false,
+      model: c.hf.model,
+      free: false,
+      hasAuth: !!c.hf.token,
+      timeoutMs: c.timeoutMs,
+      urlError: c.urlError,
+      note: "HuggingFace Inference API · modelo configurable con HF_IMAGE_MODEL.",
+    };
+  }
   return {
     provider: "forge",
     configured: !!c.baseUrl,
@@ -254,7 +390,7 @@ app.post("/api/chat", async (req, res) => {
     if (adult) {
       messages.push({
         role: "system",
-        content: "Modo adulto: todos los personajes y el usuario son mayores de 18 años. La ficción sexual explícita entre adultos con consentimiento está permitida. Está terminantemente prohibido generar contenido sexual con personas no adultas, personajes que aparenten no ser adultos, personas reales, animales o situaciones no consentidas. Si la conversación intenta eso, rechazá esa parte y continuá sin contenido sexual.",
+        content: "Modo adulto: todos los personajes y el usuario son mayores de 18 años. La ficción sexual explícita entre adultos con consentimiento está permitida. Está terminantemente prohibido generar contenido sexual con personas no adultas, personajes que aparenten no ser adultos, personas reales o situaciones no consentidas. Prohibido el contenido sexual con animales reales (zoofilia). Los personajes antropomórficos adultos (furry) están permitidos como cualquier otro personaje. Si la conversación intenta eso, rechazá esa parte y continuá sin contenido sexual.",
       });
     }
     messages.push({ role: "user", content: String(req.body.prompt || "") });
@@ -311,8 +447,11 @@ app.post("/api/chat", async (req, res) => {
 app.get("/api/image/models", async (req, res) => {
   const cf = imageConfig("cloudflare");
   const forge = imageConfig("forge");
+  const hf = imageConfig("huggingface");
   const out = {
     defaultProvider: imageConfig().provider,
+    dailyLimit: num(process.env.IMAGE_DAILY_LIMIT, 5, 1, 1000),
+    requiresAccount: true,
     providers: {
       cloudflare: {
         available: !!cf.endpoint,
@@ -329,6 +468,14 @@ app.get("/api/image/models", async (req, res) => {
         local: forge.isLocal,
         models: [],
         error: forge.urlError || null,
+      },
+      huggingface: {
+        available: !!hf.endpoint,
+        configured: !!hf.hf.token,
+        model: hf.hf.model,
+        free: false,
+        note: "HuggingFace Inference API. Modelo configurable con HF_IMAGE_MODEL.",
+        error: hf.urlError || null,
       },
     },
   };
@@ -397,6 +544,37 @@ app.get("/api/image/health", async (req, res) => {
     }
   }
 
+  if (c.provider === "huggingface") {
+    if (!c.endpoint) {
+      return res.status(500).json({
+        ok: false,
+        provider: "huggingface",
+        error: c.urlError || "Falta configurar HF_TOKEN y HF_IMAGE_MODEL.",
+      });
+    }
+    try {
+      const r = await fetch("https://huggingface.co/api/whoami-v2", {
+        headers: { authorization: "Bearer " + c.hf.token },
+        signal: AbortSignal.timeout(Math.min(c.timeoutMs, 15000)),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return res.json({
+        ok: true,
+        provider: "huggingface",
+        host: c.host,
+        model: c.hf.model,
+        note: "No se generó una imagen de prueba para no consumir cuota.",
+      });
+    } catch (e) {
+      return res.status(502).json({
+        ok: false,
+        provider: "huggingface",
+        host: c.host,
+        error: "No pude verificar HF_TOKEN. Revisa el token y el acceso al modelo. " + e.message,
+      });
+    }
+  }
+
   if (!c.baseUrl) return res.status(500).json({ ok: false, error: c.urlError || "Falta configurar SD_URL." });
   try {
     const r = await fetch(c.baseUrl + "/sdapi/v1/options", {
@@ -429,22 +607,7 @@ async function generateCloudflareImage(req, res, c) {
   // etiquetas meta "adult"/"adulta"/"18+" con NSFW, así que las quitamos del
   // prompt y las reemplazamos por una edad adulta explícita. No reescribimos
   // descripciones explícitas: Cloudflare las sigue bloqueando.
-  let cleanedPrompt = prompt
-    .replace(/\b18\s*\+/gi, " ")
-    .replace(/\b(adult|adults|adulta|adultas|adulto|adultos|nsfw)\b/gi, " ")
-    .replace(/\s+([,.;:])/g, "$1")
-    .replace(/\s{2,}/g, " ")
-    .trim()
-    .replace(/^[\s,.;:]+/, "");
-  const ageMatch = cleanedPrompt.match(/\b(\d{1,3})\s*(?:years?[\s-]*old|y\/o|años?|anos?)\b/i)
-    || cleanedPrompt.match(/\b(?:age|edad)\s*:?\s*(\d{1,3})\b/i)
-    || cleanedPrompt.match(/\b(\d{2})\b\s*\+?/);
-  const detectedAge = ageMatch ? Number(ageMatch[1]) : 0;
-  const ageText = detectedAge >= 21 ? detectedAge + " years old" : "28 years old";
-  if (ageMatch) cleanedPrompt = cleanedPrompt.replace(ageMatch[0], ageText);
-  const safePrompt = (ageMatch
-    ? cleanedPrompt
-    : ageText + ", " + (cleanedPrompt || "retrato de personaje, alta calidad, portrait")).slice(0, 2048);
+  const safePrompt = prepareImagePrompt(prompt, req.body.style, req.body.tags, { cloudflare: true });
   try {
     const r = await fetch(c.endpoint, {
       method: "POST",
@@ -486,20 +649,103 @@ async function generateCloudflareImage(req, res, c) {
   }
 }
 
-app.post("/api/image", async (req, res) => {
-  if (containsMinorTerms(req.body.prompt)) return rejectMinor(res);
-  const c = imageConfig(req.body.provider);
-  if (c.provider === "cloudflare") return generateCloudflareImage(req, res, c);
-  if (!c.baseUrl) return res.status(500).json({ error: c.urlError || "Falta configurar SD_URL." });
+async function generateHuggingFaceImage(req, res, c) {
+  if (!c.endpoint) {
+    return res.status(500).json({ error: c.urlError || "Falta configurar HF_TOKEN y HF_IMAGE_MODEL." });
+  }
   const prompt = String(req.body.prompt || "").trim();
   if (!prompt) return res.status(400).json({ error: "Falta el prompt de la imagen." });
+  const safePrompt = prepareImagePrompt(prompt, req.body.style, req.body.tags, {
+    adult: req.body.adult !== false,
+  });
+  const negative = (process.env.SD_NEGATIVE ||
+    "child, minor, underage, teen, loli, shota, kid, lowres, bad anatomy, extra fingers, watermark, text"
+  ).slice(0, 1200);
+  const body = {
+    inputs: safePrompt,
+    parameters: {
+      negative_prompt: negative,
+      width: num(req.body.width, 512, 256, 1024),
+      height: num(req.body.height, 704, 256, 1344),
+      num_inference_steps: num(req.body.steps, 28, 8, 60),
+    },
+    options: { wait_for_model: true, use_cache: false },
+  };
+  try {
+    const r = await fetch(c.endpoint, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer " + c.hf.token,
+        "content-type": "application/json",
+        "x-wait-for-model": "true",
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(c.timeoutMs),
+    });
+    const ct = (r.headers.get("content-type") || "").toLowerCase();
+    if (ct.startsWith("image/")) {
+      const buf = Buffer.from(await r.arrayBuffer());
+      return res.json({
+        image: buf.toString("base64"),
+        mime: ct.split(";")[0] || "image/jpeg",
+        provider: "huggingface",
+        model: c.hf.model,
+      });
+    }
+    const txt = await r.text().catch(() => "");
+    let j = null;
+    try { j = JSON.parse(txt); } catch (e) {}
+    if (!r.ok || (j && j.error)) {
+      const msg = (j && (j.error || j.message)) || txt.slice(0, 300) || ("HTTP " + r.status);
+      throw new Error("HuggingFace respondió " + r.status + ": " + msg);
+    }
+    const raw = (j && (j.image || j.output || (Array.isArray(j) && j[0] && j[0].image))) || "";
+    const b64 = String(raw).replace(/^data:image\/[a-z0-9.+-]+;base64,/i, "");
+    if (!b64) throw new Error("HuggingFace no devolvió ninguna imagen.");
+    return res.json({ image: b64, mime: "image/jpeg", provider: "huggingface", model: c.hf.model });
+  } catch (e) {
+    res.status(502).json({
+      error: "No pude generar la imagen con HuggingFace. Revisa HF_TOKEN, HF_IMAGE_MODEL y que el modelo esté disponible. " + e.message,
+    });
+  }
+}
+
+app.post("/api/image", async (req, res) => {
+  try {
+    const prompt = String(req.body.prompt || "").trim();
+    if (!prompt) return res.status(400).json({ error: "Falta el prompt de la imagen." });
+    if (containsMinorTerms(prompt)) return rejectMinor(res);
+
+    {
+      const idToken = bearerToken(req);
+      if (!idToken) {
+        return res.status(401).json({ error: "Inicia sesión con una cuenta para generar imágenes." });
+      }
+      let user;
+      try {
+        user = await verifyFirebaseToken(idToken);
+      } catch (e) {
+        return res.status(e.code === "FIREBASE_INVALID_TOKEN" ? 401 : 503).json({ error: e.message });
+      }
+      if (!user || user.anonymous) {
+        return res.status(401).json({ error: "Inicia sesión con una cuenta para generar imágenes." });
+      }
+      if (!takeImageQuota(user.uid)) {
+        return res.status(429).json({ error: "Llegaste al límite diario de imágenes. Vuelve mañana." });
+      }
+    }
+
+    const c = imageConfig(req.body.provider);
+    if (c.provider === "cloudflare") return generateCloudflareImage(req, res, c);
+    if (c.provider === "huggingface") return generateHuggingFaceImage(req, res, c);
+    if (!c.baseUrl) return res.status(500).json({ error: c.urlError || "Falta configurar SD_URL." });
   try {
     const anime = req.body.style === "anime";
     const requestedModel = String(req.body.model || "").trim();
     const checkpoint = c.checkpoints[requestedModel]
       || (/\.(safetensors|ckpt)\b/i.test(requestedModel) ? requestedModel : "");
     const adult = req.body.adult !== false;
-    const safePrompt = (adult && !/\badult\b/i.test(prompt) ? prompt + ", adult, 18+" : prompt).slice(0, 1800);
+    const safePrompt = prepareImagePrompt(prompt, req.body.style, req.body.tags, { adult });
     const negative = (process.env.SD_NEGATIVE ||
       "child, minor, underage, teen, loli, shota, kid, lowres, bad anatomy, extra fingers, watermark, text"
     ).slice(0, 1200);
@@ -533,6 +779,9 @@ app.post("/api/image", async (req, res) => {
     res.status(502).json({
       error: "No pude generar la imagen en " + (c.host || "el servidor de imágenes") + "." + localHint + " " + e.message,
     });
+  }
+  } catch (e) {
+    res.status(500).json({ error: "No pude procesar la solicitud de imagen: " + e.message });
   }
 });
 

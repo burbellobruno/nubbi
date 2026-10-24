@@ -27,7 +27,10 @@ const EN = [
 "adult androgynous cosmic entity, starry eyes, flowing dark robe, galaxy",
 "adult man orphanage guardian, warm tired smile, simple shirt, cozy doorway, gentle eyes",
 "adult woman homicide detective, dark blazer, sharp eyes, notebook, night city street",
-"adult young man street musician, acoustic guitar, scarf, flirty smile, evening plaza"
+"adult young man street musician, acoustic guitar, scarf, flirty smile, evening plaza",
+"adult male anthropomorphic fox adventurer, 29 years old, russet fur, amber eyes, worn leather travel coat, satchel and map, ancient forest ruins, adventurous grin, upper body portrait",
+"adult female anthropomorphic wolf forest ranger, 31 years old, grey fur, green eyes, weathered green cloak, wooden bow, misty pine forest, calm expression, upper body portrait",
+"adult male anthropomorphic cat musician, 27 years old, sleek black fur, gold eyes, loose burgundy shirt, double bass, dim jazz club, warm smile, upper body portrait"
 ];
 if (EN.length !== RAW.length) {
   throw new Error("Faltan prompts de retrato: " + EN.length + " para " + RAW.length + " personajes.");
@@ -41,7 +44,7 @@ const dir = path.join(__dirname, "../public/portraits"); fs.mkdirSync(dir, { rec
     console.log("generando", RAW[i][1], "...");
     const r = await fetch("http://localhost:" + (process.env.PORT || 3000) + "/api/image", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ prompt: EN[i] + ", anime style, masterpiece, best quality, upper body portrait, looking at viewer", style: "anime" }),
+      body: JSON.stringify({ prompt: EN[i] + ", anime style, masterpiece, best quality, upper body portrait, looking at viewer", style: "anime", tags: RAW[i][5] }),
     });
     const j = await r.json();
     if (j.error) { console.log("error:", j.error); break; }

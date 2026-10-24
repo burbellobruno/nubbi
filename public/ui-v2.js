@@ -11,10 +11,7 @@ root.dataset.skin=ls("nubbi-skin")||"";
 /* fondo de luces */
 if(!$("bg-lights"))body.insertAdjacentHTML("afterbegin",'<div id="bg-lights" aria-hidden="true"><i></i><i></i><i></i><i></i></div>');
 
-/* 17 splash */
-try{if(!sessionStorage.getItem("nb-splash")){sessionStorage.setItem("nb-splash","1");
-body.insertAdjacentHTML("beforeend",'<div id="nb-splash"><img src="logo.png" alt=""><b>Nubbi</b></div>');
-var sp=$("nb-splash");setTimeout(function(){sp.classList.add("out");setTimeout(function(){sp.remove();},550);},800);}}catch(e){}
+/* La bienvenida animada vive en experience.js. */
 
 /* 19 sonidos */
 var ac;function tone(f,d){if(ls("nubbi-sound")!=="on")return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.type="sine";o.frequency.value=f;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.05,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.start(t);o.stop(t+d+.02);}catch(e){}}
@@ -85,12 +82,14 @@ if(dlg&&!dlg.querySelector(".wz-nav")){
   var b=document.createElement("b");b.textContent=$("n").value.trim();prev.appendChild(b);
   [[$("r").value,0],[$("d").value,1],[$("gr").value,1]].forEach(function(x){if(x[0].trim()){var p=document.createElement("p");p.textContent=x[0];prev.appendChild(p);}});
   var n=document.createElement("p");n.textContent="La imagen generada o subida se guarda con el personaje.";prev.appendChild(n);};
- var show=function(n){step=n;dlg.dataset.step=n;[].forEach.call(steps.children,function(s,i){s.classList.toggle("on",i<n);});$("wzBack").textContent=n===1?"Cancelar":"Atrás";if(n===3)fill();};
- $("wzBack").onclick=function(){if(step===1)$("cancel").click();else show(step-1);};
+ var errBox=document.createElement("div");errBox.id="wzErr";errBox.setAttribute("role","alert");errBox.style.color="#ff8a8a";errBox.style.display="none";dlg.insertBefore(errBox,nav);
+ var say=function(m){errBox.textContent=m||"";errBox.style.display=m?"block":"none";};
+ var show=function(n){step=n;dlg.dataset.step=n;say("");[].forEach.call(steps.children,function(s,i){s.classList.toggle("on",i<n);});$("wzBack").textContent=n===1?"Cancelar":"Atrás";if(n===3)fill();dlg.scrollTop=0;};
+ $("wzBack").onclick=function(){try{if(step===1)$("cancel").click();else show(step-1);}catch(e){say("No se pudo volver: "+e.message);}};
  $("wzNext").onclick=function(){
-  if(step===1){if(!$("n").value.trim()){$("n").focus();return;}show(2);if(!autoDone&&!isEditing()&&$("wzAuto").checked){autoDone=true;$("genImg").click();}}
-  else if(step===2)show(3);};
- new MutationObserver(function(){if(dlg.open){autoDone=false;show(1);}}).observe(dlg,{attributes:true,attributeFilter:["open"]});
+  try{if(step===1){if(!$("n").value.trim()){say("Escribe un nombre para continuar.");$("n").focus();return;}show(2);if(!autoDone&&!isEditing()&&$("wzAuto").checked){autoDone=true;$("genImg").click();}}
+  else if(step===2)show(3);}catch(e){say("No se pudo avanzar: "+e.message);}};
+ new MutationObserver(function(){try{if(dlg.open){autoDone=false;show(1);}}catch(e){say("No se pudo abrir el asistente: "+e.message);}}).observe(dlg,{attributes:true,attributeFilter:["open"]});
  show(1);
 }
 document.addEventListener("visibilitychange",function(){body.classList.toggle("nb-hidden",document.hidden);});
@@ -104,8 +103,8 @@ function wire(d){
  var b=document.createElement("button");b.type="button";b.className="nb-x";b.innerHTML=(window.NubbiIcon?window.NubbiIcon("close"):"")||"✕";b.setAttribute("aria-label","Cerrar");b.setAttribute("title","Cerrar");
  b.onclick=function(e){e.stopPropagation();d.close();};
  d.insertBefore(b,d.firstChild);
- d.addEventListener("click",function(e){var r=d.getBoundingClientRect();
-  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();});
+ d.addEventListener("pointerdown",function(e){var r=d.getBoundingClientRect();d._nbOut=e.target===d&&(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom);});
+ d.addEventListener("click",function(e){if(d._nbOut&&e.target===d)d.close();d._nbOut=false;});
 }
 function scan(){[].forEach.call(document.querySelectorAll("dialog"),wire);}
 scan();new MutationObserver(scan).observe(document.body,{childList:true,subtree:true});

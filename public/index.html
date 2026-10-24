@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="ui-v2.css">
+<link rel="stylesheet" href="experience.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -54,16 +55,18 @@
 <div id="views">
 <section class="view on" id="v-home">
 <div class="top"><span class="logo"><img src="logo.png" alt="">Nubbi</span><span class="note">+18 · todos los personajes son adultos</span></div>
-<div class="hero"><div><h1>Historias que se sienten</h1><p>Elegí un personaje o creá el tuyo, con emociones, acciones y escenas.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="heroNew"><svg class="icon"><use href="#i-plus"></use></svg><span>Crear personaje</span></button><button class="g" id="surprise"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Sorpréndeme</span></button></div></div>
+<div class="hero"><div><span class="eyebrow">UN PEQUEÑO REFUGIO PARA TUS HISTORIAS</span><h1>Conecta. Imagina.<br><span>Siente la historia.</span></h1><p>Encuentra un personaje, comparte un momento y descubre hasta dónde puede llevarte una conversación.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="heroNew"><svg class="icon"><use href="#i-plus"></use></svg><span>Crear personaje</span></button><button class="g" id="surprise"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Sorpréndeme</span></button></div></div>
+<section id="recentStories" aria-labelledby="recentTitle" hidden><div class="section-heading"><div><span class="eyebrow">TU PRÓXIMO CAPÍTULO</span><h2 id="recentTitle">Continúa tu historia</h2></div><button type="button" class="g" id="recentAll">Ver chats</button></div><div id="recentStoryList"></div></section>
 <div class="searchbox"><svg class="icon"><use href="#i-search"></use></svg><input id="q" placeholder="Buscar personajes, tags, roles..."></div>
 <div class="tabs" id="tabs"><button class="tab on" data-tab="explore">Explorar</button><button class="tab" data-tab="trend">Tendencias</button><button class="tab" data-tab="today">Hoy</button><button class="tab" data-tab="new">Nuevos</button></div>
-<div class="filterrow">
+<details class="catalog-filters"><summary>Filtros y orden <span>Encuentra tu próxima conexión</span></summary><div class="filterrow">
 <select id="sort" aria-label="Ordenar"><option value="reco">Recomendados</option><option value="pop">Populares</option><option value="new">Nuevos</option><option value="az">A-Z</option><option value="chats">Más chateados</option></select>
 <select id="origin" aria-label="Origen"><option value="all">Todos</option><option value="cat">Catálogo</option><option value="mine">Creados por mí</option></select>
 </div>
 <div class="pills" id="gp"></div>
 <div class="pills" id="tp"></div>
-<div class="railwrap"><h2>Para vos</h2><div class="rail" id="forYou"></div></div>
+</details>
+<div class="railwrap"><h2>Para ti</h2><div class="rail" id="forYou"></div></div>
 <div class="railwrap"><h2>Tendencias</h2><div class="rail" id="rail"></div></div>
 <h2>Catálogo</h2><div class="grid" id="grid"></div>
 <button class="g loadmore" id="loadMore">Ver más</button>
@@ -171,7 +174,7 @@
 <header><button class="g icon-btn" id="back" type="button" aria-label="Volver"><svg class="icon"><use href="#i-arrow-left"></use></svg></button><div class="av" id="hav"></div><div class="t"><b id="hname"></b><br><small id="hdesc"></small></div><button class="g icon-btn" id="fv" type="button" aria-label="Favorito" aria-pressed="false"><svg class="icon"><use href="#i-heart"></use></svg></button><button class="g" id="cfg" type="button"><svg class="icon"><use href="#i-film"></use></svg><span>Escena</span></button><button class="g icon-btn" id="reset" type="button" aria-label="Reiniciar chat"><svg class="icon"><use href="#i-rotate"></use></svg></button></header>
 <div id="msgs"></div>
 <div class="chips"><button class="g" id="bAct" type="button">*Acción*</button><button class="g" id="bCont" type="button">Continuar historia</button><button class="g" id="bScene" type="button">Nueva escena</button><button class="g" id="bImpro" type="button">Improvisar</button><button class="g" id="bRegen" type="button">Regenerar</button><button class="g" id="bMemory" type="button"><svg class="icon"><use href="#i-bookmark"></use></svg><span>Memoria</span></button><button class="g" id="bDirector" type="button"><svg class="icon"><use href="#i-film"></use></svg><span>Director</span></button><button class="g" id="bRamas" type="button"><svg class="icon"><use href="#i-branch"></use></svg><span>Ramas</span></button><button class="g" id="bExport" type="button"><svg class="icon"><use href="#i-download"></use></svg><span>Exportar</span></button></div>
-<form id="f" class="pillform"><input id="inp" placeholder="Escribí un mensaje..." autocomplete="off"><button type="submit" class="send" aria-label="Enviar"><svg class="icon"><use href="#i-send"></use></svg></button></form>
+<form id="f" class="pillform"><textarea id="inp" rows="1" placeholder="Escribe un mensaje…" aria-label="Mensaje" autocomplete="off"></textarea><button type="submit" class="send" aria-label="Enviar"><svg class="icon"><use href="#i-send"></use></svg></button></form>
 </div>
 
 <dialog id="dlg">
@@ -183,10 +186,10 @@
 <label>Nombre</label><input id="n"><label>Descripción corta</label><input id="d"><label>Rol (novio, villano, mentor...)</label><input id="r">
 <label>Género</label><select id="gen2"><option>Masculino</option><option>Femenino</option><option>Otro</option></select>
 <label>Personalidad y reglas</label><textarea id="p" rows="3"></textarea><label>Primer mensaje</label><input id="gr">
-<label>Proveedor de imagen</label><select id="iprov"><option value="cloudflare">Cloudflare gratis · FLUX.1 schnell</option><option value="forge">Forge local · mis modelos</option></select>
+<label>Proveedor de imagen</label><select id="iprov"><option value="cloudflare">Cloudflare gratis · FLUX.1 schnell</option><option value="forge">Forge local · mis modelos</option><option value="huggingface">HuggingFace · modelo configurado</option></select>
 <label>Modelo de imagen</label><select id="sdm"><option value="">Automático</option></select>
 <div class="note" id="imageEngineNote" style="margin-top:4px">Cloudflare usa FLUX.1 schnell. No usa tus modelos locales ni genera imágenes explícitas.</div>
-<label>Estilo del prompt</label><select id="sty"><option>anime</option><option>realista</option><option>semi-realista</option><option>pintura digital</option><option>manhwa</option></select>
+<label>Estilo del prompt</label><select id="sty"><option>anime</option><option>realista</option><option>semi-realista</option><option>pintura digital</option><option>manhwa</option><option>furry</option></select>
 <div class="pr" id="pr"></div>
 <button id="genImg" type="button" class="g" style="margin-top:8px"><svg class="icon"><use href="#i-image"></use></svg><span>Generar imagen con IA</span></button>
 <div class="drow"><button class="g" id="cancel" type="button">Cancelar</button><button id="save" type="button">Guardar</button></div>
@@ -347,5 +350,6 @@
 <script src="app.js"></script>
 <script src="community.js"></script>
 <script src="ui-v2.js"></script>
+<script src="experience.js"></script>
 </body>
 </html>
