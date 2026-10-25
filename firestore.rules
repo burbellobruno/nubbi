@@ -22,15 +22,19 @@ service cloud.firestore {
     function validLikeChange(oldLikes, newLikes) {
       return newLikes is list && oldLikes is list
         && newLikes.size() <= 100000
+        && oldLikes.toSet().size() == oldLikes.size()
+        && newLikes.toSet().size() == newLikes.size()
         && (
           (
-            newLikes.size() == oldLikes.size() + 1
+            !oldLikes.hasAny([request.auth.uid])
+            && newLikes.size() == oldLikes.size() + 1
             && newLikes.hasAll(oldLikes)
             && newLikes.hasAny([request.auth.uid])
           )
           ||
           (
-            newLikes.size() + 1 == oldLikes.size()
+            oldLikes.hasAny([request.auth.uid])
+            && newLikes.size() + 1 == oldLikes.size()
             && oldLikes.hasAll(newLikes)
             && !newLikes.hasAny([request.auth.uid])
           )

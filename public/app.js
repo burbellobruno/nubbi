@@ -66,9 +66,9 @@ function branchStore(id){if(!st.branches)st.branches={};if(!st.branches[id])st.b
 function saveBranchSnapshot(id,name,msgs){var bc=deepCopy(cfg(id));delete bc.bg;var b={id:"br"+Date.now()+Math.floor(Math.random()*99),name:name||("Rama "+new Date().toLocaleString()),ts:Date.now(),messages:deepCopy(msgs||hist(id)),cfg:bc};var arr=branchStore(id);arr.unshift(b);if(arr.length>20)arr.length=20;save();return b;}
 function firebaseToken(){try{var u=window.cloudSync&&window.cloudSync.currentUser?window.cloudSync.currentUser():null;return u&&u.getIdToken?u.getIdToken().catch(function(){return "";}):Promise.resolve("");}catch(e){return Promise.resolve("");}}
 function imageAuthReady(){try{return !!(window.cloudSync&&window.cloudSync.currentUser&&window.cloudSync.currentUser()&&!window.cloudSync.isAnonymous());}catch(e){return false;}}
-function api(url,body){var headers={"Content-Type":"application/json"};var tokenP=url.indexOf("/api/image")===0?firebaseToken():Promise.resolve("");return tokenP.then(function(t){if(t)headers.Authorization="Bearer "+t;return fetch(url,{method:"POST",headers:headers,body:JSON.stringify(body)});}).then(function(r){return r.text().then(function(t){var j=null;try{j=JSON.parse(t);}catch(e){}if(!j)throw new Error("El servidor no respondió. Cierra Live Server, ejecuta npm run dev y entra a http://localhost:3000");if(j.error)throw new Error(j.error);return j;});},function(){throw new Error("No hay conexión con el servidor. Ejecuta npm run dev y entra a http://localhost:3000");});}
+function api(url,body){var headers={"Content-Type":"application/json"};var tokenP=url.indexOf("/api/image")===0?firebaseToken():Promise.resolve("");return tokenP.then(function(t){if(t)headers.Authorization="Bearer "+t;return fetch(url,{method:"POST",headers:headers,body:JSON.stringify(body)});}).then(function(r){return r.text().then(function(t){var j=null;try{j=JSON.parse(t);}catch(e){}if(!j){var bad=new Error("El servidor no respondió. Cierra Live Server, ejecuta npm run dev y entra a http://localhost:3000");bad.status=r.status;bad.code="BAD_RESPONSE";throw bad;}if(j.error){var err=new Error(j.error);err.status=r.status;err.code=j.code||"";throw err;}return j;});},function(){var net=new Error("No hay conexión con el servidor. Ejecuta npm run dev y entra a http://localhost:3000");net.status=0;net.code="NETWORK";throw net;});}
 var sample=null,busy=false,imgData="",editingId=null,gF="Todos",tF="",view="home",homeTab="explore",homeLimit=12;
-sample=function(prompt,opts){opts=opts||{};var body={prompt:prompt,adult:adultOn()};if(st.prof&&st.prof.model)body.model=st.prof.model;if(opts.response_format)body.response_format=opts.response_format;if(opts.stream)body.stream=true;if(opts.temperature!=null)body.temperature=opts.temperature;if(opts.top_p!=null)body.top_p=opts.top_p;if(opts.max_tokens!=null)body.max_tokens=opts.max_tokens;if(opts.presence_penalty!=null)body.presence_penalty=opts.presence_penalty;if(opts.frequency_penalty!=null)body.frequency_penalty=opts.frequency_penalty;if(!opts.stream)return api("/api/chat",body).then(function(j){if(opts.onText)opts.onText({text:j.text});return{text:j.text};});return new Promise(function(resolve,reject){var full="";fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(r){if(!r.ok){return r.text().then(function(t){var j=null;try{j=JSON.parse(t);}catch(e){}throw new Error(j&&j.error?j.error:"Error de la API");});}var reader=r.body.getReader();var decoder=new TextDecoder();var buf="";function read(){reader.read().then(function(res){if(res.done){resolve({text:full});return;}buf+=decoder.decode(res.value,{stream:true});var lines=buf.split("\n");buf=lines.pop();for(var i=0;i<lines.length;i++){var line=lines[i];if(line.indexOf("data: ")===0){var data=line.slice(6).trim();if(data==="[DONE]")continue;try{var j=JSON.parse(data);var chunk=j.choices&&j.choices[0]&&j.choices[0].delta?j.choices[0].delta.content||"":"";if(chunk){full+=chunk;if(opts.onText)opts.onText({text:full});}}catch(e){}}}read();}).catch(reject);}read();}).catch(reject);});};
+sample=async function(prompt,opts){opts=opts||{};var body={prompt:prompt,adult:adultOn()};if(st.prof&&st.prof.model)body.model=st.prof.model;if(opts.response_format)body.response_format=opts.response_format;if(opts.stream)body.stream=true;if(opts.temperature!=null)body.temperature=opts.temperature;if(opts.top_p!=null)body.top_p=opts.top_p;if(opts.max_tokens!=null)body.max_tokens=opts.max_tokens;if(opts.presence_penalty!=null)body.presence_penalty=opts.presence_penalty;if(opts.frequency_penalty!=null)body.frequency_penalty=opts.frequency_penalty;if(!opts.stream){var j=await api("/api/chat",body);if(opts.onText)opts.onText({text:j.text});return{text:j.text};}var response=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!response.ok){var error=await response.json().catch(function(){return {};});throw new Error(error.error||"No se pudo generar la respuesta.");}return window.NubbiReadSSE(response,opts.onText);};
 function all(){return st.custom.concat(CAT);}
 function byId(id){return all().find(function(c){return c.id===id});}
 function userMsgCount(id){var h=st.chats[id];if(!h||!h.length)return 0;return h.filter(function(m){return m.role==="user";}).length;}
@@ -166,9 +166,9 @@ var ed=$("shedit");if(ed){ed.style.display=custom?"inline-block":"none";ed.oncli
 var pub=$("shpub");if(pub){var canPub=custom&&!!window.NubbiCommunity;pub.style.display=canPub?"inline-block":"none";pub.textContent=c.pubMine?"Actualizar en comunidad":"Publicar en comunidad";pub.onclick=function(){sh.close();if(window.NubbiCommunity)window.NubbiCommunity.publish(c.id);};}
 var share=$("shshare");if(share)share.onclick=function(){shareChar(c);};
 $("shchat").textContent=h.length?"Continuar chat":"Chatear";$("shchat").onclick=function(){sh.close();openChat(c.id);};sh.showModal();}
-function shareChar(c){var data={nubbiChar:1,emoji:c.emoji||"",name:c.name||"",desc:c.desc||"",role:c.role||"",gender:c.gender||"Otro",tags:c.tags||"importado",persona:c.persona||"",greeting:c.greeting||""};var code=JSON.stringify(data);if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(function(){alert("Código del personaje copiado. Pegalo en Perfil → Importar personaje.");},function(){prompt("Copiá este código:",code);});}else prompt("Copiá este código:",code);}
-function importChar(){var code=prompt("Pegá el código del personaje (JSON):");if(!code)return;try{var o=JSON.parse(code);if(!o||!o.name)throw new Error("El código no tiene nombre.");var c={id:"c"+Date.now()+Math.floor(Math.random()*999),emoji:o.emoji||"🙂",img:"",name:o.name,desc:o.desc||"",role:o.role||"",gender:normGender(o.gender),tags:o.tags||"importado",persona:o.persona||"",greeting:o.greeting||""};st.custom.unshift(c);save();renderAll();alert("Personaje importado: "+c.name);}catch(e){alert("No se pudo importar: "+e.message);}}
-function openEdit(id){var c=byId(id);if(!c)return;editingId=id;imgData=c.img||"";$("pr").style.display="none";$("pr").dataset.p="";$("idea").value="";$("e").value=c.emoji||"";$("n").value=c.name||"";$("d").value=c.desc||"";$("r").value=c.role||"";$("p").value=c.persona||"";$("gr").value=c.greeting||"";$("gen2").value=normGender(c.gender);$("dlg").querySelector("h3").textContent="Editar personaje";if($("iprov"))$("iprov").value=((st.prof&&st.prof.imgProvider)==="forge")?"forge":"cloudflare";fillImageEngine(true);$("dlg").showModal();}
+function shareChar(c){var data={nubbiChar:1,emoji:c.emoji||"",name:c.name||"",desc:c.desc||"",role:c.role||"",gender:c.gender||"Otro",tags:c.tags||"importado",persona:c.persona||"",greeting:c.greeting||"",imagePrompt:c.imagePrompt||""};var code=JSON.stringify(data);if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(function(){alert("Código del personaje copiado. Pegalo en Perfil → Importar personaje.");},function(){prompt("Copiá este código:",code);});}else prompt("Copiá este código:",code);}
+function importChar(){var code=prompt("Pegá el código del personaje (JSON):");if(!code)return;try{var o=JSON.parse(code);if(!o||!o.name)throw new Error("El código no tiene nombre.");var c={id:"c"+Date.now()+Math.floor(Math.random()*999),emoji:o.emoji||"🙂",img:"",name:o.name,desc:o.desc||"",role:o.role||"",gender:normGender(o.gender),tags:o.tags||"importado",persona:o.persona||"",greeting:o.greeting||"",imagePrompt:o.imagePrompt||""};var ageIssue=window.NubbiCharacterAgeIssue(c);if(ageIssue)throw new Error(ageIssue.message);st.custom.unshift(c);save();renderAll();alert("Personaje importado: "+c.name);}catch(e){alert("No se pudo importar: "+e.message);}}
+function openEdit(id){var c=byId(id);if(!c)return;editingId=id;showWzError("");imgData=c.img||"";$("pr").style.display="none";$("imagePrompt").value=c.imagePrompt||"";$("idea").value="";$("e").value=c.emoji||"";$("n").value=c.name||"";$("d").value=c.desc||"";$("r").value=c.role||"";$("p").value=c.persona||"";$("gr").value=c.greeting||"";$("gen2").value=normGender(c.gender);$("dlg").querySelector("h3").textContent="Editar personaje";if($("iprov"))$("iprov").value=((st.prof&&st.prof.imgProvider)==="forge")?"forge":"cloudflare";fillImageEngine(true);$("dlg").showModal();}
 function openChat(id){if("speechSynthesis" in window)speechSynthesis.cancel();st.cur=id;hist(id);save();renderChat();$("chat").classList.add("open");document.body.classList.add("chat-open");}
 window.NubbiOpenChat=function(id){if(byId(id))openChat(id);};
 $("back").onclick=function(){if("speechSynthesis" in window)speechSynthesis.cancel();$("chat").classList.remove("open");document.body.classList.remove("chat-open");renderAll();};
@@ -195,9 +195,10 @@ async function generateChatImage(index){
  var c=cur();if(!c||imageBusy)return;if(!imageAuthReady()){alert("Inicia sesión con una cuenta para generar imágenes.");return;}
  var id=c.id,g=cfg(id),h=hist(id),focus=Number.isInteger(index)&&h[index]&&h[index].role==="assistant"?h[index]:null;
  var recent=h.filter(function(m){return m.role==="user"||m.role==="assistant";}).slice(-6).map(function(m){return (m.role==="user"?"Usuario":c.name)+": "+String(m.content||"").slice(0,420);}).join("\n");
- var scene="Create one coherent fictional scene illustration, preserve the adult character appearance, no collage, no lettering.\nPermanent visual profile: "+visualProfile(c)+"\nScenario: "+String(g.scenario||"").slice(0,700)+"\n"+(focus?"Exact moment: "+String(focus.content||"").slice(0,900):recent);
+ var scene="Create one coherent fictional scene illustration, preserve the adult character appearance, no collage, no lettering.\nCharacter: "+c.name+". Age description: "+c.desc+"\nPermanent visual profile: "+visualProfile(c)+"\nScenario: "+String(g.scenario||"").slice(0,700)+"\n"+(focus?"Exact moment: "+String(focus.content||"").slice(0,900):recent);
+ try{var imageDesc=window.NubbiImageCharacterDescription(c,g.imageCharacterAge);scene="Character age declaration: "+imageDesc+"\n"+scene;}catch(e){alert(e.message+" Abre Escena y completa la edad del personaje para imágenes.");return;}
  var button=$("bImage");imageBusy=true;if(button){button.disabled=true;button.textContent="Generando imagen…";}
- try{var provider=st.prof.imgProvider||"",j=await api("/api/image",{prompt:buildImagePrompt(scene,"anime",c.tags),style:"anime",tags:c.tags||"",provider:provider,adult:adultOn(),width:640,height:896,seed:stableImageSeed(id)});var image=await compressChatImage("data:"+(j.mime||"image/png")+";base64,"+j.image);
+ try{var provider=st.prof.imgProvider||"",j=await api("/api/image",{prompt:buildImagePrompt(scene,"anime",c.tags),style:"anime",tags:c.tags||"",provider:provider,model:window.NubbiImageModelForProvider(st.prof,provider),adult:adultOn(),width:640,height:896,seed:stableImageSeed(id)});var image=await compressChatImage("data:"+(j.mime||"image/png")+";base64,"+j.image);
  if(st.chats[id]!==h){alert("La historia cambió durante la generación. No se agregó la imagen.");return;}
  h.push({role:"image",image:image,content:"Imagen de la escena",ts:Date.now()});save();if(st.cur===id)renderChat();
  }catch(e){alert("No se pudo generar la imagen: "+e.message);}finally{imageBusy=false;if(button){button.disabled=false;button.textContent="Crear imagen";}}
@@ -253,10 +254,10 @@ var modo=g.mode==="story"
 :"Modo chat: priorizá el diálogo y las acciones, como una conversación real; no escribas párrafos largos.";
 var intText=(adult?INT_ADULT:INT)[g.intensity]||(adult?INT_ADULT.rom:INT.rom);
 var adultRules=adult
-?"- Todos los personajes y el usuario son adultos (18+). La ficción sexual explícita entre adultos con consentimiento está permitida cuando la escena y la intensidad lo justifican.\n"
+?"- Todos los personajes tienen 21 años o más y el usuario es adulto (18+). La ficción sexual explícita entre adultos con consentimiento está permitida cuando la escena y la intensidad lo justifican.\n"
 +"- Límites absolutos: nunca contenido sexual con personas no adultas, personajes que aparenten no ser adultos, personas reales o situaciones no consentidas. Prohibido el contenido sexual con animales reales (zoofilia). Los personajes antropomórficos adultos (furry) están permitidos como cualquier otro personaje. Si aparece uno de esos elementos, rechazá la escena sexual y continuá la historia sin contenido sexual.\n"
 :"- No escribas contenido sexual explícito; si la escena sube de tono, usá elipsis o un corte.\n";
-return "Sos "+c.name+(c.role?" ("+c.role+")":"")+", un personaje adulto (18+) en un roleplay interactivo con el usuario"+(pname?", que se llama "+pname:"")+".\n"
+return "Sos "+c.name+(c.role?" ("+c.role+")":"")+", un personaje adulto (21+) en un roleplay interactivo con el usuario"+(pname?", que se llama "+pname:"")+".\n"
 +"Descripción: "+(c.desc||"")+"\n"
 +"Relación: confianza "+g.relation.trust+"/100; afinidad "+g.relation.affinity+"/100; emoción "+g.relation.mood+". Respeta la personalidad establecida; no fuerces sentimientos ni decisiones del usuario.\n"
 +"Personalidad y forma de ser: "+(c.persona||"")+"\n"
@@ -325,8 +326,8 @@ function renderBranches(){var el=$("brlist");if(!el)return;el.innerHTML="";var l
 function openBranch(b){var c=cur();if(!c||!b)return;if(!confirm("¿Abrir esta rama? La historia actual se guarda como rama."))return;var h=hist(c.id);if(h.length)saveBranchSnapshot(c.id,"Actual "+new Date().toLocaleString(),h);var arr=branchStore(c.id),pos=arr.indexOf(b);if(pos>=0)arr.splice(pos,1);var old=cfg(c.id),nc=deepCopy(b.cfg||{});nc.bg=old.bg;nc.bubble=old.bubble||nc.bubble;nc.bgDim=old.bgDim;st.chats[c.id]=deepCopy(b.messages||[]);st.cfg[c.id]=nc;cfg(c.id);save();renderChat();renderBranches();if($("brdlg").open)$("brdlg").close();}
 function exportChat(){var c=cur();if(!c)return;var h=hist(c.id);var md="# "+c.name+"\n\n"+(c.desc||"")+"\n\n"+h.map(function(m){return(m.role==="user"?"**Vos:** ":"**"+c.name+":** ")+m.content;}).join("\n\n");var blob=new Blob([md],{type:"text/markdown;charset=utf-8"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="nubbi-"+String(c.name).replace(/[^\w\-]+/g,"-").toLowerCase()+".md";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);}
 $("reset").onclick=function(){if("speechSynthesis" in window)speechSynthesis.cancel();delete st.chats[st.cur];save();hist(st.cur);renderChat();};
-$("cfg").onclick=function(){var g=cfg(st.cur);$("sc").value=g.scenario||"";$("ur").value=g.userRole||"";$("mode").value=g.mode||"chat";$("int").value=g.intensity||"rom";if($("ci"))$("ci").value=g.instructions||"";if($("cgoal"))$("cgoal").value=g.goal||"";if($("csecret"))$("csecret").value=g.secret||"";if($("carc"))$("carc").value=g.arc||"";if($("cbubble"))$("cbubble").value=g.bubble||"rounded";if($("cdim"))$("cdim").value=(g.bgDim==null?0.2:g.bgDim);var sel=$("pcfg");if(sel){sel.innerHTML='<option value="">Perfil actual</option>';(st.personas||[]).forEach(function(p){var o=document.createElement("option");o.value=p.id;o.textContent=p.name;sel.appendChild(o);});sel.value=g.personaId||"";}$("cdlg").showModal();};
-$("csave").onclick=function(){var g=cfg(st.cur);g.scenario=$("sc").value.trim();g.userRole=$("ur").value.trim();g.mode=$("mode").value;g.intensity=$("int").value;if($("ci"))g.instructions=$("ci").value.trim().slice(0,600);if($("cgoal"))g.goal=$("cgoal").value.trim();if($("csecret"))g.secret=$("csecret").value.trim();if($("carc"))g.arc=$("carc").value.trim();if($("cbubble"))g.bubble=$("cbubble").value;if($("cdim"))g.bgDim=Number($("cdim").value);var sel=$("pcfg");if(sel)g.personaId=sel.value||null;save();renderChat();$("cdlg").close();};
+$("cfg").onclick=function(){var g=cfg(st.cur);$("sc").value=g.scenario||"";$("imageCharacterAge").value=g.imageCharacterAge||"";$("ur").value=g.userRole||"";$("mode").value=g.mode||"chat";$("int").value=g.intensity||"rom";if($("ci"))$("ci").value=g.instructions||"";if($("cgoal"))$("cgoal").value=g.goal||"";if($("csecret"))$("csecret").value=g.secret||"";if($("carc"))$("carc").value=g.arc||"";if($("cbubble"))$("cbubble").value=g.bubble||"rounded";if($("cdim"))$("cdim").value=(g.bgDim==null?0.2:g.bgDim);var sel=$("pcfg");if(sel){sel.innerHTML='<option value="">Perfil actual</option>';(st.personas||[]).forEach(function(p){var o=document.createElement("option");o.value=p.id;o.textContent=p.name;sel.appendChild(o);});sel.value=g.personaId||"";}$("cdlg").showModal();};
+$("csave").onclick=function(){var g=cfg(st.cur),declaredAge=$("imageCharacterAge").value;if(declaredAge){try{window.NubbiImageCharacterDescription(cur(),declaredAge);}catch(e){alert(e.message);return;}}g.imageCharacterAge=declaredAge;g.scenario=$("sc").value.trim();g.userRole=$("ur").value.trim();g.mode=$("mode").value;g.intensity=$("int").value;if($("ci"))g.instructions=$("ci").value.trim().slice(0,600);if($("cgoal"))g.goal=$("cgoal").value.trim();if($("csecret"))g.secret=$("csecret").value.trim();if($("carc"))g.arc=$("carc").value.trim();if($("cbubble"))g.bubble=$("cbubble").value;if($("cdim"))g.bgDim=Number($("cdim").value);var sel=$("pcfg");if(sel)g.personaId=sel.value||null;save();renderChat();$("cdlg").close();};
 if($("cbg"))$("cbg").onchange=function(){var input=this;bgPic(input,function(d){var g=cfg(st.cur);g.bg=d;save();renderChat();input.value="";});};
 if($("cbgClear"))$("cbgClear").onclick=function(){var g=cfg(st.cur);g.bg="";save();renderChat();};
 if($("cdim"))$("cdim").oninput=function(){var g=cfg(st.cur);g.bgDim=Number(this.value);save();if(g.bg){var md=$("msgs");md.style.background='linear-gradient(rgba(0,0,0,'+g.bgDim+'),rgba(0,0,0,'+g.bgDim+')), url("'+g.bg+'") center / cover no-repeat';}};
@@ -412,10 +413,11 @@ if($("syncUp"))$("syncUp").onclick=async function(){if(!window.cloudSync){alert(
 if($("syncDown"))$("syncDown").onclick=async function(){if(!window.cloudSync){alert("Configurá Firebase en firebase-config.js primero.");return;}try{await window.cloudSync.load();renderAccount();}catch(e){alert("Error al bajar: "+e.message);}};
 $("newPersona").onclick=function(){["pname","pbio","page","ppron","papp","prel"].forEach(function(i){if($(i))$(i).value="";});$("pdlg").showModal();};$("pcancel").onclick=function(){$("pdlg").close();};$("psave").onclick=function(){var n=$("pname").value.trim();if(!n)return;var per={id:"per"+Date.now(),name:n,bio:$("pbio").value.trim(),age:($("page")?$("page").value.trim():""),pronouns:($("ppron")?$("ppron").value.trim():""),appearance:($("papp")?$("papp").value.trim():""),relation:($("prel")?$("prel").value.trim():"")};st.personas=st.personas||[];st.personas.unshift(per);st.persona=per.id;save();$("pdlg").close();["pname","pbio","page","ppron","papp","prel"].forEach(function(i){if($(i))$(i).value="";});renderPersonas();renderProf();};
 
-$("plus").onclick=function(){editingId=null;imgData="";$("pr").style.display="none";$("pr").dataset.p="";$("dlg").querySelector("h3").textContent="Crear personaje";["n","d","r","p","gr","idea"].forEach(function(i){if($(i))$(i).value="";});$("e").value="🦇";$("gen2").value="Masculino";if($("genStatus"))$("genStatus").textContent="";$("save").textContent="Guardar";if($("iprov"))$("iprov").value=(st.prof&&st.prof.imgProvider)||"";fillImageEngine(true);$("dlg").showModal();};
+$("plus").onclick=function(){editingId=null;showWzError("");imgData="";$("pr").style.display="none";$("imagePrompt").value="";$("dlg").querySelector("h3").textContent="Crear personaje";["n","d","r","p","gr","idea"].forEach(function(i){if($(i))$(i).value="";});$("e").value="🦇";$("gen2").value="Masculino";if($("genStatus"))$("genStatus").textContent="";$("save").textContent="Guardar";if($("iprov"))$("iprov").value=(st.prof&&st.prof.imgProvider)||"";fillImageEngine(true);$("dlg").showModal();};
 $("cancel").onclick=function(){if($("genStatus"))$("genStatus").textContent="";$("save").textContent="Guardar";$("dlg").close();};
 $("img").onchange=function(){pic(this,function(d){imgData=d;});};
-function showPr(){var p=$("pr").dataset.p;if(!p)return;$("pr").style.display="block";$("pr").textContent="Prompt de imagen ("+$("sty").value+"): "+buildImagePrompt(p,$("sty").value,"");}
+$("imagePrompt").oninput=showPr;
+function showPr(){var p=$("imagePrompt").value;if(!p){$("pr").style.display="none";$("pr").textContent="";return;}$("pr").style.display="block";$("pr").textContent="Prompt de imagen ("+$("sty").value+"): "+buildImagePrompt(p,$("sty").value,"");}
 $("sty").onchange=function(){showPr();updateStyleWarning();};
 function setGenStatus(t,err){var el=$("genStatus");if(!el)return;el.textContent=t||"";el.style.color=err?"#ff8a8a":"";}
 function showWzError(msg){var e=$("wzErr");if(e){e.textContent=msg||"";e.style.display=msg?"block":"none";if(msg&&e.scrollIntoView)e.scrollIntoView({block:"nearest"});}else alert(msg||"");}
@@ -431,7 +433,7 @@ function fillImageEngine(force){
   Array.prototype.forEach.call(psel.options,function(o){
    var p=provs[o.value]||{};
    o.disabled=!p.available;
-   if(o.value==="cloudflare")o.textContent="Cloudflare gratis · FLUX.1 schnell"+(p.available?"":" (no configurado)");
+   if(o.value==="cloudflare")o.textContent="Cloudflare · modelos alojados"+(p.available?"":" (no configurado)");
    if(o.value==="forge")o.textContent="Forge · mis modelos"+(p.available?" ("+p.models.length+")":" (no disponible)");
    if(o.value==="huggingface")o.textContent="HuggingFace · "+((p.model)||"HF_IMAGE_MODEL")+(p.available?"":" (no configurado)");
   });
@@ -442,13 +444,15 @@ function fillImageEngine(force){
   var prov=provs[chosen]||{};
   msel.innerHTML="";
   if(chosen==="cloudflare"){
-   var o=document.createElement("option");o.value=prov.model||"@cf/black-forest-labs/flux-1-schnell";o.textContent=prov.model||"FLUX.1 schnell";msel.appendChild(o);msel.disabled=true;
-   if(note)note.textContent="Cloudflare es gratis y usa FLUX.1 schnell. No usa tus modelos locales ni genera imágenes explícitas.";
+   (prov.models||[{title:prov.model,name:prov.model}]).forEach(function(model){var option=document.createElement("option");option.value=model.title;option.textContent=model.name+(model.consumption==="alto"?" · mayor consumo":"");msel.appendChild(option);});msel.disabled=false;
+   var cfOptions=Array.from(msel.options).map(function(o){return o.value;});var cfSaved=window.NubbiImageModelForProvider(st.prof,"cloudflare");var cfModel=window.NubbiReconcileImageModel("cloudflare",cfSaved,cfOptions,prov.model);if(cfModel)msel.value=cfModel;if(prov.available&&cfModel&&cfSaved!==cfModel){st.prof.imgModelCloudflare=cfModel;save();}
+   if(note)note.textContent="Los modelos comparten la cuota de Cloudflare. Lucid y Phoenix consumen más; su disponibilidad depende de la cuenta. No generan imágenes explícitas.";
   }else if(chosen==="huggingface"){
    var oh=document.createElement("option");oh.value=prov.model||"";oh.textContent=prov.model||"HF_IMAGE_MODEL";msel.appendChild(oh);msel.disabled=true;
    if(note)note.textContent=prov.available?"HuggingFace usará el modelo configurado en HF_IMAGE_MODEL.":(prov.error||"HuggingFace no está configurado.");
   }else{
    (prov.models||[]).forEach(function(m){var op=document.createElement("option");op.value=m.title;op.textContent=m.name||m.title;msel.appendChild(op);});msel.disabled=!prov.available;
+   var forgeOptions=Array.from(msel.options).map(function(o){return o.value;});var forgeSaved=window.NubbiImageModelForProvider(st.prof,"forge");var forgeModel=window.NubbiReconcileImageModel("forge",forgeSaved,forgeOptions,"");if(forgeModel)msel.value=forgeModel;if(prov.available&&forgeModel&&forgeSaved!==forgeModel){st.prof.imgModelForge=forgeModel;save();}
    if(note)note.textContent=prov.available?"Forge usará el checkpoint elegido. Para Render, Forge tiene que estar expuesto por un túnel.":(prov.error||"Forge no está disponible.");
   }
   if(!msel.value&&msel.options.length)msel.selectedIndex=0;
@@ -456,21 +460,15 @@ function fillImageEngine(force){
  });
 }
 if($("iprov"))$("iprov").onchange=function(){st.prof.imgProvider=this.value;save();fillImageEngine(true);};
+if($("sdm"))$("sdm").onchange=function(){var provider=$("iprov")?$("iprov").value:"",model=this.value;if((provider==="cloudflare"||provider==="forge")&&!window.NubbiIsValidImageModelForProvider(provider,model)){if(typeof showWzError==="function")showWzError("El modelo elegido no corresponde al proveedor seleccionado.");this.value=window.NubbiImageModelForProvider(st.prof,provider);return;}if(provider==="cloudflare")st.prof.imgModelCloudflare=model;else if(provider==="forge")st.prof.imgModelForge=model;save();updateStyleWarning();};
 function waitMs(ms){return new Promise(function(r){setTimeout(r,ms);});}
-function charPrompt(idea){return 'Tarea de escritura creativa para una app de ficción interactiva. Creá un personaje ficticio ADULTO (18+) de chat de roleplay a partir de esta idea. El personaje y cualquier persona involucrada deben ser mayores de 18; nunca generes un personaje que no sea adulto ni sexualices a personas no adultas. Si la idea sugiere una persona no adulta, convertíla en adulta o rechazá la idea: "'+idea+'". Devolvé SOLO un JSON con las claves: emoji, name, desc (máx 8 palabras, incluí la edad adulta), role, gender (Masculino, Femenino u Otro), persona (3 a 4 oraciones: personalidad, forma de hablar, motivaciones, cómo trata al usuario), greeting (primer mensaje con una acción entre *asteriscos*), imagePrompt (prompt en inglés para su retrato: adulto, pelo, ojos, ropa, ambiente, luz). Escribí name, desc, role, persona y greeting en ' + langInstr() + '; imagePrompt en inglés.';}
+function charPrompt(idea){var min=window.NUBBI_MIN_AGE||21;return 'Tarea de escritura creativa para una app de ficción interactiva. Creá un personaje ficticio ADULTO ('+min+'+) de chat de roleplay a partir de esta idea. El personaje y cualquier persona involucrada deben tener '+min+' años o más; nunca generes un personaje que no sea adulto ni sexualices a personas no adultas. Si la idea sugiere una persona no adulta, convertíla en adulta o rechazá la idea: "'+idea+'". Devolvé SOLO un JSON con las claves: emoji, name, desc (máx 8 palabras, incluí la edad exacta en el formato "29 años"), role, gender (Masculino, Femenino u Otro), persona (3 a 4 oraciones: personalidad, forma de hablar, motivaciones, cómo trata al usuario), greeting (primer mensaje con una acción entre *asteriscos*), imagePrompt (prompt en inglés para su retrato: indicá la misma edad en el formato "29 years old", adulto, pelo, ojos, ropa, ambiente, luz). Escribí name, desc, role, persona y greeting en ' + langInstr() + '; imagePrompt en inglés. Todos los campos deben ser strings no vacíos.';}
 async function genCharJSON(idea){
-var last=null;
-for(var attempt=0;attempt<2;attempt++){
-try{
-var opts={cache:false,max_tokens:1200};
-if(attempt===0)opts.response_format={type:"json_object"};
-var r=await sample(charPrompt(idea),opts);
-var m=r.text.match(/\{[\s\S]*\}/);
-if(!m)throw new Error("El modelo no devolvió datos válidos. Puede haber rechazado la idea; probá con otra idea o configurá un proveedor adulto.");
-return JSON.parse(m[0]);
-}catch(e){last=e;if(attempt===0)await waitMs(700);}
-}
-throw last;
+ return window.NubbiGenerateCharacter(charPrompt(idea),function(prompt,attempt){
+  var opts={cache:false,max_tokens:1200};
+  if(attempt===0)opts.response_format={type:"json_object"};
+  return sample(prompt,opts).then(function(r){return r.text;});
+ },{attempts:2,wait:waitMs});
 }
 $("gen").onclick=async function(){
 var idea=$("idea").value.trim();
@@ -479,14 +477,15 @@ if(!sample){alert("La IA no está disponible en esta vista.");return;}
 var b=$("gen");b.innerHTML=icon("sparkles")+'<span>Generando...</span>';b.disabled=true;setGenStatus("La IA está creando el personaje...");
 try{
 var j=await genCharJSON(idea);
-$("e").value=j.emoji||"🙂";$("n").value=j.name||"";$("d").value=j.desc||"";$("r").value=j.role||"";$("p").value=j.persona||"";$("gr").value=j.greeting||"";$("gen2").value=normGender(j.gender);$("pr").dataset.p=j.imagePrompt||"";showPr();
+$("e").value=j.emoji||"🙂";$("n").value=j.name||"";$("d").value=j.desc||"";$("r").value=j.role||"";$("p").value=j.persona||"";$("gr").value=j.greeting||"";$("gen2").value=normGender(j.gender);$("imagePrompt").value=j.imagePrompt||"";showPr();
 setGenStatus("Borrador listo. Revisá los datos y tocá Guardar personaje.");
 $("save").textContent="Guardar personaje";$("save").focus();
 }catch(e){var msg=e.message||"Error desconocido";setGenStatus("No se pudo generar: "+msg,true);alert("No pude generarlo: "+msg);}
 b.innerHTML=icon("sparkles")+'<span>Generar con IA</span>';b.disabled=false;
 };
-$("save").onclick=function(){try{var n=$("n").value.trim();if(!n){showWzError("Escribe un nombre para guardar.");return;}
-var data={emoji:$("e").value||"🙂",img:imgData,name:n,desc:$("d").value.trim(),role:$("r").value.trim(),gender:$("gen2").value,tags:"creado por ti",persona:$("p").value.trim(),greeting:$("gr").value.trim()};
+$("save").onclick=function(){try{showWzError("");var n=$("n").value.trim();if(!n){showWzError("Escribe un nombre para guardar.");return;}
+var ageIssue=window.NubbiCharacterAgeIssue({desc:$("d").value,persona:$("p").value,greeting:$("gr").value,imagePrompt:$("imagePrompt").value||""});if(ageIssue){showWzError(ageIssue.message);return;}
+var data={emoji:$("e").value||"🙂",img:imgData,name:n,desc:$("d").value.trim(),role:$("r").value.trim(),gender:$("gen2").value,tags:"creado por ti",persona:$("p").value.trim(),greeting:$("gr").value.trim(),imagePrompt:$("imagePrompt").value||""};
 var cid=editingId,c=null;if(cid)c=st.custom.find(function(x){return x.id===cid});
 if(c){for(var k in data)c[k]=data[k];cid=c.id;}
 else{var nc={id:"c"+Date.now()+Math.floor(Math.random()*999)};for(var k2 in data)nc[k2]=data[k2];st.custom.unshift(nc);cid=nc.id;}
@@ -494,12 +493,14 @@ editingId=null;save();$("dlg").close();["n","d","r","p","gr","idea"].forEach(fun
 
 function shrink(dataUrl,w,cb){var im=new Image();im.onload=function(){var h=Math.round(im.height*w/im.width),cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(im,0,0,w,h);cb(cv.toDataURL("image/jpeg",.8));};im.src=dataUrl;}
 function addFurryPrompt(prompt,style,tags){var furry=/\bfurry\b/i.test(String(style||""))||/\bfurry\b/i.test(String(tags||""));if(!furry||/\banthro(?:pomorphic)?\b/i.test(prompt))return prompt;return prompt+", anthro, anthropomorphic";}
-function buildImagePrompt(base,style,tags){var p=String(base||"").trim().replace(/[,\s]+$/,"");p+=", adult, high quality, portrait";var s=String(style||"").toLowerCase();if(s==="manhwa")p+=", manhwa style, korean webtoon, clean lineart, flat colors, detailed eyes";else if(s==="anime")p+=", anime style, masterpiece, best quality";else if(s)p+=", "+s+" style";return addFurryPrompt(p,style,tags);}
+function buildImagePrompt(base,style,tags){var p=String(base||"").trim().replace(/[,\s]+$/,"");p+=", adult, high quality, portrait";var s=String(style||"").toLowerCase(),presets={realista:"photorealistic portrait, natural skin texture, soft cinematic lighting, realistic proportions, 85mm lens","semi-realista":"semi-realistic digital illustration, painterly skin, believable anatomy, cinematic lighting",anime:"anime style, masterpiece, best quality",manhwa:"manhwa style, korean webtoon, clean lineart, flat colors, detailed eyes",furry:"anthro, anthropomorphic, expressive adult face, detailed fur, mature proportions, character illustration","pintura digital":"digital painting, detailed concept art, painterly brushwork, dramatic lighting","3d":"stylized 3d character, soft studio lighting, subsurface scattering, polished character design"};if(s)p+=", "+(presets[s]||s+" style");return addFurryPrompt(p,style,tags);}
 function currentImageProvider(){var v=$("iprov")?$("iprov").value:"";if(v)return v;return imageProvidersCache&&imageProvidersCache.defaultProvider||"";}
-function updateStyleWarning(){var note=$("imageEngineNote");if(!note)return;var prov=currentImageProvider();var sty=$("sty")?String($("sty").value||"").toLowerCase():"";if(prov==="cloudflare"&&(sty==="manhwa"||sty==="furry")){note.textContent="Cloudflare no está hecho para este estilo; usa Forge para mejores resultados.";note.dataset.warn="1";return;}if(note.dataset.warn==="1"){note.dataset.warn="";if(prov==="huggingface")note.textContent="HuggingFace usará el modelo configurado en HF_IMAGE_MODEL.";else if(prov==="forge")note.textContent="Forge usará el checkpoint elegido. Para Render, Forge tiene que estar expuesto por un túnel.";else note.textContent="Cloudflare es gratis y usa FLUX.1 schnell. No usa tus modelos locales ni genera imágenes explícitas.";}}
-$("genImg").onclick=async function(){var base=$("pr").dataset.p||($("n").value+", "+$("d").value);if(!base.trim()){showWzError("Genera el personaje con IA o completa nombre y descripción primero.");return;}
+function updateStyleWarning(){var note=$("imageEngineNote");if(!note)return;var prov=currentImageProvider(),model=$("sdm")?$("sdm").value:"",style=$("sty")?$("sty").value:"";if(prov==="cloudflare"){note.textContent=/lucid|phoenix/.test(model)?"Modelo de mayor calidad y consumo. Comparte la cuota diaria de Cloudflare y no garantiza identidad constante. Su acceso depende de la cuenta.":"FLUX.1 schnell prioriza velocidad. Para anime, manhwa o furry, prueba Lucid Origin o un modelo especializado instalado en Forge.";}else if(prov==="huggingface")note.textContent="El modelo debe estar desplegado en hf-inference; que exista en HuggingFace no significa que tenga API disponible.";else if(prov==="forge")note.textContent="Forge usa los modelos realmente instalados. Animagine XL 4.0 es una opción para anime y webtoon; requiere GPU y licencia compatible.";}
+$("genImg").onclick=async function(){var base=$("imagePrompt").value||($("n").value+", "+$("d").value);if(!base.trim()){showWzError("Genera el personaje con IA o completa nombre y descripción primero.");return;}
+var ageIssue=window.NubbiCharacterAgeIssue({desc:$("d").value,persona:$("p").value,greeting:$("gr").value,imagePrompt:$("imagePrompt").value||""});if(ageIssue){showWzError(ageIssue.message);return;}
 if(!imageAuthReady()){showWzError("Inicia sesión con una cuenta para generar imágenes.");return;}
 var prov=$("iprov")?$("iprov").value:"";var model=$("sdm")?$("sdm").value:"";if(prov==="forge"&&!model){showWzError("Forge no tiene modelos disponibles. Revisa que esté corriendo o elige otro proveedor.");return;}
+if((prov==="cloudflare"||prov==="forge")&&!window.NubbiIsValidImageModelForProvider(prov,model)){showWzError("El modelo elegido no corresponde al proveedor seleccionado.");return;}
 var b=$("genImg");b.innerHTML=icon("image")+'<span>Generando imagen...</span>';b.disabled=true;
 var style=$("sty").value;
 var ec=editingId?byId(editingId):null;
@@ -516,7 +517,7 @@ var b=$("surprise");b.innerHTML=icon("sparkles")+'<span>Generando...</span>';b.d
 var idea=surpriseIdeas[Math.floor(Math.random()*surpriseIdeas.length)];
 try{
 var j=await genCharJSON(idea);
-var c={id:"c"+Date.now(),emoji:j.emoji||"",img:"",name:j.name||"Personaje",desc:j.desc||"",role:j.role||"",gender:normGender(j.gender),tags:"creado por IA",persona:j.persona||"",greeting:j.greeting||""};
+var c={id:"c"+Date.now(),emoji:j.emoji||"",img:"",name:j.name||"Personaje",desc:j.desc||"",role:j.role||"",gender:normGender(j.gender),tags:"creado por IA",persona:j.persona||"",greeting:j.greeting||"",imagePrompt:j.imagePrompt||""};
 st.custom.unshift(c);save();renderAll();
 if(imageAuthReady()){try{var prov=$("iprov")?$("iprov").value:"";var model=$("sdm")?$("sdm").value:"";if(prov==="forge"&&!model){prov="";model="";}var style="anime",tags=c.tags||"";var prompt=buildImagePrompt((j.imagePrompt||c.name),style,tags);var ji=await api("/api/image",{prompt:prompt,style:style,tags:tags,model:model,provider:prov,adult:adultOn()});shrink("data:"+(ji.mime||"image/png")+";base64,"+ji.image,360,function(d){c.img=d;save();renderAll();});}catch(e){/* imagen opcional */}}
 alert("Se creó: "+c.name);
@@ -530,9 +531,22 @@ $("q").oninput=function(){clearTimeout(searchTimer);searchTimer=setTimeout(funct
 document.querySelectorAll(".tab").forEach(function(t){t.onclick=function(){homeTab=t.dataset.tab;homeLimit=12;document.querySelectorAll(".tab").forEach(function(x){x.classList.toggle("on",x===t);});renderHome();};});
 if($("sort"))$("sort").onchange=function(){homeLimit=12;renderHome();};
 if($("origin"))$("origin").onchange=function(){homeLimit=12;renderHome();};
+function syncChatModels(models){
+ var sel=$("pmodel");if(!sel||!Array.isArray(models)||!models.length)return;
+ models.forEach(function(model){
+  if(typeof model!=="string"||!model)return;
+  var exists=Array.prototype.some.call(sel.options,function(o){return o.value===model;});
+  if(!exists){var option=document.createElement("option");option.value=model;option.textContent=model;sel.appendChild(option);}
+ });
+ Array.prototype.forEach.call(sel.options,function(o){if(o.value)o.hidden=models.indexOf(o.value)<0;});
+ if(st.prof.model&&models.indexOf(st.prof.model)<0){st.prof.model="";save();}
+ sel.value=st.prof.model||"";
+}
 function refreshAdultProvider(){
-var el=$("adultProviderNote");if(!el)return;
+var el=$("adultProviderNote");
 fetch("/api/health").then(function(r){return r.json();}).then(function(j){
+syncChatModels(j.models);
+if(!el)return;
 if(j.adultConfigured)el.textContent="Proveedor adulto configurado: "+(j.adultProvider||"")+(j.adultModel?" · "+j.adultModel:"")+".";
 else el.textContent="Proveedor adulto no configurado: se usa el general. Algunas escenas explícitas pueden ser rechazadas.";
 var iel=$("imageStatusNote"),im=j.image||{};
@@ -543,7 +557,7 @@ else if(im.configured)iel.textContent="Imágenes: Forge "+(im.local?"local":"rem
 else if(im.provider==="cloudflare")iel.textContent="Imágenes: faltan CF_ACCOUNT_ID y CF_API_TOKEN en el servidor.";
 else iel.textContent="Imágenes: falta configurar SD_URL en el servidor.";
 }
-}).catch(function(){el.textContent="No se pudo verificar el proveedor de texto.";});
+}).catch(function(){if(el)el.textContent="No se pudo verificar el proveedor de texto.";});
 }
 var adultGateOk=localStorage.getItem("nubbi-adult-ok")==="1";
 if(!adultGateOk){setTimeout(function(){if($("onboard")){if($("onbAdult"))$("onbAdult").checked=false;if($("onbStart"))$("onbStart").disabled=true;$("onboard").showModal();}},300);}

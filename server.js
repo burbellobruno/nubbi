@@ -1,9 +1,67 @@
 require("dotenv").config();
 const express = require("express");
+const characterAge = require("./public/ai-client.js");
 const app = express();
 app.set("trust proxy", 1);
-app.use(express.json({ limit: "2mb" }));
+app.set("x-powered-by", false);
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Content-Security-Policy", [
+    "default-src 'self'", "base-uri 'none'", "object-src 'none'", "frame-ancestors 'none'",
+    "script-src 'self' https://www.gstatic.com https://apis.google.com",
+    "style-src 'self' 'unsafe-inline'", "img-src 'self' https: data: blob:",
+    "font-src 'self' data:", "media-src 'self' blob:", "worker-src 'self' blob:",
+    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://*.web.app",
+    "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com https://recaptcha.google.com",
+    "form-action 'self'"
+  ].join("; "));
+  if (req.secure) res.setHeader("Strict-Transport-Security", "max-age=31536000");
+  next();
+});
+app.use(express.json({ limit: "128kb", strict: true }));
 app.use(express.static("public"));
+app.use("/api/", (req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (req.method !== "POST") return next();
+  const origin = req.headers.origin;
+  if (origin) {
+    try {
+      const source = new URL(origin);
+      if (source.host !== req.get("host") || !/^https?:$/.test(source.protocol)) {
+        return res.status(403).json({ error: "Origen de la solicitud no permitido." });
+      }
+    } catch (e) { return res.status(403).json({ error: "Origen de la solicitud no permitido." }); }
+  }
+  if (!req.is("application/json")) return res.status(415).json({ error: "Envía la solicitud como JSON." });
+  if (!req.body || Array.isArray(req.body) || typeof req.body !== "object") return res.status(400).json({ error: "Solicitud inválida." });
+  if (req.path === "/chat" || req.path === "/image") {
+    const max = req.path === "/chat" ? 32000 : 8000;
+    if (typeof req.body.prompt !== "string" || !req.body.prompt.trim() || req.body.prompt.length > max) {
+      return res.status(400).json({ error: "El texto es obligatorio y debe tener como máximo " + max + " caracteres." });
+    }
+  }
+  next();
+});
+
+// Concurrency protects a small free instance; it is not a distributed quota.
+const activeRequests = { chat: 0, image: 0 };
+app.use("/api/", (req, res, next) => {
+  if (req.method !== "POST" || !["/chat", "/image"].includes(req.path)) return next();
+  const kind = req.path === "/chat" ? "chat" : "image";
+  const limit = kind === "chat" ? 8 : 2;
+  if (activeRequests[kind] >= limit) {
+    res.setHeader("Retry-After", "5");
+    return res.status(429).json({ error: "Hay varias solicitudes en curso. Espera unos segundos." });
+  }
+  activeRequests[kind]++;
+  let released = false;
+  const release = () => { if (!released) { released = true; activeRequests[kind]--; } };
+  res.once("finish", release); res.once("close", release);
+  next();
+});
 
 // Rate limiting simple en memoria
 const buckets = new Map();
@@ -24,7 +82,7 @@ app.use("/api/", (req, res, next) => {
   const ip = req.ip || req.connection.remoteAddress || "unknown";
   const isImage = req.path === "/image" || req.path === "/image/health";
   const ok = rateLimit(ip + (isImage ? ":img" : ":chat"), isImage ? 5 : 20, 60000);
-  if (!ok) return res.status(429).json({ error: "Demasiadas solicitudes. Esperá un momento." });
+  if (!ok) { res.setHeader("Retry-After", "60"); return res.status(429).json({ error: "Demasiadas solicitudes. Espera un momento." }); }
   next();
 });
 
@@ -43,17 +101,30 @@ function imageQuotaFor(uid) {
   const day = utcDay();
   let q = imageQuota.get(uid);
   if (!q || q.day !== day) {
-    q = { day, count: 0 };
+    q = { day, count: 0, pending: 0, attempts: 0 };
     imageQuota.set(uid, q);
   }
   return q;
 }
-function takeImageQuota(uid) {
-  const limit = num(process.env.IMAGE_DAILY_LIMIT, 5, 1, 1000);
+// Reserve synchronously before dispatch: concurrent requests share pending slots.
+// Failed attempts release the image slot, but still consume a bounded attempt budget.
+function reserveImageQuota(uid) {
+  const limit = Math.floor(num(process.env.IMAGE_DAILY_LIMIT, 5, 1, 1000));
+  const attemptLimit = Math.floor(num(process.env.IMAGE_DAILY_ATTEMPT_LIMIT, limit * 2, limit, 10000));
   const q = imageQuotaFor(uid);
-  if (q.count >= limit) return false;
-  q.count++;
-  return true;
+  if (q.count + q.pending >= limit || q.attempts >= attemptLimit) return null;
+  q.pending++;
+  q.attempts++;
+  let settled = false;
+  function settle(success) {
+    if (settled) return false;
+    settled = true;
+    q.pending--;
+    if (success) q.count++;
+    return true;
+  }
+  // Capture the original daily bucket so a late completion cannot modify the next day.
+  return { commit: () => settle(true), release: () => settle(false) };
 }
 const quotaCleanup = setInterval(() => {
   const day = utcDay();
@@ -109,13 +180,10 @@ function prepareImagePrompt(raw, style, tags, opts) {
     .replace(/\s{2,}/g, " ")
     .trim()
     .replace(/^[\s,.;:]+/, "");
-  const ageMatch = cleaned.match(/\b(\d{1,3})\s*(?:years?[\s-]*old|y\/o|años?|anos?)\b/i)
-    || cleaned.match(/\b(?:age|edad)\s*:?\s*(\d{1,3})\b/i)
-    || cleaned.match(/\b(\d{2})\b\s*\+?/);
-  const detectedAge = ageMatch ? Number(ageMatch[1]) : 0;
-  const ageText = detectedAge >= 21 ? detectedAge + " years old" : "28 years old";
-  if (ageMatch) cleaned = cleaned.replace(ageMatch[0], ageText);
-  else cleaned = ageText + ", " + (cleaned || "retrato de personaje, alta calidad, portrait");
+  const issue = characterAge.NubbiImageAgeIssue(raw);
+  if (issue) throw new Error(issue.message);
+  const ageText = characterAge.NubbiExtractAges(raw)[0] + " years old";
+  cleaned = ageText + ", " + characterAge.NubbiNormalizeAgeText(cleaned);
   if (!cloudflare && adult) cleaned += ", adult";
   return addAnthro(cleaned, style, tags).slice(0, cloudflare ? 2048 : 1800);
 }
@@ -133,12 +201,14 @@ function rejectMinor(res) {
   return res.status(400).json({ error: "Todos los personajes deben ser adultos." });
 }
 
-// Modelos permitidos desde el cliente. El servidor decide el modelo final:
-// si el pedido no está en la lista, usa CHAT_MODEL.
-const CHAT_MODELS = new Set([
-  "openai/gpt-oss-20b",
-  "openai/gpt-oss-120b",
-]);
+// El cliente solo puede elegir modelos de esta allowlist. Si no se define
+// CHAT_MODEL_ALLOWLIST, solo se permite el modelo configurado en CHAT_MODEL.
+function chatModelAllowlist(defaultModel) {
+  const allow = new Set((process.env.CHAT_MODEL_ALLOWLIST || "")
+    .split(",").map(s => s.trim()).filter(Boolean));
+  if (defaultModel) allow.add(defaultModel);
+  return allow;
+}
 
 // Un proveedor alternativo solo para pedidos con adult=true. Sirve para usar
 // un modelo/servidor que acepte ficción adulta legal sin cambiar el general.
@@ -178,6 +248,11 @@ const DEFAULT_CHECKPOINTS = {
 
 const CF_DEFAULT_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 const CF_API_BASE = "https://api.cloudflare.com/client/v4";
+const CF_IMAGE_MODELS = [
+  { id: CF_DEFAULT_MODEL, name: "FLUX.1 schnell · rápido", engine: "flux", styles: ["realista", "semi-realista", "pintura digital"], consumption: "bajo" },
+  { id: "@cf/leonardo/lucid-origin", name: "Lucid Origin · ilustración", engine: "lucid", styles: ["anime", "manhwa", "furry", "pintura digital", "semi-realista"], consumption: "alto" },
+  { id: "@cf/leonardo/phoenix-1.0", name: "Phoenix 1.0 · detalle", engine: "phoenix", styles: ["realista", "semi-realista", "pintura digital"], consumption: "alto" }
+];
 const HF_DEFAULT_MODEL = "cagliostrolab/animagine-xl-3.1";
 
 function huggingFaceConfig() {
@@ -193,10 +268,10 @@ function huggingFaceConfig() {
   return { token, model, timeoutMs, endpoint, error };
 }
 
-function cloudflareConfig() {
+function cloudflareConfig(modelOverride) {
   const accountId = (process.env.CF_ACCOUNT_ID || "").trim();
   const apiToken = (process.env.CF_API_TOKEN || "").trim();
-  const model = (process.env.CF_IMAGE_MODEL || CF_DEFAULT_MODEL).trim() || CF_DEFAULT_MODEL;
+  const model = modelOverride || (process.env.CF_IMAGE_MODEL || CF_DEFAULT_MODEL).trim() || CF_DEFAULT_MODEL;
   const steps = num(process.env.CF_IMAGE_STEPS, 4, 1, 8);
   const timeoutMs = num(process.env.CF_TIMEOUT_MS, 60000, 5000, 120000);
   let error = null;
@@ -359,7 +434,7 @@ app.get("/api/health", (req, res) => {
     ok: !!(def.baseUrl && def.model && def.apiKey),
     provider: def.provider,
     model: def.model,
-    models: Array.from(CHAT_MODELS),
+    models: Array.from(chatModelAllowlist(def.model)),
     hasApiKey: !!def.apiKey,
     local: def.isLocal,
     adultConfigured: adult.dedicated,
@@ -371,6 +446,11 @@ app.get("/api/health", (req, res) => {
 });
 
 app.post("/api/chat", async (req, res) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90000);
+  if (timeout.unref) timeout.unref();
+  const disconnect = () => { if (!res.writableEnded) controller.abort(); };
+  res.once("close", disconnect);
   try {
     if (containsMinorTerms(req.body.prompt)) return rejectMinor(res);
     const adult = req.body.adult === true;
@@ -382,19 +462,21 @@ app.post("/api/chat", async (req, res) => {
       return res.status(500).json({ error: "Falta configurar CHAT_API_KEY para el proveedor remoto." });
     }
     const requestedModel = String(req.body.model || "");
+    const allow = chatModelAllowlist(defaultModel);
     const model = adult && dedicated
       ? defaultModel
-      : (CHAT_MODELS.has(requestedModel) ? requestedModel : defaultModel);
+      : (allow.has(requestedModel) ? requestedModel : defaultModel);
     const stream = !!req.body.stream;
     const messages = [];
     if (adult) {
       messages.push({
         role: "system",
-        content: "Modo adulto: todos los personajes y el usuario son mayores de 18 años. La ficción sexual explícita entre adultos con consentimiento está permitida. Está terminantemente prohibido generar contenido sexual con personas no adultas, personajes que aparenten no ser adultos, personas reales o situaciones no consentidas. Prohibido el contenido sexual con animales reales (zoofilia). Los personajes antropomórficos adultos (furry) están permitidos como cualquier otro personaje. Si la conversación intenta eso, rechazá esa parte y continuá sin contenido sexual.",
+        content: "Modo adulto: todos los personajes tienen 21 años o más y el usuario es mayor de 18 años. La ficción sexual explícita entre adultos con consentimiento está permitida. Está terminantemente prohibido generar contenido sexual con personas no adultas, personajes que aparenten no ser adultos, personas reales o situaciones no consentidas. Prohibido el contenido sexual con animales reales (zoofilia). Los personajes antropomórficos adultos (furry) están permitidos como cualquier otro personaje. Si la conversación intenta eso, rechazá esa parte y continuá sin contenido sexual.",
       });
     }
     messages.push({ role: "user", content: String(req.body.prompt || "") });
     const r = await fetch(baseUrl + "/chat/completions", {
+      signal: controller.signal,
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -436,10 +518,19 @@ app.post("/api/chat", async (req, res) => {
       return;
     }
     const j = await r.json();
-    if (!r.ok) return res.status(r.status).json({ error: j.error?.message || "Error de la API" });
+    if (!r.ok) return res.status(r.status).json({ error: j.error?.message || "Error de la API", code: j.error?.code });
+    if (!j.choices?.[0]?.message?.content) return res.status(502).json({ error: "El proveedor no devolvió una respuesta utilizable." });
     res.json({ text: j.choices[0].message.content });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    if (res.destroyed) return;
+    const message = controller.signal.aborted ? "La generación tardó demasiado. Intenta de nuevo." : "No se pudo conectar con el proveedor de texto.";
+    if (res.headersSent) {
+      res.write("data: " + JSON.stringify({ error: { message, code: "STREAM_INTERRUPTED" } }) + "\n\n");
+      return res.end("data: [DONE]\n\n");
+    }
+    res.status(controller.signal.aborted ? 504 : 502).json({ error: message });
+  } finally {
+    clearTimeout(timeout); res.removeListener("close", disconnect);
   }
 });
 
@@ -450,13 +541,14 @@ app.get("/api/image/models", async (req, res) => {
   const hf = imageConfig("huggingface");
   const out = {
     defaultProvider: imageConfig().provider,
-    dailyLimit: num(process.env.IMAGE_DAILY_LIMIT, 5, 1, 1000),
+    dailyLimit: Math.floor(num(process.env.IMAGE_DAILY_LIMIT, 5, 1, 1000)),
     requiresAccount: true,
     providers: {
       cloudflare: {
         available: !!cf.endpoint,
         configured: !!cf.endpoint,
         model: cf.cf.model,
+        models: CF_IMAGE_MODELS.map(m => ({ title: m.id, name: m.name, styles: m.styles, consumption: m.consumption })),
         free: true,
         note: "FLUX.1 schnell. No usa modelos locales ni genera imágenes explícitas.",
         error: cf.urlError || null,
@@ -597,7 +689,116 @@ app.get("/api/image/health", async (req, res) => {
   }
 });
 
-async function generateCloudflareImage(req, res, c) {
+// Build the complete Forge request before reserving any image/attempt capacity.
+function prepareForgeRequest(req, c, safePrompt) {
+  const aliases = (process.env.SD_CHECKPOINTS || "").trim();
+  if (aliases) {
+    try {
+      const parsed = JSON.parse(aliases);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("invalid mapping");
+    } catch (error) {
+      return { status: 500, error: "La configuración de aliases de Forge no es un objeto JSON válido." };
+    }
+  }
+  const raw = req.body.model;
+  if (raw != null && typeof raw !== "string") return { status: 400, error: "El modelo de Forge debe ser texto." };
+  const requested = (raw || "").trim();
+  if (!characterAge.NubbiIsValidImageModelForProvider("forge", requested)
+      || /[\x00-\x1f\x7f]/.test(requested)
+      || Object.prototype.hasOwnProperty.call(Object.prototype, requested)
+      || requested === "prototype") return { status: 400, error: "Ese modelo no corresponde a Forge." };
+  let checkpoint = "";
+  if (requested) {
+    checkpoint = Object.prototype.hasOwnProperty.call(c.checkpoints, requested) ? c.checkpoints[requested] : requested;
+    if (typeof checkpoint !== "string" || !checkpoint.trim()
+        || !characterAge.NubbiIsValidImageModelForProvider("forge", checkpoint)
+        || /[\x00-\x1f\x7f]/.test(checkpoint)) {
+      return { status: 500, error: "El alias de checkpoint de Forge tiene una configuración inválida." };
+    }
+    checkpoint = checkpoint.trim();
+  }
+  function parameter(key, fallback, min, max, integer) {
+    if (req.body[key] === undefined) return fallback;
+    const value = req.body[key];
+    if ((typeof value !== "number" && typeof value !== "string") || String(value).trim() === "") throw new Error(key);
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < min || n > max || integer && !Number.isInteger(n)) throw new Error(key);
+    return n;
+  }
+  let body;
+  try {
+    body = { prompt: safePrompt,
+      negative_prompt: (process.env.SD_NEGATIVE || "child, minor, underage, teen, loli, shota, kid, lowres, bad anatomy, extra fingers, watermark, text").slice(0, 1200),
+      width: parameter("width", 512, 256, 1024, true),
+      height: parameter("height", 704, 256, 1344, true),
+      steps: parameter("steps", 25, 8, 60, true),
+      cfg_scale: parameter("cfg_scale", req.body.style === "anime" ? 7 : 6, 1, 20, false),
+    };
+    if (checkpoint) body.override_settings = { sd_model_checkpoint: checkpoint };
+    if (req.body.seed !== undefined) body.seed = parameter("seed", -1, -1, 2147483647, true);
+  } catch (error) {
+    return { status: 400, error: "El parámetro de Forge " + error.message + " no es válido." };
+  }
+  const headers = sdHeaders();
+  if (Object.values(headers).some(value => /[^\x20-\x7e]/.test(value))) return { status: 500, error: "La autenticación de Forge tiene un formato inválido." };
+  return { body, headers };
+}
+
+function imagePreflight(req) {
+  let c = imageConfig(req.body.provider);
+  if (c.provider === "cloudflare") {
+    const requested = String(req.body.model || "").trim();
+    if (requested && requested !== c.cf.model) {
+      const selection = CF_IMAGE_MODELS.find(m => m.id === requested);
+      if (selection) {
+        const cf = cloudflareConfig(selection.id);
+        c = { ...c, cf, endpoint: cf.endpoint, urlError: cf.error };
+      } else if (/^@cf\//i.test(requested)) {
+        // Un modelo guardado puede desaparecer de la whitelist. Usamos el
+        // modelo configurado si sigue permitido; si no, el default seguro.
+        const fallback = CF_IMAGE_MODELS.some(m => m.id === c.cf.model) ? c.cf.model : CF_DEFAULT_MODEL;
+        const cf = cloudflareConfig(fallback);
+        c = { ...c, cf, endpoint: cf.endpoint, urlError: cf.error };
+      } else {
+        return { status: 400, error: "Ese modelo de imagen no está permitido." };
+      }
+    }
+
+  }
+  if (!c.endpoint) return { status: 500, error: c.urlError || "Falta configurar el proveedor de imágenes." };
+  if (!Number.isInteger(c.timeoutMs)) return { status: 500, error: "El tiempo de espera de imágenes debe ser un número entero." };
+  const endpoint = new URL(c.endpoint);
+  if (!/^https?:$/.test(endpoint.protocol) || endpoint.username || endpoint.password || endpoint.hash || endpoint.search) {
+    return { status: 500, error: "La URL del proveedor de imágenes tiene una configuración no admitida." };
+  }
+  // Finish local prompt validation before reserving quota. No provider calls occur here.
+  const safePrompt = prepareImagePrompt(req.body.prompt, req.body.style, req.body.tags, { cloudflare: c.provider === "cloudflare", adult: req.body.adult !== false });
+  const forge = c.provider === "forge" ? prepareForgeRequest(req, c, safePrompt) : null;
+  if (forge && forge.error) return forge;
+  return { config: c, forge };
+}
+
+// Reject empty and obvious non-image provider payloads without adding a decoder dependency.
+function checkedImageBytes(buffer) {
+  const png = buffer.length >= 24 && buffer.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10])) && buffer.toString("ascii", 12, 16) === "IHDR";
+  const jpeg = buffer.length >= 4 && buffer[0] === 255 && buffer[1] === 216 && buffer[2] === 255;
+  const webp = buffer.length >= 12 && buffer.toString("ascii", 0, 4) === "RIFF" && buffer.toString("ascii", 8, 12) === "WEBP";
+  const gif = buffer.length >= 13 && /^(GIF87a|GIF89a)$/.test(buffer.toString("ascii", 0, 6));
+  if (!png && !jpeg && !webp && !gif) throw new Error("El proveedor no devolvió una imagen reconocible.");
+  return buffer;
+}
+
+function checkedBase64Image(raw) {
+  if (typeof raw !== "string") throw new Error("El proveedor devolvió una imagen inválida.");
+  const value = raw.replace(/^data:image\/[a-z0-9.+-]+;base64,/i, "");
+  if (!value || !/^[A-Za-z0-9+/]+={0,2}$/.test(value) || !Buffer.from(value, "base64").length) {
+    throw new Error("El proveedor no devolvió una imagen utilizable.");
+  }
+  checkedImageBytes(Buffer.from(value, "base64"));
+  return value;
+}
+
+async function generateCloudflareImage(req, res, c, onImage) {
   if (!c.endpoint) {
     return res.status(500).json({ error: c.urlError || "Falta configurar CF_ACCOUNT_ID y CF_API_TOKEN." });
   }
@@ -615,12 +816,18 @@ async function generateCloudflareImage(req, res, c) {
         "content-type": "application/json",
         authorization: "Bearer " + c.cf.apiToken,
       },
-      body: JSON.stringify({ prompt: safePrompt, steps: c.cf.steps }),
+      body: JSON.stringify(c.cf.model === "@cf/leonardo/lucid-origin"
+        ? { prompt: safePrompt, width: 768, height: 1024, num_steps: 20 }
+        : c.cf.model === "@cf/leonardo/phoenix-1.0"
+          ? { prompt: safePrompt, width: 768, height: 1024, num_steps: 25, negative_prompt: "child, minor, underage, teen, loli, shota, kid, lowres, bad anatomy, watermark" }
+          : { prompt: safePrompt, steps: c.cf.steps }),
       signal: AbortSignal.timeout(c.timeoutMs),
     });
     const ct = (r.headers.get("content-type") || "").toLowerCase();
-    if (ct.startsWith("image/")) {
+    if (r.ok && ct.startsWith("image/")) {
       const buf = Buffer.from(await r.arrayBuffer());
+      checkedImageBytes(buf);
+      onImage();
       return res.json({
         image: buf.toString("base64"),
         mime: ct.split(";")[0] || "image/jpeg",
@@ -638,8 +845,9 @@ async function generateCloudflareImage(req, res, c) {
       throw new Error("Cloudflare respondió " + r.status + ": " + msg);
     }
     const raw = (j && ((j.result && j.result.image) || j.image)) || "";
-    const b64 = String(raw).replace(/^data:image\/[a-z0-9.+-]+;base64,/i, "");
+    const b64 = checkedBase64Image(raw);
     if (!b64) throw new Error("Cloudflare no devolvió ninguna imagen.");
+    onImage();
     res.json({ image: b64, mime: "image/jpeg", provider: "cloudflare", model: c.cf.model });
   } catch (e) {
     const filterHint = /NSFW|safety|content|policy|blocked|filter|sensitive/i.test(e.message)
@@ -649,7 +857,7 @@ async function generateCloudflareImage(req, res, c) {
   }
 }
 
-async function generateHuggingFaceImage(req, res, c) {
+async function generateHuggingFaceImage(req, res, c, onImage) {
   if (!c.endpoint) {
     return res.status(500).json({ error: c.urlError || "Falta configurar HF_TOKEN y HF_IMAGE_MODEL." });
   }
@@ -683,8 +891,10 @@ async function generateHuggingFaceImage(req, res, c) {
       signal: AbortSignal.timeout(c.timeoutMs),
     });
     const ct = (r.headers.get("content-type") || "").toLowerCase();
-    if (ct.startsWith("image/")) {
+    if (r.ok && ct.startsWith("image/")) {
       const buf = Buffer.from(await r.arrayBuffer());
+      checkedImageBytes(buf);
+      onImage();
       return res.json({
         image: buf.toString("base64"),
         mime: ct.split(";")[0] || "image/jpeg",
@@ -700,8 +910,9 @@ async function generateHuggingFaceImage(req, res, c) {
       throw new Error("HuggingFace respondió " + r.status + ": " + msg);
     }
     const raw = (j && (j.image || j.output || (Array.isArray(j) && j[0] && j[0].image))) || "";
-    const b64 = String(raw).replace(/^data:image\/[a-z0-9.+-]+;base64,/i, "");
+    const b64 = checkedBase64Image(raw);
     if (!b64) throw new Error("HuggingFace no devolvió ninguna imagen.");
+    onImage();
     return res.json({ image: b64, mime: "image/jpeg", provider: "huggingface", model: c.hf.model });
   } catch (e) {
     res.status(502).json({
@@ -711,6 +922,8 @@ async function generateHuggingFaceImage(req, res, c) {
 }
 
 app.post("/api/image", async (req, res) => {
+  let reservation = null;
+  let imageUser;
   try {
     const prompt = String(req.body.prompt || "").trim();
     if (!prompt) return res.status(400).json({ error: "Falta el prompt de la imagen." });
@@ -730,39 +943,23 @@ app.post("/api/image", async (req, res) => {
       if (!user || user.anonymous) {
         return res.status(401).json({ error: "Inicia sesión con una cuenta para generar imágenes." });
       }
-      if (!takeImageQuota(user.uid)) {
-        return res.status(429).json({ error: "Llegaste al límite diario de imágenes. Vuelve mañana." });
-      }
+      const ageIssue = characterAge.NubbiImageAgeIssue(prompt);
+      if (ageIssue) return res.status(400).json({ error: ageIssue.message, code: ageIssue.code });
+      imageUser = user;
     }
 
-    const c = imageConfig(req.body.provider);
-    if (c.provider === "cloudflare") return generateCloudflareImage(req, res, c);
-    if (c.provider === "huggingface") return generateHuggingFaceImage(req, res, c);
-    if (!c.baseUrl) return res.status(500).json({ error: c.urlError || "Falta configurar SD_URL." });
+    const preflight = imagePreflight(req);
+    if (preflight.error) return res.status(preflight.status).json({ error: preflight.error });
+    const c = preflight.config;
+    reservation = reserveImageQuota(imageUser.uid);
+    if (!reservation) return res.status(429).json({ error: "Alcanzaste el límite diario de imágenes o intentos. Vuelve mañana.", code: "IMAGE_QUOTA" });
+    if (c.provider === "cloudflare") return await generateCloudflareImage(req, res, c, reservation.commit);
+    if (c.provider === "huggingface") return await generateHuggingFaceImage(req, res, c, reservation.commit);
   try {
-    const anime = req.body.style === "anime";
-    const requestedModel = String(req.body.model || "").trim();
-    const checkpoint = c.checkpoints[requestedModel]
-      || (/\.(safetensors|ckpt)\b/i.test(requestedModel) ? requestedModel : "");
-    const adult = req.body.adult !== false;
-    const safePrompt = prepareImagePrompt(prompt, req.body.style, req.body.tags, { adult });
-    const negative = (process.env.SD_NEGATIVE ||
-      "child, minor, underage, teen, loli, shota, kid, lowres, bad anatomy, extra fingers, watermark, text"
-    ).slice(0, 1200);
-    const body = {
-      prompt: safePrompt,
-      negative_prompt: negative,
-      width: num(req.body.width, 512, 256, 1024),
-      height: num(req.body.height, 704, 256, 1344),
-      steps: num(req.body.steps, 25, 8, 60),
-      cfg_scale: num(req.body.cfg_scale, anime ? 7 : 6, 1, 20),
-    };
-    if (checkpoint) body.override_settings = { sd_model_checkpoint: checkpoint };
-    if (req.body.seed != null) body.seed = num(req.body.seed, -1, -1, 2147483647);
     const r = await fetch(c.endpoint, {
       method: "POST",
-      headers: sdHeaders(),
-      body: JSON.stringify(body),
+      headers: preflight.forge.headers,
+      body: JSON.stringify(preflight.forge.body),
       signal: AbortSignal.timeout(c.timeoutMs),
     });
     if (!r.ok) {
@@ -771,7 +968,9 @@ app.post("/api/image", async (req, res) => {
     }
     const j = await r.json();
     if (!j.images || !j.images[0]) throw new Error("Forge no devolvió ninguna imagen.");
-    res.json({ image: j.images[0], mime: "image/png", provider: "forge" });
+    const image = checkedBase64Image(j.images[0]);
+    reservation.commit();
+    res.json({ image, mime: "image/png", provider: "forge" });
   } catch (e) {
     const localHint = c.isLocal && process.env.RENDER
       ? " En Render no se puede usar localhost: configurá SD_URL con la URL pública del GPU."
@@ -782,8 +981,16 @@ app.post("/api/image", async (req, res) => {
   }
   } catch (e) {
     res.status(500).json({ error: "No pude procesar la solicitud de imagen: " + e.message });
+  } finally {
+    // Idempotent: a committed image is never refunded by finish/error/disconnect paths.
+    if (reservation) reservation.release();
   }
 });
 
 const port = process.env.PORT || 3001;
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const status = err.type === "entity.too.large" ? 413 : err instanceof SyntaxError ? 400 : 500;
+  res.status(status).json({ error: status === 413 ? "La solicitud es demasiado grande." : status === 400 ? "El JSON de la solicitud no es válido." : "No se pudo procesar la solicitud." });
+});
 app.listen(port, () => console.log("Nubbi en http://localhost:" + port));

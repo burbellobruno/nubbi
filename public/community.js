@@ -692,6 +692,8 @@
       pubOwnerName: pub.ownerName || "",
       pubMine: false
     };
+    var ageIssue = window.NubbiCharacterAgeIssue(c);
+    if(ageIssue){ alert(ageIssue.message); return; }
     st.custom = st.custom || [];
     st.custom.unshift(c);
     save();
@@ -749,9 +751,11 @@
     var name = ($("pubname").value || "").trim();
     if(!name){ alert("El personaje necesita un nombre público."); return; }
     if(!$("pubadult").checked || !$("pubterms").checked){
-      alert("Confirmá que el personaje es adulto (18+), que no incluye contenido sexual con menores ni no consentido, y que tenés derecho a publicarlo.");
+      alert("Confirmá que el personaje tiene 21 años o más, que no incluye contenido sexual con menores ni no consentido, y que tenés derecho a publicarlo.");
       return;
     }
+    var ageIssue = window.NubbiCharacterAgeIssue({desc: $("pubdesc").value, persona: $("pubpersona").value, greeting: $("pubgreet").value});
+    if(ageIssue){ alert(ageIssue.message); return; }
     var b = $("pubsend");
     b.disabled = true;
     b.textContent = "Publicando...";

@@ -19,9 +19,107 @@
     return (e && e.message) || "Error de autenticación.";
   }
 
+  // Invalidate pending operations on account transitions, including same-UID re-login.
+  let sessionEpoch = 0;
+  let observedUser = auth.currentUser;
+  let receivedInitialAuth = false;
+  auth.onAuthStateChanged(function(user){
+    if(receivedInitialAuth && user !== observedUser) sessionEpoch++;
+    // The SDK's first hydration callback must not cancel an otherwise valid operation.
+    receivedInitialAuth = true;
+    observedUser = user;
+  });
+
+  function sessionChanged(){
+    const error = new Error("La sesión cambió durante la sincronización. Revisa la cuenta y vuelve a intentar.");
+    error.code = "sync/session-changed";
+    return error;
+  }
+
+  function captureSession(){ return {user: auth.currentUser, epoch: sessionEpoch}; }
+  function assertSession(ticket){
+    if(!ticket.user || !auth.currentUser || auth.currentUser !== ticket.user
+      || auth.currentUser.uid !== ticket.user.uid || sessionEpoch !== ticket.epoch) throw sessionChanged();
+  }
+
   async function ensureUser(){
-    if(!auth.currentUser) await auth.signInAnonymously();
-    return auth.currentUser;
+    if(auth.currentUser) return auth.currentUser;
+    const credential = await auth.signInAnonymously();
+    const user = credential && credential.user;
+    if(!user || !user.isAnonymous || auth.currentUser !== user) throw sessionChanged();
+    return user;
+  }
+
+  async function sessionUser(){
+    const before = captureSession();
+    const user = await ensureUser();
+    if(before.user) assertSession(before);
+    else if(!user || !user.isAnonymous || auth.currentUser !== user) throw sessionChanged();
+    return captureSession();
+  }
+
+  function validSnapshot(text){
+    if(typeof text !== "string") throw new Error("El respaldo no tiene un formato válido.");
+    const data = JSON.parse(text);
+    function record(value){ return value !== null && typeof value === "object" && !Array.isArray(value); }
+    if(!record(data)) throw new Error("El respaldo debe ser un objeto.");
+    // Reject dangerous property names before assigning any part of a remote snapshot.
+    function safeKeys(value){
+      if(!value || typeof value !== "object") return;
+      for(const key of Object.keys(value)){
+        if(key === "__proto__" || key === "constructor" || key === "prototype") throw new Error("El respaldo contiene campos no permitidos.");
+        safeKeys(value[key]);
+      }
+    }
+    safeKeys(data);
+    for(const key of ["custom", "favs", "personas"]){
+      if(Object.prototype.hasOwnProperty.call(data, key) && !Array.isArray(data[key])) throw new Error("El respaldo contiene una lista inválida.");
+    }
+    for(const key of ["chats", "cfg", "branches", "prof"]){
+      if(Object.prototype.hasOwnProperty.call(data, key) && !record(data[key])) throw new Error("El respaldo contiene una sección inválida.");
+    }
+    for(const key of ["custom", "personas"]){
+      if(data[key] && data[key].some(function(value){ return !record(value); })) throw new Error("El respaldo contiene elementos inválidos.");
+    }
+    if(data.favs && data.favs.some(function(value){ return typeof value !== "string"; })) throw new Error("El respaldo contiene favoritos inválidos.");
+    for(const key of ["chats", "branches"]){
+      if(data[key]) for(const id of Object.keys(data[key])){
+        if(!Array.isArray(data[key][id]) || data[key][id].some(function(value){ return !record(value); })) throw new Error("El respaldo contiene una conversación inválida.");
+      }
+    }
+    if(data.cfg) for(const id of Object.keys(data.cfg)){
+      if(!record(data.cfg[id])) throw new Error("El respaldo contiene una configuración inválida.");
+    }
+    for(const key of ["persona", "cur"]){
+      if(Object.prototype.hasOwnProperty.call(data, key) && data[key] !== null && typeof data[key] !== "string") throw new Error("El respaldo contiene una selección inválida.");
+    }
+    return data;
+  }
+
+  function localConflict(){
+    const error = new Error("Los datos locales cambiaron durante la descarga. No se reemplazaron; vuelve a intentar.");
+    error.code = "sync/local-conflict";
+    return error;
+  }
+
+  function persistDownloadedSnapshot(data, localBefore, ticket){
+    // Stage the merge without touching live state. The app's save hook catches storage
+    // errors, so this download uses the local storage primitive directly and never
+    // calls an ambiguous global save or a cloud upload method.
+    const staged = Object.assign({}, st, data);
+    const serialized = JSON.stringify(staged);
+    assertSession(ticket);
+    if(JSON.stringify(st) !== localBefore) throw localConflict();
+    try{
+      // Web Storage writes are synchronous/atomic: failure leaves the previous value.
+      window.localStorage.setItem("nubbi-v1", serialized);
+    }catch(cause){
+      const error = new Error("No se pudo guardar el respaldo en este dispositivo. Los datos locales no se reemplazaron.");
+      error.code = "sync/local-storage";
+      throw error;
+    }
+    // There is no await between the final guards, storage write and state commit.
+    for(const key of Object.keys(data)) st[key] = data[key];
   }
 
   window.cloudSync = {
@@ -33,6 +131,7 @@
     async ensureUser(){ return ensureUser(); },
 
     async register(email, password){
+      sessionEpoch++;
       let u = auth.currentUser;
       if(u && u.isAnonymous){
         const cred = firebase.auth.EmailAuthProvider.credential(email, password);
@@ -46,51 +145,60 @@
     },
 
     async signIn(email, password){
+      sessionEpoch++;
       const u = (await auth.signInWithEmailAndPassword(email, password)).user;
       return u;
     },
 
-    async signOut(){ await auth.signOut(); },
+    async signOut(){ sessionEpoch++; await auth.signOut(); },
 
     async reset(email){
       await auth.sendPasswordResetEmail(email);
     },
 
     async hasData(){
-      const u = await ensureUser();
-      const doc = await db.collection("users").doc(u.uid).get();
+      const ticket = await sessionUser();
+      assertSession(ticket);
+      const doc = await db.collection("users").doc(ticket.user.uid).get();
+      assertSession(ticket);
       return doc.exists;
     },
 
     async save(){
-      const u = await ensureUser();
-      await db.collection("users").doc(u.uid).set({
-        data: JSON.stringify(st),
+      // Capture before the first await: later edits must not enter an earlier upload.
+      const snapshot = JSON.stringify(st);
+      validSnapshot(snapshot);
+      const ticket = await sessionUser();
+      assertSession(ticket);
+      await db.collection("users").doc(ticket.user.uid).set({
+        data: snapshot,
         updated: Date.now(),
-        email: u.email || null
+        email: ticket.user.email || null
       });
-      return u.uid;
+      assertSession(ticket);
+      return ticket.user.uid;
     },
 
     async load(){
-      const u = await ensureUser();
-      const doc = await db.collection("users").doc(u.uid).get();
+      const localBefore = JSON.stringify(st);
+      const ticket = await sessionUser();
+      assertSession(ticket);
+      const doc = await db.collection("users").doc(ticket.user.uid).get();
+      assertSession(ticket);
+      if(JSON.stringify(st) !== localBefore) throw localConflict();
       if(!doc.exists){
         alert("No hay datos en la nube para este usuario.");
         return false;
       }
-      try{
-        const o = JSON.parse(doc.data().data);
-        for(const k in o) st[k] = o[k];
-        save();
-        applyPrefs();
-        renderAll();
-        alert("Datos sincronizados desde la nube.");
-        return true;
-      }catch(e){
-        alert("Error al sincronizar los datos.");
-        return false;
-      }
+      let data;
+      try{ data = validSnapshot(doc.data().data); }
+      catch(error){ alert("No se sincronizó el respaldo: formato inválido."); return false; }
+      // Validation and local persistence complete before mutating live state.
+      persistDownloadedSnapshot(data, localBefore, ticket);
+      applyPrefs();
+      renderAll();
+      alert("Datos sincronizados desde la nube.");
+      return true;
     }
   };
 })();

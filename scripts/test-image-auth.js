@@ -15,6 +15,7 @@ const app = {
 const express = () => app;
 express.json = express.static = () => () => {};
 let providerCalls = 0;
+let lastProviderRequest;
 const env = {
   FIREBASE_API_KEY: "test-only",
   IMAGE_PROVIDER: "cloudflare",
@@ -26,6 +27,7 @@ const ctx = {
   require(name) {
     if (name === "dotenv") return { config() {} };
     if (name === "express") return express;
+    if (name === "./public/ai-client.js") return require("../public/ai-client.js");
     throw new Error("Unexpected dependency: " + name);
   },
   process: { env }, Buffer, URL, AbortSignal, Date: Clock,
@@ -40,15 +42,17 @@ const ctx = {
         json: async () => token === "invalid" ? { error: { message: "INVALID_ID_TOKEN" } } : { users: [user] } };
     }
     providerCalls++;
-    const prompt = JSON.parse(options.body).prompt;
+    const payload = JSON.parse(options.body);lastProviderRequest={url,payload};
+    const prompt = payload.prompt;
     assert.match(prompt, /years old/);
-    return { ok: true, status: 200, headers: { get: () => "image/png" }, arrayBuffer: async () => Buffer.from("test-image") };
+    if(url.includes('lucid-origin'))return {ok:true,status:200,headers:{get:()=>"application/json"},text:async()=>JSON.stringify({result:{image:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64').toString('base64')}})};
+    return { ok: true, status: 200, headers: { get: () => "image/png" }, arrayBuffer: async () => Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64') };
   },
 };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, "../server.js"), "utf8"), ctx);
-async function request(token, prompt = "Portrait of a person, 28 years old") {
-  const req = { body: { prompt }, headers: token ? { authorization: "Bearer " + token } : {} };
+async function request(token, prompt = "Portrait of a person, 28 years old", extra = {}) {
+  const req = { body: { prompt, ...extra }, headers: token ? { authorization: "Bearer " + token } : {} };
   const res = { code: 200, status(code) { this.code = code; return this; }, json(body) { this.body = body; return this; } };
   await routes["/api/image"](req, res);
   return res;
@@ -59,12 +63,39 @@ async function request(token, prompt = "Portrait of a person, 28 years old") {
   }
   assert.equal(providerCalls, 0);
   assert.equal((await request("user-a", "child portrait")).code, 400);
+  // Invalid numeric ages fail before provider calls and do not spend the daily quota.
+  for (const prompt of ["Portrait without an age", "Portrait, 0 years old", "Portrait, 20 years old", "Portrait, 29 years old, 12 years old", "Portrait, 29 years old, 30 years old", "Portrait, age: 21.5"]) {
+    const invalid = await request("age-user", prompt);
+    assert.equal(invalid.code, 400, prompt);
+    assert.equal(invalid.body.code, "INVALID_AGE");
+  }
+  assert.equal(providerCalls, 0);
+  assert.equal((await request("age-user", "Vampire, 300 years old")).code, 200);
+  assert.match(lastProviderRequest.payload.prompt, /300 years old/);
+  for (let i = 0; i < 4; i++) assert.equal((await request("age-user", "Portrait, 21‑year‑old explorer")).code, 200);
+  assert.equal((await request("age-user")).code, 429);
+  const longPrompt = "portrait, " + "detailed texture, ".repeat(150) + "29 years old";
+  assert.equal((await request("long-prompt-user", longPrompt)).code, 200);
+  assert.match(lastProviderRequest.payload.prompt, /^29 years old/);
+  assert.ok(lastProviderRequest.payload.prompt.length <= 2048);
   for (let i = 0; i < 5; i++) assert.equal((await request("user-a")).code, 200);
   assert.equal((await request("user-a")).code, 429);
   assert.equal((await request("user-b")).code, 200);
   now += 120000;
   assert.equal((await request("user-a")).code, 200);
+  assert.equal((await request('model-user',undefined,{model:'@cf/leonardo/lucid-origin'})).code,200);
+  assert.equal(lastProviderRequest.payload.num_steps,20);
+  assert.equal(lastProviderRequest.payload.width,768);
+  assert.equal((await request('model-user',undefined,{model:'@cf/leonardo/phoenix-1.0'})).code,200);
+  assert.match(lastProviderRequest.payload.negative_prompt,/underage/);
+  const stale=await request('stale-user',undefined,{model:'@cf/leonardo/removed-model'});
+  assert.equal(stale.code,200);
+  assert.match(lastProviderRequest.url,/@cf\/black-forest-labs\/flux-1-schnell/);
+  assert.equal(stale.body.model,'@cf/black-forest-labs/flux-1-schnell');
+  assert.equal((await request('model-user',undefined,{model:'https://attacker.example/model'})).code,400);
+  assert.equal((await request('model-user',undefined,{model:'Counterfeit-V3.0_fp16'})).code,400);
+  assert.equal((await request('model-user',undefined,{provider:'forge',model:'@cf/leonardo/lucid-origin'})).code,400);
   delete env.FIREBASE_API_KEY;
   assert.equal((await request("user-c")).code, 503);
-  console.log("Imágenes: sesión, rechazo anónimo/inhabilitado, menores, cuota por uid y reinicio UTC: OK (proveedores simulados)");
+  console.log("Imágenes: sesión, rechazo anónimo/inhabilitado, menores, cuota por uid, modelos por proveedor y reinicio UTC: OK (proveedores simulados)");
 })().catch(error => { console.error(error); process.exitCode = 1; });

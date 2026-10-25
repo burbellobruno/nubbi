@@ -103,40 +103,47 @@ fetch("/api/image/models").then(function(r){if(!r.ok)throw new Error("Imagen no 
 
 /* Cloud cuddle welcome. SVG is authored here; no external animation or audio library. */
 var introArt='<svg class="intro-art" viewBox="0 0 400 310" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cloudBlue" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#fff8ff"/><stop offset=".5" stop-color="#dcf4ff"/><stop offset="1" stop-color="#a5c9ff"/></linearGradient><linearGradient id="cloudPink" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#fff0fc"/><stop offset=".5" stop-color="#e9c5fa"/><stop offset="1" stop-color="#b49cf3"/></linearGradient><radialGradient id="cloudBlush"><stop stop-color="#ff91c5" stop-opacity=".7"/><stop offset="1" stop-color="#ff91c5" stop-opacity="0"/></radialGradient></defs><ellipse cx="202" cy="266" rx="100" ry="12" fill="#b59cfa" opacity=".08"/><g fill="#d8c0ff"><path class="intro-spark" d="m69 112 4 11 11 4-11 4-4 11-4-11-11-4 11-4z"/><path class="intro-spark s2" d="m319 77 5 15 15 5-15 5-5 15-5-15-15-5 15-5z"/><path class="intro-spark" d="m311 221 3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/></g><g class="intro-cloud-blue"><path d="M112 174C79 173 68 143 83 122C91 110 102 107 115 109C115 80 139 62 166 67C188 70 199 84 202 101C225 91 248 107 249 128C277 140 265 174 240 177L154 180L137 200L137 179L116 192L121 175Z" fill="url(#cloudBlue)" stroke="#eff5ff" stroke-width="2.5"/><ellipse cx="128" cy="148" rx="19" ry="13" fill="url(#cloudBlush)"/><ellipse cx="211" cy="140" rx="19" ry="13" fill="url(#cloudBlush)"/><g stroke="#382553" stroke-width="4" fill="none" stroke-linecap="round"><path d="M126 131q7-11 14 0M195 124q7-11 14 0M158 143q7 9 14-1"/></g></g><g class="intro-cloud-pink"><path d="M170 221C143 220 133 197 143 180C150 168 160 165 172 167C172 142 192 130 214 135C230 138 240 150 241 164C265 155 286 167 287 186C313 196 301 222 280 225L238 228L250 247L227 235L224 248L210 229Z" fill="url(#cloudPink)" stroke="#f6deff" stroke-width="2.5"/><ellipse cx="174" cy="201" rx="18" ry="12" fill="url(#cloudBlush)"/><ellipse cx="265" cy="196" rx="18" ry="12" fill="url(#cloudBlush)"/><g stroke="#422a5c" stroke-width="4" fill="none" stroke-linecap="round"><path d="M173 183q7 10 14 0M249 180q7 10 14 0M207 197q7 9 14-1"/></g></g><path class="intro-heart" d="M202 82c-25-14-17-31-6-27 4 1 6 5 6 5s3-5 8-5c16-1 16 16-8 27Z" fill="#f9b5da"/></svg>';
-var intro=null,introTimer=0,audioTimer=0,previousFocus=null;
-var introAudio=new Audio("nubbi-intro.mp3");introAudio.preload="auto";
+var heroClouds=$('heroClouds');if(heroClouds)heroClouds.innerHTML=introArt.replace(/cloudBlue/g,'heroCloudBlue').replace(/cloudPink/g,'heroCloudPink').replace(/cloudBlush/g,'heroCloudBlush');
+var styleList=$('styleDiscoveryList');
+if(styleList)[['realista','Realista','Luz natural · detalle','◒'],['semi-realista','Semi-realista','Entre el arte y lo real','◐'],['anime','Anime','Expresión · color','✧'],['manhwa','Manhwa','Tu propio webtoon','▱'],['furry','Furry','Personajes antropomórficos','♧'],['pintura digital','Fantasía','Mundos por descubrir','✦'],['3d','3D','Dimensión · carácter','◇']].forEach(function(style,index){var card=button('',function(){$('plus').click();$('sty').value=style[0];$('sty').dispatchEvent(new Event('change',{bubbles:true}));});card.className='style-tile style-'+index;var mark=document.createElement('span'),name=document.createElement('b'),caption=document.createElement('small');mark.className='style-mark';mark.textContent=style[3];mark.setAttribute('aria-hidden','true');name.textContent=style[1];caption.textContent=style[2];card.append(mark,name,caption);styleList.appendChild(card);});
+var intro=null,introTimer=0,audioTimer=0,previousFocus=null,introStarted=0;
+var introAudio=new Audio("nubbi-intro-soft.wav");introAudio.preload="auto";introAudio.volume=.8;
 function stopIntroAudio(){clearTimeout(audioTimer);introAudio.pause();introAudio.currentTime=0;}
-function finishIntro(){clearTimeout(introTimer);stopIntroAudio();if(intro&&intro.open)intro.close();}
+function finishIntro(){clearTimeout(introTimer);stopIntroAudio();if(intro&&intro.open){const film=intro.querySelector('video');if(film)film.pause();intro.close();}}
 function playIntroAudio(){
- if(!intro||!intro.open)return;
- introAudio.currentTime=0;
+ if(!intro||!intro.open||read("nubbi-intro-audio","on")==="off")return;
+ introAudio.currentTime=Math.min(4.2,(performance.now()-introStarted)/1000);
  var playback=introAudio.play();
- if(playback&&playback.then)playback.then(function(){if($("introStatus"))$("introStatus").textContent="Un pequeño abrazo, una nueva historia.";}).catch(function(e){if($("introStatus"))$("introStatus").textContent=e.name==="NotAllowedError"?"Activa el audio con el botón para escuchar Nubbi.":"No se pudo reproducir el audio. Puedes entrar sin sonido.";});
+ if(playback&&playback.catch)playback.catch(function(){}); // Silent fallback: respect browser autoplay policy.
 }
 function showIntro(){
  if(intro&&intro.open)return;
  previousFocus=document.activeElement;
  if(intro)intro.remove();
- intro=document.createElement("dialog");intro.id="nb-intro";intro.dataset.nbx="1";intro.setAttribute("aria-labelledby","introTitle");intro.setAttribute("aria-describedby","introSubtitle");
- intro.innerHTML=introArt+'<h1 id="introTitle" class="intro-brand">nubbi</h1><p id="introSubtitle" class="intro-subtitle">Las mejores historias comienzan con un encuentro.</p><div class="intro-controls"><button type="button" id="introVoice">Escuchar «Nubbi»</button><button type="button" id="introSkip" autofocus>Entrar</button></div><p id="introStatus" role="status">Una pequeña bienvenida, solo una vez por sesión.</p>';
+ intro=document.createElement("dialog");intro.id="nb-intro";intro.dataset.nbx="1";intro.setAttribute("aria-label","Bienvenida a Nubbi. La página se abrirá automáticamente.");intro.tabIndex=-1;
+ intro.innerHTML='<video class="intro-film" muted playsinline preload="auto" aria-hidden="true"><source src="nubbi-intro.webm" type="video/webm"></video><div class="intro-fallback">'+introArt+'<h1 class="intro-brand">nubbi</h1><p class="intro-subtitle">Cada historia comienza con un encuentro.</p></div>';
  document.body.appendChild(intro);
- intro.addEventListener("close",function(){clearTimeout(introTimer);stopIntroAudio();if(previousFocus&&previousFocus.isConnected)previousFocus.focus();});
- $("introSkip").onclick=finishIntro;
- $("introVoice").onclick=function(){
-  clearTimeout(introTimer);clearTimeout(audioTimer);
-  // Direct playback keeps the button usable with strict browser autoplay policies.
-  playIntroAudio();
- };
+ var film=intro.querySelector('video');film.muted=true;
+ intro.addEventListener("close",function(){clearTimeout(introTimer);film.pause();stopIntroAudio();if(previousFocus&&previousFocus.isConnected)previousFocus.focus();});
+ intro.addEventListener('pointerdown',function(){if(introAudio.paused)playIntroAudio();},{once:true});
+ film.addEventListener('playing',function(){intro.classList.add('has-film');introStarted=performance.now()-film.currentTime*1000;playIntroAudio();},{once:true});
+ film.addEventListener('ended',finishIntro,{once:true});
  intro.showModal();
- audioTimer=setTimeout(playIntroAudio,2350);
- // The entrance never blocks the age confirmation beneath it.
- introTimer=setTimeout(finishIntro,6500);
+ introStarted=performance.now();
+ var motion=read('nubbi-intro-motion','system');
+ var reduced=motion==='off'||motion==='system'&&matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.dataset.anim==='off';
+ if(!reduced)film.play().catch(function(){playIntroAudio();});
+ // No visible controls and no dependency on autoplay or a network response.
+ introTimer=setTimeout(finishIntro,reduced?650:4700);
 }
 var settings=document.createElement("section");settings.className="intro-settings";
 var settingsTitle=document.createElement("h3");settingsTitle.textContent="Un encuentro entre nubes";
-var settingsNote=document.createElement("p");settingsNote.textContent="Repite el encuentro de las nubes con el audio original de Nubbi. Si tu navegador bloquea el sonido automático, usa el botón Escuchar.";
+var settingsNote=document.createElement("p");settingsNote.textContent="Una bienvenida de unos segundos, sin botones. El audio original tiene una mezcla suave; si tu navegador bloquea el sonido automático, continúa en silencio.";
 settings.append(settingsTitle,settingsNote,button("Volver a ver la intro",showIntro));
+var soundLabel=document.createElement('label'),soundToggle=document.createElement('input');soundToggle.type='checkbox';soundToggle.checked=read('nubbi-intro-audio','on')!=='off';soundToggle.onchange=function(){store('nubbi-intro-audio',soundToggle.checked?'on':'off');};soundLabel.append(soundToggle,document.createTextNode(' Sonido de bienvenida'));settings.appendChild(soundLabel);
+var motionLabel=document.createElement('label'),motionSelect=document.createElement('select');motionLabel.textContent='Movimiento de la bienvenida';[['system','Respetar el sistema'],['on','Mostrar animación'],['off','Sin animación']].forEach(function(item){var option=document.createElement('option');option.value=item[0];option.textContent=item[1];motionSelect.appendChild(option);});motionSelect.value=read('nubbi-intro-motion','system');motionSelect.onchange=function(){store('nubbi-intro-motion',motionSelect.value);};motionLabel.appendChild(motionSelect);settings.appendChild(motionLabel);
 var profile=document.querySelector("#v-prof .prof");if(profile)profile.appendChild(settings);
-var seen=false;try{seen=sessionStorage.getItem("nubbi-cuddle-intro")==="1";sessionStorage.setItem("nubbi-cuddle-intro","1");}catch(e){}
+document.addEventListener('visibilitychange',function(){if(document.hidden&&intro&&intro.open)finishIntro();});
+var seen=false;try{seen=sessionStorage.getItem("nubbi-cuddle-intro")==="v2";sessionStorage.setItem("nubbi-cuddle-intro","v2");}catch(e){}
 if(!seen)showIntro();
 })();

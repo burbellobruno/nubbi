@@ -54,8 +54,9 @@
 </svg>
 <div id="views">
 <section class="view on" id="v-home">
-<div class="top"><span class="logo"><img src="logo.png" alt="">Nubbi</span><span class="note">+18 · todos los personajes son adultos</span></div>
-<div class="hero"><div><span class="eyebrow">UN PEQUEÑO REFUGIO PARA TUS HISTORIAS</span><h1>Conecta. Imagina.<br><span>Siente la historia.</span></h1><p>Encuentra un personaje, comparte un momento y descubre hasta dónde puede llevarte una conversación.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="heroNew"><svg class="icon"><use href="#i-plus"></use></svg><span>Crear personaje</span></button><button class="g" id="surprise"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Sorpréndeme</span></button></div></div>
+<div class="top"><span class="logo"><img src="logo.png" alt="">Nubbi</span><span class="note">+18 · personajes de 21 años o más</span></div>
+<div class="hero"><div class="hero-copy"><span class="eyebrow">UN UNIVERSO PEQUEÑO. HISTORIAS INFINITAS.</span><h1>Todo empieza<br>con un <span>hola.</span></h1><p>Personajes que despiertan tu imaginación. Conversaciones que se convierten en tu próxima historia.</p><div class="hero-actions"><button id="heroNew"><svg class="icon"><use href="#i-plus"></use></svg><span>Dar vida a un personaje</span></button><button class="g" id="surprise"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Inspírame</span></button></div></div><div id="heroClouds" class="hero-clouds" aria-hidden="true"></div></div>
+<section class="style-discovery" aria-labelledby="styleTitle"><div class="section-heading"><div><span class="eyebrow">DALE FORMA A TU IMAGINACIÓN</span><h2 id="styleTitle">Tu personaje, tu estilo</h2></div><span class="note">Un punto de partida para crear</span></div><div id="styleDiscoveryList" class="style-discovery-list"></div></section>
 <section id="recentStories" aria-labelledby="recentTitle" hidden><div class="section-heading"><div><span class="eyebrow">TU PRÓXIMO CAPÍTULO</span><h2 id="recentTitle">Continúa tu historia</h2></div><button type="button" class="g" id="recentAll">Ver chats</button></div><div id="recentStoryList"></div></section>
 <div class="searchbox"><svg class="icon"><use href="#i-search"></use></svg><input id="q" placeholder="Buscar personajes, tags, roles..."></div>
 <div class="tabs" id="tabs"><button class="tab on" data-tab="explore">Explorar</button><button class="tab" data-tab="trend">Tendencias</button><button class="tab" data-tab="today">Hoy</button><button class="tab" data-tab="new">Nuevos</button></div>
@@ -178,18 +179,19 @@
 </div>
 
 <dialog id="dlg">
-<h3 style="margin:0">Crear personaje</h3><div class="note">Todos los personajes son adultos (18+)</div>
+<h3 style="margin:0">Crear personaje</h3><div class="note">Todos los personajes tienen 21 años o más</div>
 <label>Idea para generarlo con IA</label><input id="idea" placeholder="Ej: rival de la academia, orgulloso pero leal">
 <button id="gen" type="button" style="margin-top:6px"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Generar con IA</span></button>
 <div class="note" id="genStatus" style="margin-top:6px"></div>
 <label>Emoji / foto</label><div style="display:flex;gap:8px"><input id="e" maxlength="4" value="🦇" style="width:80px"><input id="img" type="file" accept="image/*"></div>
-<label>Nombre</label><input id="n"><label>Descripción corta</label><input id="d"><label>Rol (novio, villano, mentor...)</label><input id="r">
+<label>Nombre</label><input id="n"><label>Descripción corta (incluye edad, mínimo 21 años)</label><input id="d"><label>Rol (novio, villano, mentor...)</label><input id="r">
 <label>Género</label><select id="gen2"><option>Masculino</option><option>Femenino</option><option>Otro</option></select>
 <label>Personalidad y reglas</label><textarea id="p" rows="3"></textarea><label>Primer mensaje</label><input id="gr">
 <label>Proveedor de imagen</label><select id="iprov"><option value="cloudflare">Cloudflare gratis · FLUX.1 schnell</option><option value="forge">Forge local · mis modelos</option><option value="huggingface">HuggingFace · modelo configurado</option></select>
 <label>Modelo de imagen</label><select id="sdm"><option value="">Automático</option></select>
 <div class="note" id="imageEngineNote" style="margin-top:4px">Cloudflare usa FLUX.1 schnell. No usa tus modelos locales ni genera imágenes explícitas.</div>
-<label>Estilo del prompt</label><select id="sty"><option>anime</option><option>realista</option><option>semi-realista</option><option>pintura digital</option><option>manhwa</option><option>furry</option></select>
+<label>Estilo del personaje</label><select id="sty"><option value="anime">Anime</option><option value="realista">Realista</option><option value="semi-realista">Semi-realista</option><option value="pintura digital">Pintura digital / fantasía</option><option value="manhwa">Manhwa / webtoon</option><option value="furry">Furry adulto / antropomórfico</option><option value="3d">Personaje 3D estilizado</option></select>
+<label for="imagePrompt">Descripción del retrato (opcional, misma edad)</label><textarea id="imagePrompt" rows="3" maxlength="1600" placeholder="Portrait of a person, 29 years old"></textarea>
 <div class="pr" id="pr"></div>
 <button id="genImg" type="button" class="g" style="margin-top:8px"><svg class="icon"><use href="#i-image"></use></svg><span>Generar imagen con IA</span></button>
 <div class="drow"><button class="g" id="cancel" type="button">Cancelar</button><button id="save" type="button">Guardar</button></div>
@@ -197,6 +199,7 @@
 <dialog id="cdlg">
 <h3 style="margin:0">Escena e historia</h3>
 <label>Escenario</label><textarea id="sc" rows="3" placeholder="Ej: Academia de magia, noche de tormenta, biblioteca vacía"></textarea>
+<label for="imageCharacterAge">Edad del personaje para imágenes (21+)</label><input id="imageCharacterAge" type="number" min="21" step="1" placeholder="Completa si tu personaje antiguo no indica edad"><p class="note">No cambia los datos del personaje. Si la descripción ya indica edad, debe coincidir.</p>
 <label>Tu rol en la historia</label><input id="ur">
 <label>Modo</label><select id="mode"><option value="chat">Chat directo</option><option value="story">Historia narrada</option></select>
 <label>Intensidad</label><select id="int"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, puede ser explícito)</option><option value="libre">Libre (iniciativa; puede ser explícito)</option></select>
@@ -264,11 +267,11 @@
 <p class="note">App de chat con personajes de IA. Es solo para mayores de 18 años.</p>
 <ul class="note" style="text-align:left">
 <li>Elegí un personaje o creá el tuyo.</li>
-<li>Podés escribir ficción adulta entre personajes mayores de 18.</li>
+<li>Podés escribir ficción adulta entre personajes de 21 años o más.</li>
 <li>Prohibido: contenido sexual con menores, no consentido, con animales o con personas reales.</li>
 <li>Personalizá tema, acento y tamaño en Perfil.</li>
 </ul>
-<label class="chk"><input type="checkbox" id="onbAdult"> Confirmo que tengo 18 años o más y que todos los personajes son adultos.</label>
+<label class="chk"><input type="checkbox" id="onbAdult"> Confirmo que tengo 18 años o más y que todos los personajes tienen 21 años o más.</label>
 <div class="drow"><button id="onbStart" disabled>Entrar</button></div>
 </div>
 </dialog>
@@ -306,7 +309,7 @@
 <label>Tags</label><input id="pubtags" maxlength="120">
 <label>Personalidad y reglas</label><textarea id="pubpersona" rows="4" maxlength="5000"></textarea>
 <label>Primer mensaje</label><textarea id="pubgreet" rows="2" maxlength="2000"></textarea>
-<label class="chk"><input type="checkbox" id="pubadult"> Confirmo que el personaje es adulto (18+) y que no incluye contenido sexual con menores ni no consentido.</label>
+<label class="chk"><input type="checkbox" id="pubadult"> Confirmo que el personaje tiene 21 años o más y que no incluye contenido sexual con menores ni no consentido.</label>
 <label class="chk"><input type="checkbox" id="pubterms"> Confirmo que tengo derecho a publicar este personaje y acepto las normas de la comunidad.</label>
 <div class="drow"><button class="g" id="pubcancel" type="button">Cancelar</button><button id="pubsend" type="button">Publicar</button></div>
 </dialog>
@@ -347,6 +350,7 @@
 </dialog>
 
 <script src="catalog.js"></script>
+<script src="ai-client.js"></script>
 <script src="app.js"></script>
 <script src="community.js"></script>
 <script src="ui-v2.js"></script>
