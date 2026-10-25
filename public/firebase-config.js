@@ -1,9 +1,9 @@
 window.FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDEOEIRtnTtMfOjgp77hTU7Nj6bBpcMKoA",
-  authDomain: "nubbi-d106b.firebaseapp.com",
-  projectId: "nubbi-d106b",
-  storageBucket: "nubbi-d106b.firebasestorage.app",
-  messagingSenderId: "334484618910",
-  appId: "1:334484618910:web:96e997133782f1e25d058f",
-  measurementId: "G-C7CDRPFDFQ"
+  apiKey: "AIzaSyD9rNJX_eGVHrGcyWhZhhKWbl8qyuUPs68",
+  authDomain: "nubbi-7cd8d.firebaseapp.com",
+  projectId: "nubbi-7cd8d",
+  storageBucket: "nubbi-7cd8d.firebasestorage.app",
+  messagingSenderId: "1332717642",
+  appId: "1:1332717642:web:1dc3de59d1e85ba8ca5eb3",
+  measurementId: "G-6XJL88NCEV"
 };
