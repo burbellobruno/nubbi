@@ -97,7 +97,7 @@ dialog{box-shadow:0 24px 100px #0006}dialog::backdrop{background:#080614b3;backd
 .appearance-controls{padding:16px;border:1px solid var(--bd);border-radius:16px;margin:16px 0;background:var(--surface)}
 .appearance-controls label{display:block;font-size:12px;margin-bottom:10px}.appearance-controls input{accent-color:var(--ac);padding:0;margin-top:8px}
 .intro-settings{margin:22px 0;padding:18px;border:1px solid var(--bd);border-radius:20px;background:var(--surface)}
-.intro-settings h3{margin:0 0 6px}.intro-settings p{font-size:12px;color:var(--mut);line-height:1.6}.intro-settings button{font-size:12px}
+.intro-settings summary{cursor:pointer;font-weight:600}.intro-settings label{display:block;margin-top:14px}.intro-settings button{margin-top:14px}
 /* Welcome: two clouds find a little home in each other. */
 #nb-intro{inset:0;width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;padding:24px;background:radial-gradient(ellipse at 50% 45%,#30254e 0%,#151127 44%,#0b0914 80%);color:#fff;overflow:hidden;animation:none}
 #nb-intro[open]{display:grid;place-items:center;align-content:center;gap:20px;text-align:center}
@@ -133,7 +133,536 @@ body{background:radial-gradient(ellipse at 85% -5%,#6749841f,transparent 55%),va
 .style-discovery{margin:30px 0 32px}.style-discovery .section-heading .note{font-size:11px}.style-discovery-list{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
 .style-tile{display:flex;flex-direction:column;text-align:left;align-items:flex-start;min-width:0;padding:14px 12px;border:1px solid var(--bd);background:var(--surface);border-radius:17px;color:var(--tx);transition:transform .2s,border-color .2s}.style-tile:hover{transform:translateY(-4px);border-color:var(--nb-lilac);background:var(--bot)}.style-tile b{font-size:12px;margin:12px 0 4px}.style-tile small{font-size:9px;line-height:1.6;color:var(--mut);font-weight:400}.style-mark{display:grid;place-items:center;border-radius:12px;width:40px;height:44px;font-size:25px;background:#aec5d51a;color:#c6e5f5}.style-1 .style-mark,.style-4 .style-mark{color:#e2b4cb;background:#ce87ae18}.style-2 .style-mark,.style-5 .style-mark{color:#cfb6f2;background:#b690e318}.style-3 .style-mark,.style-6 .style-mark{color:#a8d8c0;background:#71ab941a}
 .card{border-radius:22px;border:1px solid #ffffff17;box-shadow:0 8px 24px #0002}.card img.ph{transition:transform .45s}.card:hover img.ph{transform:scale(1.035)}.card .em{font-size:65px;opacity:.75}.card .fav{backdrop-filter:blur(12px)}.card .tags>*{font-size:9px;letter-spacing:.01em}.grid{gap:18px!important}.section-heading h2,h2{font-size:20px;font-weight:700}.catalog-filters{background:transparent}.searchbox{background:var(--surface);border-color:var(--bd);box-shadow:none}.tabs .tab{background:transparent;border:0;box-shadow:none}.tabs .tab.on{background:var(--ac-soft);color:var(--tx)}
-.intro-film{width:min(94vw,650px);height:min(94vw,650px);max-height:90dvh;object-fit:contain;display:none;border-radius:36px}.intro-fallback{display:grid;justify-items:center;gap:20px}.has-film .intro-film{display:block}.has-film .intro-fallback{display:none}#nb-intro{background:#100c1b;gap:0}#nb-intro .intro-film{filter:drop-shadow(0 0 65px #70538d22)}#nb-intro .intro-fallback .intro-art{max-height:55dvh}.intro-settings label{display:block;margin-top:16px;font-size:12px}.intro-settings input[type=checkbox]{width:18px;height:18px;vertical-align:middle;accent-color:var(--ac)}
+.intro-film{width:min(94vw,650px);height:min(94vw,650px);max-height:90dvh;object-fit:contain;display:block;border-radius:36px}.intro-fallback{display:grid;justify-items:center;gap:20px}.has-film .intro-film{opacity:1!important}#nb-intro{background:#100c1b;gap:0}#nb-intro .intro-film{filter:drop-shadow(0 0 65px #70538d22)}#nb-intro .intro-fallback .intro-art{max-height:55dvh}
 @media(max-width:1000px){.style-discovery-list{display:flex;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:10px;scrollbar-width:thin}.style-tile{flex:0 0 125px;scroll-snap-align:start}.hero{min-height:320px}.hero-clouds{right:-25px;top:30px;width:46%}}
 @media(max-width:700px){.hero{padding:26px!important;min-height:335px;display:block;border-radius:24px}.hero-copy{width:100%}.hero h1{font-size:45px!important;max-width:230px;margin:20px 0 16px}.hero p{max-width:240px;font-size:12px}.hero .eyebrow{font-size:8px;letter-spacing:.13em;max-width:220px}.hero-clouds{right:-32px;top:35px;width:47%;height:190px;opacity:.6;z-index:0}.hero-actions{margin-top:22px;gap:8px}.hero-actions button{font-size:10px;min-height:42px;padding:10px 12px}.style-discovery .section-heading .note{display:none}.style-tile{flex-basis:116px;padding:13px}.style-tile b{font-size:11px}.style-tile small{font-size:9px}.style-discovery{margin:24px 0}.intro-film{width:100vw;height:100vw;border-radius:0}#nb-intro{padding:0}.card small{font-size:11px}.card b{font-size:15px}}
 @media(prefers-reduced-motion:reduce){.hero-clouds .intro-cloud-blue,.hero-clouds .intro-cloud-pink{animation:none!important}}
+
+
+/* Nubbi Visual Comfort R2: soft surfaces, consistent geometry and lightweight motion.
+   Visual-only overrides. Original page sections, element IDs and application handlers stay intact. */
+:root{
+  --nb-ease:cubic-bezier(.22,.8,.25,1);
+  --nb-control-radius:16px;
+  --nb-card-radius:24px;
+  --nb-focus-ring:0 0 0 3px color-mix(in srgb,var(--ac3) 60%,transparent);
+}
+#views,.view,#chat,#msgs,.prof,.account,.sheetbody,.creator-preview,.recent-copy{min-width:0}
+#views{overscroll-behavior-y:contain;scrollbar-gutter:stable}
+.view.on{animation:nb-screen-arrive .32s var(--nb-ease) both}
+@keyframes nb-screen-arrive{from{opacity:.5;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes nb-chat-arrive{from{opacity:.65;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+@keyframes nb-message-arrive{from{opacity:.15;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@keyframes nb-sheet-arrive{from{opacity:.6;transform:translateY(12px) scale(.992)}to{opacity:1;transform:translateY(0) scale(1)}}
+#chat.open{animation:nb-chat-arrive .28s var(--nb-ease) both}
+#msgs .mr:last-child{animation:nb-message-arrive .24s var(--nb-ease) both}
+dialog[open]:not(#nb-intro){animation:nb-sheet-arrive .25s var(--nb-ease) both}
+:where(button,.card,.recent-story,.style-tile,nav [data-v],nav #plus){-webkit-tap-highlight-color:transparent}
+:where(button,.card,.recent-story,.style-tile,.pill,nav [data-v],nav #plus):focus-visible{outline:3px solid var(--ac3);outline-offset:3px}
+button{transition:transform .2s var(--nb-ease),box-shadow .2s var(--nb-ease),background-color .2s ease,border-color .2s ease}
+@media(hover:hover) and (pointer:fine){
+  .hero-actions button:hover,.acc-btns button:hover,.drow button:hover{transform:translateY(-2px)}
+  .card:hover,.recent-story:hover,.style-tile:hover{transform:translateY(-4px)}
+}
+:where(button,.card,.recent-story,.style-tile):active{transform:scale(.985)}
+
+/* Clear hierarchy and better legibility in discovery. */
+#views{max-width:1360px}
+.top{min-height:58px}
+.hero{min-width:0;max-width:100%;border-radius:30px;box-shadow:0 18px 52px #0000000b}
+.hero-copy{min-width:0;max-width:min(100%,560px)}
+.hero h1{overflow-wrap:normal;text-wrap:balance}
+.hero p{max-width:420px}
+.hero-clouds{max-width:440px}
+.hero-actions button{white-space:normal;line-height:1.3}
+.section-heading{align-items:flex-end}
+.section-heading h2{line-height:1.23;text-wrap:balance}
+.searchbox{min-width:0;box-shadow:0 4px 18px #0000000b;transition:border-color .2s,box-shadow .2s}
+.searchbox:focus-within{border-color:var(--ac3);box-shadow:var(--nb-focus-ring)}
+.searchbox input{min-width:0;outline:none!important}
+.catalog-filters{min-width:0}
+.catalog-filters .filterrow>*{min-width:0}
+.tabs{gap:6px}
+.tabs .tab{border-radius:12px;min-height:40px;padding-inline:14px}
+.tabs .tab.on{box-shadow:inset 0 -2px 0 var(--ac2)}
+.grid{min-width:0;align-items:stretch}
+.grid .card{min-width:0;aspect-ratio:3/4.15!important;min-height:0}
+.card{border-radius:var(--nb-card-radius);isolation:isolate;min-width:0;transition:transform .3s var(--nb-ease),border-color .2s,box-shadow .3s}
+.card:hover{box-shadow:0 15px 40px #0004;border-color:color-mix(in srgb,var(--ac2) 42%,var(--bd))}
+.card:after{background:linear-gradient(180deg,transparent 20%,#120b1e26 40%,#130c22ed 100%)}
+.card b,.card small,.recent-story b,.recent-story small{overflow-wrap:anywhere}
+.card b{font-size:clamp(14px,1.3vw,18px);line-height:1.25;letter-spacing:-.018em}
+.card small{line-height:1.42}
+.card .tags{min-width:0}
+.recent-story{min-width:0;border-radius:20px;transition:transform .25s var(--nb-ease),border-color .2s,background-color .2s}
+.recent-story img,.recent-story .recent-avatar{flex:none}
+.style-discovery-list,.rail{scroll-padding-inline:8px;overscroll-behavior-inline:contain}
+.style-tile{min-height:108px;transition:transform .25s var(--nb-ease),border-color .2s}
+.style-tile b,.style-tile small{overflow-wrap:anywhere}
+
+/* Conversation: comfortable line lengths, flexible composer and legible controls. */
+#chat{min-width:0;overflow:hidden}
+#chat>header{min-height:64px;min-width:0}
+#chat>header .t{min-width:0;flex:1}
+#chat>header button{flex:none}
+#msgs{min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;padding-bottom:18px}
+#msgs .mr{max-width:100%;min-width:0}
+#msgs .m{min-width:0;max-width:min(88%,680px);overflow-wrap:anywhere;word-break:normal;line-height:1.65}
+#msgs .m img{max-width:100%;height:auto;object-fit:contain;border-radius:12px}
+#msgs .mact{gap:5px;flex-wrap:wrap}
+#chat .chips{min-width:0;max-width:min(100%,800px);gap:6px;align-items:center}
+#chat .chips>button{white-space:nowrap}
+.chat-tools{min-width:0}
+.tool-panel{width:min(320px,calc(100vw - 32px));max-height:min(65dvh,480px);overflow-y:auto;overscroll-behavior:contain}
+#chat .pillform{min-width:0;align-items:flex-end;gap:10px}
+#chat .pillform textarea{flex:1;min-width:0;min-height:46px;max-height:160px;resize:none;line-height:1.5;overflow-y:auto;border-radius:18px;padding:12px 14px}
+#chat .pillform .send{width:46px;height:46px;flex:none;border-radius:16px}
+
+/* Forms and dialogs: predictable bounds, safe scrolling, zero cutoff. */
+dialog:not(#nb-intro){box-sizing:border-box;max-width:min(94vw,660px);max-height:min(90dvh,900px);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;border-radius:24px}
+dialog .drow{flex-wrap:wrap;align-items:center}
+dialog .drow button{min-width:0;overflow-wrap:anywhere}
+dialog input,dialog textarea,dialog select{max-width:100%;min-width:0}
+#dlg .wz-steps{min-width:0}
+#dlg .wz-steps span{min-width:0;overflow-wrap:anywhere}
+.creator-preview .preview-copy{flex:1;min-width:0}
+.creator-preview .preview-copy b,.creator-preview .preview-copy small{overflow-wrap:anywhere}
+.nb-image-viewer img{max-height:calc(90dvh - 110px);width:auto;height:auto}
+.prof{width:100%}
+.prof :is(.acc-btns,.stats){min-width:0;flex-wrap:wrap}
+.prof :is(.account,textarea,select,input){max-width:100%}
+
+/* Navigation keeps six evenly spaced destinations, including the create action. */
+nav [data-v]{transition:background-color .2s var(--nb-ease),color .2s var(--nb-ease),transform .2s var(--nb-ease)}
+nav [data-v].on{color:var(--tx)}
+nav .plus span{transition:transform .25s var(--nb-ease),box-shadow .25s var(--nb-ease)}
+@media (hover:hover) and (pointer:fine){nav .plus:hover span{transform:rotate(8deg) scale(1.06)}}
+
+@media (min-width:900px){
+  nav{width:230px;overflow-y:auto;overscroll-behavior:contain}
+  nav>div:not(.brand){min-height:48px}
+  nav [data-v].on{background:linear-gradient(90deg,var(--ac-soft),var(--surface));box-shadow:inset 3px 0 var(--ac2)}
+  #views{width:auto;max-width:1360px;min-width:0}
+  #chat{max-width:calc(100vw - 230px);box-shadow:-15px 0 50px #0003}
+}
+@media (min-width:900px) and (max-width:1160px){
+  /* Keep enough discovery space while a conversation is docked. */
+  body.chat-open #views{opacity:.9}
+  .hero h1{font-size:clamp(32px,3vw,45px)!important}
+  .hero-clouds{opacity:.55}
+}
+@media (max-width:899px){
+  #views{width:100%;max-width:none;padding:16px clamp(12px,3.5vw,24px) calc(100px + env(safe-area-inset-bottom,0px))}
+  nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));justify-content:stretch;gap:2px;align-items:end;padding:8px max(6px,env(safe-area-inset-left,0px)) calc(7px + env(safe-area-inset-bottom,0px));}
+  nav .brand{display:none}
+  nav>div:not(.brand){width:100%;min-width:0;max-width:none;min-height:52px;display:flex;align-items:center;justify-content:center;gap:3px;padding:5px 1px;border-radius:12px;font-size:clamp(9px,2.5vw,11px)}
+  nav .l{display:block;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  nav .plus{margin-top:-18px;align-self:center;overflow:visible}
+  nav .plus span{width:clamp(44px,13vw,54px);height:clamp(44px,13vw,54px);font-size:26px}
+  nav [data-v].on{background:var(--ac-soft)}
+  .style-discovery-list{overflow-x:auto}
+  .style-tile{flex:0 0 clamp(122px,22vw,160px)}
+  #chat{inset:0;width:100%;height:100dvh}
+  #chat>header{padding-inline:12px}
+}
+@media (max-width:700px){
+  .top{min-height:48px}
+  .hero{padding:clamp(20px,5vw,30px)!important;min-height:310px;max-height:none;display:block;isolation:isolate}
+  .hero-copy{width:100%;max-width:100%;position:relative;z-index:2}
+  .hero h1{font-size:clamp(32px,9vw,44px)!important;max-width:270px;line-height:1.08;margin:14px 0}
+  .hero p{max-width:min(95%,310px);font-size:clamp(12px,3.2vw,14px);line-height:1.55;margin-bottom:16px}
+  .hero .eyebrow{font-size:clamp(9px,2.3vw,10px);line-height:1.55;letter-spacing:.09em;max-width:250px}
+  .hero-clouds{width:50%;height:180px;right:-28px;top:26px;opacity:.23;z-index:1}
+  .hero-actions{gap:8px;position:relative;z-index:3}
+  .hero-actions button{flex:1 1 auto;max-width:100%;font-size:12px;min-height:44px;padding:10px 12px}
+  #recentStoryList{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .recent-story{min-width:0;padding:12px;gap:8px}
+  .grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:clamp(9px,3vw,14px)!important}
+  .grid .card{min-width:0;margin-bottom:0!important;aspect-ratio:3/4.2!important;padding:clamp(10px,3vw,15px)}
+  .card b{font-size:clamp(13px,3.8vw,16px)}
+  .card small{font-size:11px;min-height:0}
+  .card .tags>*{font-size:9px}
+  .rail{gap:10px}
+  .rail .card{width:clamp(142px,42vw,170px)!important}
+  .section-heading{gap:10px}
+  .section-heading h2,h2{font-size:clamp(18px,5vw,22px)}
+  #chat .chips{padding:8px 12px 0}
+  #chat .chips>button{font-size:11px;min-height:36px}
+  #chat .pillform{padding-inline:10px}
+  #msgs{padding:14px 10px}
+  #msgs .m{max-width:90%;padding:11px 13px}
+  #dlg{width:100%;max-width:100%;border-radius:24px 24px 0 0}
+}
+@media (max-width:360px){
+  #views{padding-inline:11px}
+  .hero{min-height:345px;padding:19px!important}
+  .hero-clouds{width:43%;opacity:.18}
+  .hero-actions button{font-size:11px;padding:9px 10px}
+  .card .tags>:nth-child(n+2){display:none}
+  .card .em{font-size:50px}
+  nav>div:not(.brand){font-size:9px}
+  #chat>header{gap:6px;padding-inline:7px}
+  #chat>header button{padding:9px}
+  #msgs .m{max-width:91%}
+  #dlg .wz-steps span{font-size:9px;padding:7px 3px}
+}
+@media (prefers-reduced-motion:reduce){
+  .view.on,#chat.open,#msgs .mr:last-child,dialog[open]:not(#nb-intro){animation:none!important}
+}
+:root[data-anim="off"] .view.on,
+:root[data-anim="off"] #chat.open,
+:root[data-anim="off"] #msgs .mr:last-child,
+:root[data-anim="off"] dialog[open]:not(#nb-intro){animation:none!important}
+
+/* R2.2: one unconditional welcome, independent of user UI animation settings.
+   The moving SVG is always visible behind a transparent video until playback begins.
+   Keep the video rendered at opacity:0 so autoplay can decode frames. */
+#nb-intro[open]{position:fixed;isolation:isolate}
+#nb-intro .intro-fallback{position:relative;z-index:1}
+#nb-intro .intro-film{
+  display:block;position:absolute;inset:50% auto auto 50%;
+  transform:translate(-50%,-50%);opacity:0;z-index:2;
+  pointer-events:none;
+}
+#nb-intro.has-film .intro-film{opacity:1!important}
+#nb-intro .intro-fallback .intro-cloud-blue{
+  animation:cloud-blue 3.8s cubic-bezier(.25,.65,.3,1) both!important;
+}
+#nb-intro .intro-fallback .intro-cloud-pink{
+  animation:cloud-pink 3.8s cubic-bezier(.25,.65,.3,1) both!important;
+}
+#nb-intro .intro-fallback .intro-heart{
+  animation:cloud-heart 3.8s ease both!important;
+}
+#nb-intro .intro-fallback .intro-spark{
+  animation:cloud-twinkle 2.6s ease-in-out infinite alternate!important;
+}
+/* Accessibility: gentle opacity reveal instead of large movement for reduced motion. */
+@keyframes nb-cloud-gentle{
+  from{opacity:.24;transform:translateY(4px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@media (prefers-reduced-motion:reduce){
+  #nb-intro[data-motion="gentle"] .intro-fallback .intro-cloud-blue{
+    animation:nb-cloud-gentle 1.2s ease both!important;
+  }
+  #nb-intro[data-motion="gentle"] .intro-fallback .intro-cloud-pink{
+    animation:nb-cloud-gentle 1.35s ease .15s both!important;
+  }
+  #nb-intro[data-motion="gentle"] .intro-fallback .intro-heart{
+    animation:nb-cloud-gentle 1.2s ease .35s both!important;
+  }
+  #nb-intro[data-motion="gentle"] .intro-fallback .intro-spark{
+    animation:nb-cloud-gentle 1.4s ease .3s both!important;
+  }
+}
+
+/* Nubbi UX R2.3 — Home geometry & legibility, based on real desktop screenshot.
+   Presentation-only: keep existing element IDs, JS handlers and intro behavior. */
+#v-home .style-discovery{margin:22px 0 24px}
+#v-home .style-discovery .section-heading{margin-bottom:14px}
+#v-home .style-discovery-list{gap:12px}
+#v-home .style-tile{
+  min-width:0;min-height:126px;padding:15px 14px;
+  border-radius:18px;justify-content:flex-start;
+  box-shadow:0 6px 24px #00000012;
+}
+#v-home .style-tile b{font-size:13px;line-height:1.3;margin:10px 0 6px}
+#v-home .style-tile small{font-size:11px;line-height:1.45;color:var(--mut)}
+#v-home .style-mark{height:42px;width:42px;flex:none}
+#v-home .searchbox{min-height:54px;border-radius:18px;margin-block:14px}
+#v-home .searchbox input{font-size:14px}
+#v-home .tabs{margin-top:12px}
+#v-home .section-heading .note{max-width:40%;text-align:right;line-height:1.5}
+
+/* The create CTA should lead navigation without dwarfing other destinations. */
+@media(min-width:900px){
+  nav .plus{margin:10px 0 12px;min-height:64px;box-shadow:0 10px 30px #7352ba20}
+  nav .plus span{width:42px;height:42px;flex:none}
+  nav .plus span .icon{width:23px;height:23px}
+}
+
+@media(min-width:1100px){
+  #v-home .hero{
+    min-height:0;max-height:none;align-items:center;
+    padding:27px 34px!important;margin-bottom:24px;
+  }
+  #v-home .hero-copy{width:62%;max-width:600px}
+  #v-home .hero h1{
+    font-size:clamp(38px,3.6vw,52px)!important;
+    line-height:1.07;margin:13px 0 16px;
+  }
+  #v-home .hero p{max-width:430px;font-size:14px;line-height:1.6;margin:0 0 19px}
+  #v-home .hero-actions button{min-height:46px}
+  #v-home .hero-clouds{top:14px;right:10px;height:calc(100% - 28px);width:40%;max-width:450px}
+}
+/* Mid-size screens cannot fit seven useful readable tiles side by side. */
+@media(min-width:900px) and (max-width:1099px){
+  #v-home .style-discovery-list{display:flex;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin;padding-bottom:10px}
+  #v-home .style-tile{flex:0 0 156px;scroll-snap-align:start}
+  #v-home .hero{padding:28px!important}
+  #v-home .hero h1{font-size:clamp(32px,3.5vw,42px)!important}
+}
+@media(max-width:899px){
+  #v-home .style-discovery-list{display:flex;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin;padding-bottom:10px}
+  #v-home .style-tile{flex:0 0 clamp(148px,24vw,170px);min-height:128px;scroll-snap-align:start}
+}
+@media(max-width:700px){
+  #v-home .style-discovery{margin:22px 0 22px}
+  #v-home .style-tile{flex-basis:148px;min-height:134px;padding:13px 14px}
+  #v-home .style-tile b{font-size:13px}
+  #v-home .style-tile small{font-size:11px;line-height:1.4}
+  #v-home .style-discovery .section-heading .note{display:none}
+  #v-home .searchbox{min-height:50px}
+}
+@media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  #v-home .style-tile:hover{transform:translateY(-3px);box-shadow:0 12px 32px #0000002a}
+}
+
+/* ===== UX R2.4 · Reading-first conversation layout =====
+   Geometry and polish only; keep message actions, event handlers and history intact. */
+#chat{
+  /* An opaque app surface keeps the catalog from competing with the conversation. */
+  background:radial-gradient(850px 620px at 100% 0%,color-mix(in srgb,var(--ac) 7%,transparent),transparent 75%),var(--bg);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  min-height:0;
+}
+#chat>header{
+  flex:0 0 auto;
+  min-height:76px;
+  padding:12px 18px;
+  gap:12px;
+  box-shadow:0 5px 18px rgba(0,0,0,.12);
+  position:relative;
+  z-index:2;
+}
+#chat>header .av{width:46px;height:46px;flex:0 0 46px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+#chat>header .t{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0;line-height:1.2}
+#chat>header .t br{display:none}
+#hname{font-size:17px;line-height:1.2;letter-spacing:-.02em}
+#hdesc{font-size:12px;line-height:1.3;max-width:100%;opacity:.93}
+#chat>header .icon-btn{width:42px;height:42px;min-height:42px;padding:0;display:grid;place-items:center;border-radius:14px}
+#chat>header #cfg{min-height:42px;padding:0 14px;border-radius:14px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+
+#msgs{
+  flex:1 1 0;
+  min-height:0;
+  width:100%;max-width:min(100%,820px);
+  padding:24px 20px 26px;
+  gap:14px;
+  scroll-padding-bottom:24px;
+  overscroll-behavior:contain;
+}
+#msgs .mr{gap:10px;margin-top:0;align-items:flex-end;max-width:100%}
+#msgs .mr .av{width:34px;height:34px;flex:0 0 34px;font-size:14px;border:1px solid var(--border)}
+#msgs .mr.u{padding-left:30px}
+#msgs .mr.b{padding-right:14px}
+#msgs .m{
+  width:fit-content;min-width:0;
+  max-width:min(84%,630px);
+  padding:14px 16px;
+  border-radius:20px;
+  line-height:1.58;
+  font-size:var(--fs);
+  box-shadow:0 6px 18px rgba(0,0,0,.1);
+  border:1px solid var(--border);
+  overflow-wrap:anywhere;
+}
+#msgs .m.b{
+  background:var(--surface-2);
+  color:var(--tx);
+  border-bottom-left-radius:7px;
+}
+#msgs .m.u{
+  color:#fff;
+  border-color:rgba(255,255,255,.17);
+  border-bottom-right-radius:7px;
+  max-width:min(78%,540px);
+}
+#msgs .m>div:not(.mact){line-height:1.62}
+#msgs .m i.act{opacity:.89;line-height:1.65}
+#msgs .emo{margin-bottom:10px;padding:4px 9px;font-size:11px;line-height:1.2}
+#msgs .mact{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  padding-top:10px;
+  margin-top:12px;
+  border-top:1px solid var(--border);
+  opacity:.8;
+}
+#msgs .mact button{
+  min-width:34px;
+  width:34px;
+  height:34px;
+  min-height:34px;
+  border-radius:10px;
+  padding:0;
+  border:1px solid var(--border);
+  background:var(--glass);
+  color:var(--mut);
+  display:grid;
+  place-items:center;
+}
+#msgs .mact button:hover,#msgs .mact button:focus-visible{border-color:var(--border-strong);color:var(--tx);background:var(--glass-strong)}
+#msgs .m.u .mact{border-top-color:rgba(255,255,255,.2)}
+#msgs .m.u .mact button{background:rgba(0,0,0,.12);color:#fff;border-color:rgba(255,255,255,.2)}
+#msgs .m.u .mact button:hover{background:rgba(0,0,0,.25)}
+#msgs .m>button.g{
+  min-height:36px;
+  margin-top:12px;
+  padding:7px 12px;
+  border-radius:12px;
+  font-size:12px;
+  font-weight:600;
+  opacity:1;
+}
+/* Preserve intentionally user-selected manga/minimal bubble variants. */
+#chat[data-bubble="minimal"] #msgs .m.b{background:var(--sf)}
+#chat[data-bubble="manga"] #msgs .m{border-radius:4px;border:1.5px solid var(--tx);box-shadow:3px 3px 0 var(--tx)}
+#chat[data-bubble="manga"] #msgs .m.b,#chat[data-bubble="manga"] #msgs .m.u{background:#fff;color:#111}
+#chat[data-bubble="manga"] #msgs .m.u .mact{border-top-color:rgba(0,0,0,.16)}
+#chat[data-bubble="manga"] #msgs .m.u .mact button{color:#222;background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.17)}
+
+#chat .chips{
+  flex:0 0 auto;
+  width:100%;max-width:min(100%,820px);
+  min-height:50px;
+  margin:0 auto;
+  padding:6px 14px 6px;
+  display:flex;flex-wrap:wrap;
+  gap:8px;
+  overflow:visible;
+  justify-content:flex-start;
+  border-top:1px solid var(--border);
+}
+#chat .chips::-webkit-scrollbar{display:none}
+#chat .chips>button{flex:none;min-height:38px;white-space:nowrap;border-radius:99px;padding:0 13px;font-size:12px}
+#chat .chat-tools{flex:0 0 auto;position:relative;margin-left:auto;z-index:5}
+#chat .chat-tools>summary{
+  min-height:38px;
+  padding:9px 14px;
+  border-radius:99px;
+  white-space:nowrap;
+  background:var(--surface-2);
+  font-weight:600;
+}
+#chat .chat-tools[open]>summary{border-color:var(--ac);color:var(--tx)}
+#chat .tool-panel{bottom:calc(100% + 10px);right:0;z-index:20}
+#chat .pillform{
+  flex:0 0 auto;
+  min-height:72px;
+  max-width:min(100%,820px);
+  width:100%;
+  margin:0 auto;
+  padding:10px 14px calc(12px + env(safe-area-inset-bottom,0px));
+  gap:10px;
+  align-items:flex-end;
+  border-top:1px solid var(--border);
+  background:var(--glass-strong);
+}
+#chat .pillform textarea{
+  flex:1;min-width:0;
+  min-height:48px;max-height:min(160px,30dvh);
+  padding:12px 16px;
+  font-size:14px;line-height:1.55;
+  border-radius:16px;
+  background:var(--surface-2);
+  border:1px solid var(--border-strong);
+}
+#chat .pillform textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--ac-soft)}
+#chat .pillform .send{flex:0 0 48px;width:48px;height:48px;min-height:48px;border-radius:16px;box-shadow:0 5px 18px var(--ac-soft)}
+#chat .pillform .send .icon{width:20px;height:20px}
+
+@media(max-width:700px){
+  #chat>header{min-height:70px;padding:9px 12px;gap:9px}
+  #chat>header .av{width:40px;height:40px;flex-basis:40px}
+  #chat>header .icon-btn{width:40px;height:40px;min-height:40px}
+  #chat>header #cfg{width:40px;min-height:40px;padding:0;justify-content:center;font-size:0}
+  #chat>header #cfg .icon{width:20px;height:20px}
+  #hname{font-size:16px}
+  #hdesc{font-size:11px}
+  #msgs{padding:17px 12px 18px;gap:12px}
+  #msgs .mr{gap:8px}
+  #msgs .mr.u{padding-left:22px}
+  #msgs .mr.b{padding-right:0}
+  #msgs .mr .av{width:30px;height:30px;flex-basis:30px}
+  #msgs .m{max-width:calc(100% - 38px);padding:12px 13px;font-size:var(--fs)}
+  #msgs .m.u{max-width:84%}
+  #msgs .mact{gap:4px}
+  #msgs .mact button{width:32px;min-width:32px;height:32px;min-height:32px}
+  #chat .chips{padding:6px 10px;gap:6px;min-height:46px}
+  #chat .chips>button{min-height:36px;padding:0 11px;font-size:11px}
+  #chat .chat-tools>summary{min-height:36px;padding:8px 10px;font-size:11px}
+  #chat .pillform{padding:9px 10px calc(10px + env(safe-area-inset-bottom,0px));min-height:66px}
+  #chat .pillform textarea{font-size:16px}
+  #chat .pillform .send{width:46px;height:46px;flex-basis:46px}
+}
+@media(max-width:360px){
+  #chat>header{gap:6px;padding-inline:8px}
+  #chat>header .icon-btn{width:36px;height:40px;min-height:40px}
+  #chat>header .av{width:36px;height:36px;flex-basis:36px}
+  #chat .chips{gap:5px}
+  #chat .chips>button{padding:0 8px}
+  #chat .chat-tools>summary{padding:8px 6px;font-size:10px;letter-spacing:-.02em}
+}
+@media(max-height:540px){
+  #chat>header{min-height:56px;padding-block:6px}
+  #msgs{padding-block:10px}
+  #chat .chips{min-height:42px}
+}
+@media(hover:hover) and (pointer:fine){
+  #msgs .mact{opacity:.6;transition:opacity .18s ease}
+  #msgs .m:hover .mact,#msgs .m:focus-within .mact{opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+  #msgs .mact{transition:none!important}
+}
+
+/* ===== UX R2.5 · Quiet motion, clear feedback, no history replay ===== */
+@keyframes nb25-message-arrive{
+ from{opacity:0;transform:translateY(7px) scale(.992)}
+ to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes nb25-screen-arrive{
+ from{opacity:.76;transform:translateY(6px)}
+ to{opacity:1;transform:translateY(0)}
+}
+/* Disable legacy animations on every history bubble and on the last child.
+   Only the DOM observer tags genuinely new messages. */
+#msgs .mr:not(.nb25-message-enter),
+#msgs .mr:last-child:not(.nb25-message-enter){animation:none}
+#msgs .mr.nb25-message-enter{animation:nb25-message-arrive .24s var(--nb-ease) both}
+.view.on{animation:nb25-screen-arrive .23s var(--nb-ease) both}
+#chat.open{animation-duration:.22s}
+
+/* Reply indicator exists only while app.js has an active text request.
+   Streaming replaces it with actual text; no fake waiting animation. */
+#msgs .typing{display:inline-flex;align-items:center;gap:5px;min-height:27px}
+#msgs .typing::before{content:"Escribiendo";font-size:12px;color:var(--mut);margin-right:7px;letter-spacing:.01em}
+#msgs .typing span{background:var(--ac2);width:6px;height:6px;opacity:.65}
+
+/* Readability: message actions should be discoverable without competing with text. */
+#msgs .mact{opacity:.9;gap:5px}
+#msgs .mact button{opacity:1;transition:background-color .18s ease,border-color .18s ease,color .18s ease,transform .18s var(--nb-ease)}
+#msgs .m.b .mact button{color:var(--mut)}
+#msgs .m.u .mact button{color:#fff}
+#chat .chat-tools>summary{transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease}
+#chat .chat-tools[open]>summary{border-color:var(--ac3);background:var(--ac-soft);box-shadow:0 0 0 2px color-mix(in srgb,var(--ac) 15%,transparent)}
+#chat .chat-tools>summary:focus-visible{outline:3px solid var(--ac3);outline-offset:3px}
+@media(hover:hover) and (pointer:fine){
+ #msgs .mact{opacity:.82}
+ #msgs .m:hover .mact,#msgs .m:focus-within .mact{opacity:1}
+ #msgs .mact button:hover{transform:translateY(-2px)}
+ #chat .chat-tools>summary:hover{border-color:var(--ac3)}
+}
+@media(hover:none){#msgs .mact{opacity:1}}
+@media(prefers-reduced-motion:reduce){
+ #msgs .mr.nb25-message-enter,.view.on{animation:none!important}
+ #msgs .typing span{animation:none!important;opacity:.8}
+ #msgs .mact button,#chat .chat-tools>summary{transition:none!important}
+}
+:root[data-anim="off"] #msgs .mr.nb25-message-enter,
+:root[data-anim="off"] .view.on{animation:none!important}
+:root[data-anim="off"] #msgs .typing span{animation:none!important;opacity:.8}
