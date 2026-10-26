@@ -666,6 +666,3 @@ nav .plus span{transition:transform .25s var(--nb-ease),box-shadow .25s var(--nb
 :root[data-anim="off"] #msgs .mr.nb25-message-enter,
 :root[data-anim="off"] .view.on{animation:none!important}
 :root[data-anim="off"] #msgs .typing span{animation:none!important;opacity:.8}
-
-#nb-intro[data-motion="off"] .intro-film{display:none!important}
-#nb-intro[data-motion="off"] .intro-fallback *{animation:none!important;transition:none!important;transform:none!important;opacity:1!important}

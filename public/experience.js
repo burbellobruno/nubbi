@@ -216,10 +216,11 @@ function showIntro(){
  film.addEventListener('ended',finishIntro,{once:true});
  intro.showModal();
  introStarted=performance.now();
- var reduced=read('nubbi-intro-motion','system')==='off'||document.documentElement.dataset.anim==='off'||
-  (typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches);
- intro.dataset.motion=reduced?'off':'on';
- if(reduced){showFallback();introTimer=setTimeout(finishIntro,650);return;}
+ // Welcome motion is independent of legacy and general UI animation settings.
+ // OS reduced motion uses a short SVG reveal, never the full-motion video.
+ var reduced=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+ intro.dataset.motion=reduced?'gentle':'on';
+ if(reduced){showFallback();introTimer=setTimeout(finishIntro,1800);return;}
  // The SVG cuddle animates immediately behind the video, including during autoplay stalls.
  // The film must stay rendered (opacity 0) so browsers can start decoding it.
  try{var play=film.play();if(play&&play.catch)play.catch(showFallback);}catch(e){showFallback();}
@@ -244,12 +245,6 @@ soundToggle.type='checkbox';soundToggle.id='welcomeSound';
 soundToggle.checked=read('nubbi-intro-audio',read('nubbi-sound','off'))==='on';
 soundToggle.onchange=function(){store('nubbi-intro-audio',soundToggle.checked?'on':'off');if(!soundToggle.checked)stopIntroAudio();};
 soundLabel.append(soundToggle,document.createTextNode(' Sonido de bienvenida'));settings.appendChild(soundLabel);
-var motionLabel=document.createElement('label'),motionSelect=document.createElement('select');
-motionSelect.id='welcomeMotion';motionLabel.textContent='Movimiento de la bienvenida';
-[['system','Respetar el sistema'],['on','Mostrar animación'],['off','Sin animación']].forEach(function(item){var option=document.createElement('option');option.value=item[0];option.textContent=item[1];motionSelect.appendChild(option);});
-motionSelect.value=read('nubbi-intro-motion','system');
-motionSelect.onchange=function(){store('nubbi-intro-motion',motionSelect.value);};
-motionLabel.appendChild(motionSelect);settings.appendChild(motionLabel);
 var profile=document.querySelector('#v-prof .prof');if(profile)profile.appendChild(settings);
 // Automatic transition remains available on each entry without a required click.
 var pendingIntro=document.hidden;
