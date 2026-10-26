@@ -11,13 +11,16 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="ui-v2.css">
 <link rel="stylesheet" href="experience.css">
+<link rel="stylesheet" href="account-store.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="firebase-sync.js"></script>
+<script src="account-store.js"></script>
 </head>
 <body>
+<div id="nb-account-loading" role="status" aria-live="polite">Cargando tu espacio privado de Nubbi…</div>
 <svg class="svg-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/></symbol>
@@ -114,7 +117,7 @@
 <button class="g" id="accLogin" type="button">Iniciar sesión</button>
 <button class="g" id="accReset" type="button">Olvidé mi contraseña</button>
 </div>
-<div class="note">Crear cuenta sincroniza tus chats entre dispositivos.</div>
+<div class="note">Cada cuenta tiene sus propios datos. Subí o descargá respaldos con los controles de sincronización.</div>
 </div>
 <div id="accUser" style="display:none">
 <div class="note" id="accEmailShow"></div>
@@ -351,9 +354,6 @@
 
 <script src="catalog.js"></script>
 <script src="ai-client.js"></script>
-<script src="app.js"></script>
-<script src="community.js"></script>
-<script src="ui-v2.js"></script>
-<script src="experience.js"></script>
+<script src="account-bootstrap.js"></script>
 </body>
 </html>

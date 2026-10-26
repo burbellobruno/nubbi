@@ -1,5 +1,7 @@
 (function(){
-var KEY="nubbi-v1";
+var accountStore=window.NubbiAccountStore;
+if(!accountStore)throw new Error('Account isolation must initialize before app.js');
+var KEY=accountStore.key();
 var EMO={feliz:"😊",triste:"😢",enojado:"😠",celoso:"😒",timido:"😳",enamorado:"😍",sorprendido:"😮",nervioso:"😰",burlon:"😏",neutral:"😐",asustado:"😨",pensativo:"🤔"};
 var LANGS={
 "es-LAT":{label:"Español latinoamericano neutro",instr:"español latinoamericano neutro (usa 'tú'; evita modismos regionales)"},
@@ -16,12 +18,13 @@ var st={custom:[],chats:{},cfg:{},favs:[],personas:[],persona:null,branches:{},p
 function migrateLangs(obj){if(!obj||typeof obj!=="object")return false;var changed=false;for(var k in obj){if(k==="lang"&&(obj[k]==="es-AR"||obj[k]==="es")){obj[k]="es-LAT";changed=true;}else if(obj[k]&&typeof obj[k]==="object"){if(migrateLangs(obj[k]))changed=true;}}return changed;}
 window.NubbiMigrateLangs=migrateLangs;
 window.st=st;
-try{var raw=localStorage.getItem(KEY)||localStorage.getItem("mochi-chat-v3");if(raw){var o=JSON.parse(raw);if(o)for(var k in o)st[k]=o[k];}}catch(e){}
+// Read only the account-scoped snapshot, never someone else's legacy data.
+var accountSnapshot=accountStore.read();if(accountSnapshot)for(var k in accountSnapshot)st[k]=accountSnapshot[k];
 try{migrateLangs(st);}catch(e){}
-try{if(localStorage.getItem("nubbi-adult-optin-v1")!=="1"){st.prof=st.prof||{};st.prof.adult=false;localStorage.setItem(KEY,JSON.stringify(st));localStorage.setItem("nubbi-adult-optin-v1","1");}}catch(e){}
+try{if(localStorage.getItem("nubbi-adult-optin-v1:"+accountStore.principal)!=="1"){st.prof=st.prof||{};st.prof.adult=false;accountStore.write(JSON.stringify(st));localStorage.setItem("nubbi-adult-optin-v1:"+accountStore.principal,"1");}}catch(e){}
 applyPrefs();
 var storageWarningShown=false;
-function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){if(!storageWarningShown){storageWarningShown=true;alert("No se pudieron guardar los cambios. Exporta tus datos y libera espacio antes de continuar.");}console.warn("Nubbi: almacenamiento no disponible",e);}}
+function save(){try{accountStore.write(JSON.stringify(st));}catch(e){if(!storageWarningShown){storageWarningShown=true;alert("No se pudieron guardar los cambios. Exporta tus datos y libera espacio antes de continuar.");}console.warn("Nubbi: almacenamiento no disponible",e);}}
 function applyPrefs(){var p=st.prof=st.prof||{},changed=false;if(p.lang==="es"||p.lang==="es-AR"||!LANGS[p.lang]){p.lang="es-LAT";changed=true;}p.temp=p.temp||"balanced";p.len=p.len||"normal";p.model=p.model||"";p.adult=p.adult===true;if(["forge","cloudflare","huggingface"].indexOf(p.imgProvider)<0){p.imgProvider="";changed=true;}p.voice=p.voice||{};p.voice.enabled=p.voice.enabled!==false;p.voice.auto=!!p.voice.auto;p.voice.rate=Number(p.voice.rate)||1;p.voice.pitch=Number(p.voice.pitch)||1;p.voice.voiceURI=p.voice.voiceURI||"";var r=document.documentElement;p.theme=p.theme||"dark";p.accent=p.accent||"violet";p.fontScale=p.fontScale||"md";p.density=p.density||"comfortable";p.anim=(p.anim===false?false:true);if(p.theme==="system")delete r.dataset.theme;else r.dataset.theme=p.theme;r.dataset.accent=p.accent;r.dataset.density=p.density;r.dataset.anim=p.anim?"on":"off";var sizes={sm:"14px",md:"15px",lg:"17px"};r.style.setProperty("--fs",sizes[p.fontScale]||"15px");if(changed)save();}
 var $=function(i){return document.getElementById(i)};
 function icon(name,cls){return '<svg class="icon'+(cls?' '+cls:'')+'" aria-hidden="true" focusable="false"><use href="#i-'+name+'"></use></svg>';}
@@ -66,9 +69,9 @@ function branchStore(id){if(!st.branches)st.branches={};if(!st.branches[id])st.b
 function saveBranchSnapshot(id,name,msgs){var bc=deepCopy(cfg(id));delete bc.bg;var b={id:"br"+Date.now()+Math.floor(Math.random()*99),name:name||("Rama "+new Date().toLocaleString()),ts:Date.now(),messages:deepCopy(msgs||hist(id)),cfg:bc};var arr=branchStore(id);arr.unshift(b);if(arr.length>20)arr.length=20;save();return b;}
 function firebaseToken(){try{var u=window.cloudSync&&window.cloudSync.currentUser?window.cloudSync.currentUser():null;return u&&u.getIdToken?u.getIdToken().catch(function(){return "";}):Promise.resolve("");}catch(e){return Promise.resolve("");}}
 function imageAuthReady(){try{return !!(window.cloudSync&&window.cloudSync.currentUser&&window.cloudSync.currentUser()&&!window.cloudSync.isAnonymous());}catch(e){return false;}}
-function api(url,body){var headers={"Content-Type":"application/json"};var tokenP=url.indexOf("/api/image")===0?firebaseToken():Promise.resolve("");return tokenP.then(function(t){if(t)headers.Authorization="Bearer "+t;return fetch(url,{method:"POST",headers:headers,body:JSON.stringify(body)});}).then(function(r){return r.text().then(function(t){var j=null;try{j=JSON.parse(t);}catch(e){}if(!j){var bad=new Error("El servidor no respondió. Cierra Live Server, ejecuta npm run dev y entra a http://localhost:3000");bad.status=r.status;bad.code="BAD_RESPONSE";throw bad;}if(j.error){var err=new Error(j.error);err.status=r.status;err.code=j.code||"";throw err;}return j;});},function(){var net=new Error("No hay conexión con el servidor. Ejecuta npm run dev y entra a http://localhost:3000");net.status=0;net.code="NETWORK";throw net;});}
+function api(url,body){accountStore.assertActive();var headers={"Content-Type":"application/json"};var tokenP=url.indexOf("/api/image")===0?firebaseToken():Promise.resolve("");return tokenP.then(function(t){accountStore.assertActive();if(t)headers.Authorization="Bearer "+t;return fetch(url,{method:"POST",headers:headers,body:JSON.stringify(body)});}).then(function(r){return r.text().then(function(t){var j=null;try{j=JSON.parse(t);}catch(e){}if(!j){var bad=new Error("El servidor no respondió. Cierra Live Server, ejecuta npm run dev y entra a http://localhost:3000");bad.status=r.status;bad.code="BAD_RESPONSE";throw bad;}accountStore.assertActive();if(j.error){var err=new Error(j.error);err.status=r.status;err.code=j.code||"";throw err;}return j;});},function(){var net=new Error("No hay conexión con el servidor. Ejecuta npm run dev y entra a http://localhost:3000");net.status=0;net.code="NETWORK";throw net;});}
 var sample=null,busy=false,imgData="",editingId=null,gF="Todos",tF="",view="home",homeTab="explore",homeLimit=12;
-sample=async function(prompt,opts){opts=opts||{};var body={prompt:prompt,adult:adultOn()};if(st.prof&&st.prof.model)body.model=st.prof.model;if(opts.response_format)body.response_format=opts.response_format;if(opts.stream)body.stream=true;if(opts.temperature!=null)body.temperature=opts.temperature;if(opts.top_p!=null)body.top_p=opts.top_p;if(opts.max_tokens!=null)body.max_tokens=opts.max_tokens;if(opts.presence_penalty!=null)body.presence_penalty=opts.presence_penalty;if(opts.frequency_penalty!=null)body.frequency_penalty=opts.frequency_penalty;if(!opts.stream){var j=await api("/api/chat",body);if(opts.onText)opts.onText({text:j.text});return{text:j.text};}var response=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!response.ok){var error=await response.json().catch(function(){return {};});throw new Error(error.error||"No se pudo generar la respuesta.");}return window.NubbiReadSSE(response,opts.onText);};
+sample=async function(prompt,opts){accountStore.assertActive();opts=opts||{};var body={prompt:prompt,adult:adultOn()};if(st.prof&&st.prof.model)body.model=st.prof.model;if(opts.response_format)body.response_format=opts.response_format;if(opts.stream)body.stream=true;if(opts.temperature!=null)body.temperature=opts.temperature;if(opts.top_p!=null)body.top_p=opts.top_p;if(opts.max_tokens!=null)body.max_tokens=opts.max_tokens;if(opts.presence_penalty!=null)body.presence_penalty=opts.presence_penalty;if(opts.frequency_penalty!=null)body.frequency_penalty=opts.frequency_penalty;if(!opts.stream){var j=await api("/api/chat",body);if(opts.onText)opts.onText({text:j.text});return{text:j.text};}var response=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!response.ok){var error=await response.json().catch(function(){return {};});throw new Error(error.error||"No se pudo generar la respuesta.");}accountStore.assertActive();var result=await window.NubbiReadSSE(response,function(chunk){accountStore.assertActive();if(opts.onText)opts.onText(chunk);});accountStore.assertActive();return result;};
 function all(){return st.custom.concat(CAT);}
 function byId(id){return all().find(function(c){return c.id===id});}
 function userMsgCount(id){var h=st.chats[id];if(!h||!h.length)return 0;return h.filter(function(m){return m.role==="user";}).length;}
@@ -198,7 +201,7 @@ async function generateChatImage(index){
  var scene="Create one coherent fictional scene illustration, preserve the adult character appearance, no collage, no lettering.\nCharacter: "+c.name+". Age description: "+c.desc+"\nPermanent visual profile: "+visualProfile(c)+"\nScenario: "+String(g.scenario||"").slice(0,700)+"\n"+(focus?"Exact moment: "+String(focus.content||"").slice(0,900):recent);
  try{var imageDesc=window.NubbiImageCharacterDescription(c,g.imageCharacterAge);scene="Character age declaration: "+imageDesc+"\n"+scene;}catch(e){alert(e.message+" Abre Escena y completa la edad del personaje para imágenes.");return;}
  var button=$("bImage");imageBusy=true;if(button){button.disabled=true;button.textContent="Generando imagen…";}
- try{var provider=st.prof.imgProvider||"",j=await api("/api/image",{prompt:buildImagePrompt(scene,"anime",c.tags),style:"anime",tags:c.tags||"",provider:provider,model:window.NubbiImageModelForProvider(st.prof,provider),adult:adultOn(),width:640,height:896,seed:stableImageSeed(id)});var image=await compressChatImage("data:"+(j.mime||"image/png")+";base64,"+j.image);
+ try{var provider=st.prof.imgProvider||"",j=await api("/api/image",{prompt:buildImagePrompt(scene,"anime",c.tags),style:"anime",tags:c.tags||"",provider:provider,model:window.NubbiImageModelForProvider(st.prof,provider),adult:adultOn(),width:640,height:896,seed:stableImageSeed(id)});var image=await compressChatImage("data:"+(j.mime||"image/png")+";base64,"+j.image);accountStore.assertActive();
  if(st.chats[id]!==h){alert("La historia cambió durante la generación. No se agregó la imagen.");return;}
  h.push({role:"image",image:image,content:"Imagen de la escena",ts:Date.now()});save();if(st.cur===id)renderChat();
  }catch(e){alert("No se pudo generar la imagen: "+e.message);}finally{imageBusy=false;if(button){button.disabled=false;button.textContent="Crear imagen";}}
@@ -352,7 +355,15 @@ $("theme").onclick=function(){var r=document.documentElement,d=r.dataset.theme==
 $("wipe").onclick=function(){if(confirm("¿Borrar todos tus chats?")){if("speechSynthesis" in window)speechSynthesis.cancel();st.chats={};save();renderAll();}};
 if($("exportData"))$("exportData").onclick=function(){var blob=new Blob([JSON.stringify(st)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="nubbi-backup.json";a.click();URL.revokeObjectURL(a.href);};
 if($("importData"))$("importData").onclick=function(){$("importFile").click();};
-if($("importFile"))$("importFile").onchange=function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);for(var k in o)st[k]=o[k];save();applyPrefs();renderAll();alert("Datos importados.");}catch(e){alert("Archivo inválido.");}};r.readAsText(f);};
+if($("importFile"))$("importFile").onchange=function(){
+ var f=this.files[0];if(!f)return;var owner=accountStore.key();
+ if(!confirm('¿Restaurar este archivo en el espacio actual? No se subirá a Firebase; guardaremos una copia local anterior antes de reemplazarlo.'))return;
+ var r=new FileReader();r.onerror=function(){alert('No se pudo leer el respaldo. Los datos no cambiaron.');};
+ r.onload=function(){try{
+  if(accountStore.key()!==owner)throw new Error('La cuenta cambió.');
+  var o=accountStore.validate(r.result);accountStore.replace(JSON.stringify(Object.assign({},st,o)),'file');location.reload();
+ }catch(e){alert('No se importó el respaldo: '+e.message);}};r.readAsText(f);
+};
 if($("importChar"))$("importChar").onclick=importChar;
 function renderAccount(){
 var box=$("accBox");if(!box)return;
@@ -361,7 +372,7 @@ var status=$("accStatus"),guest=$("accGuest"),user=$("accUser"),emailShow=$("acc
 if(!cs){if(status)status.textContent="Sincronización no configurada.";if(guest)guest.style.display="none";if(user)user.style.display="none";return;}
 var u=cs.currentUser();
 if(u&&!u.isAnonymous){
-if(status)status.textContent="Sesión iniciada";
+if(status)status.textContent="Cuenta privada · datos locales separados · sincronización manual";
 if(emailShow)emailShow.textContent=u.email||"(cuenta)";
 if(guest)guest.style.display="none";
 if(user)user.style.display="block";
@@ -373,35 +384,24 @@ if(user)user.style.display="none";
 }
 function accCreds(){var e=($("accEmail").value||"").trim(),p=$("accPass").value||"";if(!e||!p){alert("Completá email y contraseña.");return null;}if(p.length<6){alert("La contraseña debe tener al menos 6 caracteres.");return null;}return{email:e,pass:p};}
 if($("accRegister"))$("accRegister").onclick=async function(){
-var cs=window.cloudSync;if(!cs){alert("Firebase no está configurado.");return;}
-var c=accCreds();if(!c)return;var b=this;b.disabled=true;b.textContent="Creando...";
-try{await cs.register(c.email,c.pass);await cs.save();$("accPass").value="";renderAccount();alert("Cuenta creada. Tus datos se subieron a la nube.");}
-catch(e){alert(cs.friendly?cs.friendly(e):("Error: "+e.message));}
-b.disabled=false;b.textContent="Crear cuenta";
+ var cs=window.cloudSync;if(!cs){alert('Firebase no está configurado.');return;}
+ var c=accCreds();if(!c)return;var b=this;b.disabled=true;b.textContent='Creando...';
+ try{await cs.register(c.email,c.pass);$('accPass').value='';
+  // Explicit reload also handles anonymous->registered linking (same Firebase UID).
+  accountStore.lock();location.reload();
+ }catch(e){alert(cs.friendly?cs.friendly(e):('Error: '+e.message));b.disabled=false;b.textContent='Crear cuenta';}
 };
 if($("accLogin"))$("accLogin").onclick=async function(){
-var cs=window.cloudSync;if(!cs){alert("Firebase no está configurado.");return;}
-var c=accCreds();if(!c)return;var b=this;b.disabled=true;b.textContent="Entrando...";
-try{
-await cs.signIn(c.email,c.pass);$("accPass").value="";
-var has=await cs.hasData();
-if(has){
-if(confirm("Tu cuenta tiene datos en la nube. ¿Querés bajarlos a este dispositivo? Si cancelás, se suben los datos locales y se reemplazan los de la nube.")){
-await cs.load();
-}else if(confirm("¿Subir los datos de este dispositivo y reemplazar los de la nube?")){
-await cs.save();alert("Datos subidos a tu cuenta.");
-}
-}else{
-await cs.save();alert("Sesión iniciada. Tus datos locales se subieron a tu cuenta.");
-}
-renderAccount();
-}catch(e){alert(cs.friendly?cs.friendly(e):("Error: "+e.message));}
-b.disabled=false;b.textContent="Iniciar sesión";
+ var cs=window.cloudSync;if(!cs){alert('Firebase no está configurado.');return;}
+ var c=accCreds();if(!c)return;var b=this;b.disabled=true;b.textContent='Entrando...';
+ try{await cs.signIn(c.email,c.pass);$('accPass').value='';
+  // Nothing uploads or downloads on sign-in. Use explicit sync controls afterward.
+  accountStore.lock();location.reload();
+ }catch(e){alert(cs.friendly?cs.friendly(e):('Error: '+e.message));b.disabled=false;b.textContent='Iniciar sesión';}
 };
 if($("accLogout"))$("accLogout").onclick=async function(){
-var cs=window.cloudSync;if(!cs)return;
-try{await cs.signOut();renderAccount();alert("Sesión cerrada. Seguís en modo invitado.");}
-catch(e){alert(cs.friendly?cs.friendly(e):("Error: "+e.message));}
+ var cs=window.cloudSync;if(!cs)return;
+ try{await cs.signOut();accountStore.lock();location.reload();}catch(e){alert(cs.friendly?cs.friendly(e):('Error: '+e.message));}
 };
 if($("accReset"))$("accReset").onclick=async function(){
 var cs=window.cloudSync;if(!cs){alert("Firebase no está configurado.");return;}
@@ -409,8 +409,59 @@ var e=($("accEmail").value||"").trim();if(!e){alert("Escribí tu email arriba pa
 try{await cs.reset(e);alert("Te enviamos un email para restablecer la contraseña.");}
 catch(err){alert(cs.friendly?cs.friendly(err):("Error: "+err.message));}
 };
-if($("syncUp"))$("syncUp").onclick=async function(){if(!window.cloudSync){alert("Configurá Firebase en firebase-config.js primero.");return;}try{await window.cloudSync.save();renderAccount();alert("Datos subidos a la nube.");}catch(e){alert("Error al subir: "+e.message);}};
-if($("syncDown"))$("syncDown").onclick=async function(){if(!window.cloudSync){alert("Configurá Firebase en firebase-config.js primero.");return;}try{await window.cloudSync.load();renderAccount();}catch(e){alert("Error al bajar: "+e.message);}};
+if($("syncUp"))$("syncUp").onclick=async function(){
+ if(!window.cloudSync){alert('Configurá Firebase primero.');return;}
+ if(!confirm('¿Subir los datos de ESTA cuenta y reemplazar su copia de Firebase? Descargá/exportá un respaldo antes de continuar.'))return;
+ try{await window.cloudSync.save();renderAccount();alert('Datos subidos a la nube.');}catch(e){alert('Error al subir: '+e.message);}
+};
+if($("syncDown"))$("syncDown").onclick=async function(){
+ if(!window.cloudSync){alert('Configurá Firebase primero.');return;}
+ if(!confirm('¿Reemplazar los datos locales de ESTA cuenta con su respaldo de Firebase? Nubbi intentará guardar una copia de recuperación antes.'))return;
+ try{if(await window.cloudSync.load())location.reload();}catch(e){alert('Error al bajar: '+e.message);}
+};
+// Explicit migration: the original nubbi-v1 key and guest copy are never deleted.
+(function accountImportControls(){
+ var host=document.querySelector('#v-prof .prof');if(!host)return;
+ var section=document.createElement('section');section.className='appearance-controls nb-account-migration';
+ var title=document.createElement('h4');title.textContent='Privacidad y datos de esta cuenta';section.appendChild(title);
+ var note=document.createElement('p');note.className='note';note.textContent=(accountStore.principal==='guest'?'Estás en el espacio de invitado de este navegador.':'Estás en el espacio privado de la cuenta iniciada.')+' No se copian ni suben datos al iniciar sesión. Los datos anteriores no tienen propietario identificado: importalos solo si te pertenecen.';section.appendChild(note);
+ function addImport(source,label){
+  if(!accountStore.hasSource(source))return;
+  var b=document.createElement('button');b.type='button';b.className='g';b.textContent=label;b.dataset.accountImport=source;
+  b.onclick=function(){
+   if(!confirm('¿Importar TODOS esos datos al espacio actual y reemplazar su historial, personajes y ajustes locales? No se borrará el origen. Se intentará guardar una copia de recuperación del destino.'))return;
+   try{accountStore.importSource(source);location.reload();}
+   catch(e){alert('No se pudo importar: '+e.message);}
+  };
+  section.appendChild(b);
+ }
+ addImport('legacy','Importar datos anteriores de Nubbi');
+ if(accountStore.principal!=='guest')addImport('guest','Importar datos de invitado');
+ var recoveries=accountStore.listRecoveries();
+ if(recoveries.length){
+  var recovery=document.createElement('button');recovery.type='button';recovery.className='g';
+  recovery.textContent='Restaurar copia de recuperación ('+recoveries.length+')';
+  recovery.onclick=function(){
+   if(!confirm('¿Restaurar la copia anterior más reciente de ESTA cuenta? El estado actual también quedará respaldado antes de reemplazarlo.'))return;
+   try{accountStore.restoreRecovery(recoveries[0]);location.reload();}
+   catch(e){alert('No se pudo restaurar: '+e.message);}
+  };
+  section.appendChild(recovery);
+ }
+ host.appendChild(section);
+ // Tell returning users why old data is not shown until they assign ownership.
+ var hasOwnData=(st.custom||[]).length || Object.keys(st.chats||{}).length || (st.favs||[]).length;
+ if(!hasOwnData&&accountStore.hasSource('legacy')){
+  var home=document.getElementById('v-home');
+  if(home){
+   var callout=document.createElement('section');callout.className='appearance-controls';
+   var copy=document.createElement('p');copy.textContent='Encontramos datos anteriores en este navegador. No los importamos automáticamente para evitar mezclarlos entre cuentas.';
+   var open=document.createElement('button');open.type='button';open.className='g';open.textContent='Revisar mis datos anteriores';
+   open.onclick=function(){go('prof');section.scrollIntoView({block:'start'});};
+   callout.append(copy,open);home.insertBefore(callout,home.firstChild);
+  }
+ }
+})();
 $("newPersona").onclick=function(){["pname","pbio","page","ppron","papp","prel"].forEach(function(i){if($(i))$(i).value="";});$("pdlg").showModal();};$("pcancel").onclick=function(){$("pdlg").close();};$("psave").onclick=function(){var n=$("pname").value.trim();if(!n)return;var per={id:"per"+Date.now(),name:n,bio:$("pbio").value.trim(),age:($("page")?$("page").value.trim():""),pronouns:($("ppron")?$("ppron").value.trim():""),appearance:($("papp")?$("papp").value.trim():""),relation:($("prel")?$("prel").value.trim():"")};st.personas=st.personas||[];st.personas.unshift(per);st.persona=per.id;save();$("pdlg").close();["pname","pbio","page","ppron","papp","prel"].forEach(function(i){if($(i))$(i).value="";});renderPersonas();renderProf();};
 
 $("plus").onclick=function(){editingId=null;showWzError("");imgData="";$("pr").style.display="none";$("imagePrompt").value="";$("dlg").querySelector("h3").textContent="Crear personaje";["n","d","r","p","gr","idea"].forEach(function(i){if($(i))$(i).value="";});$("e").value="🦇";$("gen2").value="Masculino";if($("genStatus"))$("genStatus").textContent="";$("save").textContent="Guardar";if($("iprov"))$("iprov").value=(st.prof&&st.prof.imgProvider)||"";fillImageEngine(true);$("dlg").showModal();};

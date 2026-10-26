@@ -1,0 +1,23 @@
+/* Fail closed while Firebase restores the current identity. */
+html:not([data-nb-account-ready="1"]) #views,
+html:not([data-nb-account-ready="1"]) nav,
+html:not([data-nb-account-ready="1"]) #chat,
+html:not([data-nb-account-ready="1"]) dialog {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+#nb-account-loading {
+  display: none;
+}
+html:not([data-nb-account-ready="1"]) #nb-account-loading {
+  display: grid;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483640;
+  place-items: center;
+  text-align: center;
+  padding: 28px;
+  color: #eee6ff;
+  background: #100c1b;
+  font: 500 15px/1.5 system-ui, sans-serif;
+}

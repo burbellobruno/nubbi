@@ -1,5 +1,9 @@
 # Codex status — Nubbi
 
+## 2026-10-26 — P1 account isolation (local only)
+
+Implemented on `fix/nubbi-account-isolation`, based on remote main `b05ea99ec7346febbd673b7d8e69e5bf2040719d`, in a separate worktree. UID/guest persistence, auth hydration gate, explicit non-destructive legacy migration, recovery snapshots and manual cloud sync are validated. Nine existing JS suites, new store/bootstrap/browser tests, six welcome browser scenarios and 12 official Firestore emulator groups passed. SW v31 verifies all 21 shell assets. Original dirty checkout/index preserved. No push, PR, production operation or rules change. See [P1 report](CODEX-ACCOUNT-ISOLATION.md). Entries below are historical.
+
 Updated: 2026-10-25. Branch rediseño-ui, HEAD4df0a66 unchanged; inherited edits preserved. No commit/push/merge/deploy, production config/credential change, or paid inference.
 
 ## Latest review fixes

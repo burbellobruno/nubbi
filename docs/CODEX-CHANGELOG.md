@@ -1,5 +1,12 @@
 # Codex changelog
 
+## 2026-10-26 — P1 account isolation and safe persistence
+
+- Separate main snapshots by Firebase UID and guest; wait for auth hydration before loading private state. Lock and reload on identity changes, retaining asynchronous session guards.
+- Remove automatic login/registration upload/download. Add explicit legacy/guest import, backup-before-replacement, safe file restoration and recovery export. Keep legacy sources untouched.
+- Add store/bootstrap/browser regressions and adapt existing Firebase security tests. Validate all existing suites, actual SW assets, desktop/mobile welcome and offline behavior, and official Firestore emulator (12 groups).
+- Bump the public shell to v31. Preserve Firebase configuration, rules, backend, providers, existing UX and original working tree. Local branch only; no remote publication or production changes. See CODEX-ACCOUNT-ISOLATION.md for commands and limitations.
+
 ## 2026-10-25 — Initial read-only audit
 - Parsed the OpenCode conversation export and inspected its earlier backup in an isolated scratch directory.
 - Inspected the current project, copied a secret-free source/Git snapshot for diagnostics, and compared selected archived source hashes.

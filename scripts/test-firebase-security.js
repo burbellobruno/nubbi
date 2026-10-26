@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const syncSource = fs.readFileSync(path.join(__dirname, '../public/firebase-sync.js'), 'utf8');
+const storeSource = fs.readFileSync(path.join(__dirname, '../public/account-store.js'), 'utf8');
 const rules = fs.readFileSync(path.join(__dirname, '../firestore.rules'), 'utf8');
 function deferred() { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; }
 function fixture(options = {}) {
@@ -31,17 +32,21 @@ function fixture(options = {}) {
     globalSaveCalls: 0, appSaveCalls: 0, prefsCalls: 0,
     save() { ctx.globalSaveCalls++; }, applyPrefs() { ctx.prefsCalls++; }, renderAll() { ctx.renders++; }, console, Date,
   };
-  const localValues = new Map([['nubbi-v1', JSON.stringify(ctx.st)], ['unrelated-key', 'preserved']]);
+  const accountKey=options.guest?'nubbi:state:v2:guest':'nubbi:state:v2:user:account-a';
+  const localValues = new Map([[accountKey, JSON.stringify(ctx.st)], ['nubbi-v1', 'legacy-untouched'], ['unrelated-key', 'preserved']]);
   ctx.localStorage = {
     getItem(key) { return localValues.has(key) ? localValues.get(key) : null; },
     setItem(key, value) {
       if(options.localStorageError) throw options.localStorageError;
-      assert.equal(key, 'nubbi-v1'); assert.equal(typeof value, 'string');
-      localValues.set(key, value); ctx.localSaves++;
+      assert.ok(key.startsWith('nubbi:state:v2:'), 'no legacy writes'); assert.equal(typeof value, 'string');
+      localValues.set(key, value); if(key===accountKey)ctx.localSaves++;
     },
   };
   ctx.NubbiApp = { save() { ctx.appSaveCalls++; } };
-  ctx.window = ctx; vm.createContext(ctx); vm.runInContext(syncSource, ctx);
+  ctx.window = ctx; ctx.document={documentElement:{removeAttribute(){}}};
+  ctx.cloudSync={currentUser(){return auth.currentUser;}};
+  vm.createContext(ctx); vm.runInContext(storeSource,ctx);
+  ctx.NubbiAccountStore.activate(auth.currentUser); vm.runInContext(syncSource, ctx);
   return { ctx, auth, reads, writes, alerts, localValues, setGet(fn) { get = fn; } };
 }
 // Execute the actual rules predicate with local Firestore-list/set method semantics.
@@ -220,7 +225,8 @@ async function test(name, run) { try { await run(); passed++; } catch (error) { 
     f.setGet(async()=>({exists:true,data:()=>({data:JSON.stringify({custom:[{id:'remote-only'}]})})}));
     assert.equal(await f.ctx.cloudSync.load(),true);
     assert.equal(f.ctx.st.custom[0].id,'remote-only'); assert.equal(f.ctx.st.favs,favs);
-    assert.equal(f.ctx.localStorage.getItem('nubbi-v1'),JSON.stringify(f.ctx.st));
+    assert.equal(f.ctx.localStorage.getItem('nubbi:state:v2:user:account-a'),JSON.stringify(f.ctx.st));
+    assert.equal(f.ctx.localStorage.getItem('nubbi-v1'),'legacy-untouched');
     assert.equal(f.ctx.localStorage.getItem('unrelated-key'),'preserved'); assert.equal(f.writes.length,0);
   });
   await test('a late account change before persistence is rejected without rollback over the new account', async () => {
