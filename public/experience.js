@@ -170,8 +170,7 @@ var introArt='<svg class="intro-art" viewBox="0 0 400 310" aria-hidden="true" xm
 var heroClouds=$('heroClouds');if(heroClouds)heroClouds.innerHTML=introArt.replace(/cloudBlue/g,'heroCloudBlue').replace(/cloudPink/g,'heroCloudPink').replace(/cloudBlush/g,'heroCloudBlush');
 var styleList=$('styleDiscoveryList');
 if(styleList)[['realista','Realista','Luz natural · detalle','◒'],['semi-realista','Semi-realista','Entre el arte y lo real','◐'],['anime','Anime','Expresión · color','✧'],['manhwa','Manhwa','Tu propio webtoon','▱'],['furry','Furry','Personajes antropomórficos','♧'],['pintura digital','Fantasía','Mundos por descubrir','✦'],['3d','3D','Dimensión · carácter','◇']].forEach(function(style,index){var card=button('',function(){$('plus').click();$('sty').value=style[0];$('sty').dispatchEvent(new Event('change',{bubbles:true}));});card.className='style-tile style-'+index;var mark=document.createElement('span'),name=document.createElement('b'),caption=document.createElement('small');mark.className='style-mark';mark.textContent=style[3];mark.setAttribute('aria-hidden','true');name.textContent=style[1];caption.textContent=style[2];card.append(mark,name,caption);styleList.appendChild(card);});
-/* The cloud cuddle runs at every entry. It deliberately ignores old
-   nubbi-intro-motion/sessionStorage flags and the global UI animation toggle. */
+/* Keep saved welcome preferences while retaining the R2.5 presentation. */
 var intro=null,introTimer=0,audioTimer=0,stallTimer=0,previousFocus=null,introStarted=0;
 var introAudio=new Audio("nubbi-intro-soft.wav");introAudio.preload="none";introAudio.volume=.55;
 function stopIntroAudio(){clearTimeout(audioTimer);try{introAudio.pause();introAudio.currentTime=0;}catch(e){}}
@@ -180,8 +179,8 @@ function finishIntro(){
  if(intro&&intro.open){var film=intro.querySelector('video');if(film)film.pause();intro.close();}
 }
 function playIntroAudio(){
- // Reuse the existing general sound preference, without a separate intro setting.
- if(!intro||!intro.open||read("nubbi-sound","off")!=="on")return;
+ // Legacy explicit choice wins; otherwise audio requires general sound opt-in.
+ if(!intro||!intro.open||read("nubbi-intro-audio",read("nubbi-sound","off"))!=="on")return;
  introAudio.currentTime=Math.min(4.2,(performance.now()-introStarted)/1000);
  var playback=introAudio.play();
  if(playback&&playback.catch)playback.catch(function(){});
@@ -192,7 +191,7 @@ function showIntro(){
  if(intro)intro.remove();
  intro=document.createElement("dialog");intro.id="nb-intro";intro.dataset.nbx="1";
  intro.setAttribute("aria-label","Bienvenida animada a Nubbi. Se abrirá automáticamente.");intro.tabIndex=-1;
- intro.innerHTML='<video class="intro-film" autoplay muted playsinline preload="auto" aria-hidden="true"><source src="nubbi-intro.webm" type="video/webm"></video><div class="intro-fallback">'+introArt+'<h1 class="intro-brand">nubbi</h1><p class="intro-subtitle">Cada historia comienza con un encuentro.</p></div>';
+ intro.innerHTML='<video class="intro-film" muted playsinline preload="auto" aria-hidden="true"><source src="nubbi-intro.webm" type="video/webm"></video><div class="intro-fallback">'+introArt+'<h1 class="intro-brand">nubbi</h1><p class="intro-subtitle">Cada historia comienza con un encuentro.</p></div>';
  document.body.appendChild(intro);
  var film=intro.querySelector('video'),fallback=false,lastTime=0,stale=0;
  film.muted=true;
@@ -217,8 +216,10 @@ function showIntro(){
  film.addEventListener('ended',finishIntro,{once:true});
  intro.showModal();
  introStarted=performance.now();
- // A reduced-motion OS preference gets a gentler cloud reveal, never static art.
- intro.dataset.motion=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches?'gentle':'on';
+ var reduced=read('nubbi-intro-motion','system')==='off'||document.documentElement.dataset.anim==='off'||
+  (typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+ intro.dataset.motion=reduced?'off':'on';
+ if(reduced){showFallback();introTimer=setTimeout(finishIntro,650);return;}
  // The SVG cuddle animates immediately behind the video, including during autoplay stalls.
  // The film must stay rendered (opacity 0) so browsers can start decoding it.
  try{var play=film.play();if(play&&play.catch)play.catch(showFallback);}catch(e){showFallback();}
@@ -233,8 +234,24 @@ function showIntro(){
  // Do not freeze the dialog if neither media nor the fallback can play.
  introTimer=setTimeout(finishIntro,4700);
 }
-// Always show on each visit, including a tab first opened in the background.
-// No sessionStorage suppression or saved animation preference.
+// Keep controls in an accessible, unobtrusive profile panel.
+var settings=document.createElement('details');settings.className='intro-settings';
+var settingsSummary=document.createElement('summary');settingsSummary.textContent='Bienvenida y accesibilidad';
+settings.appendChild(settingsSummary);
+settings.appendChild(button('Volver a ver la intro',showIntro));
+var soundLabel=document.createElement('label'),soundToggle=document.createElement('input');
+soundToggle.type='checkbox';soundToggle.id='welcomeSound';
+soundToggle.checked=read('nubbi-intro-audio',read('nubbi-sound','off'))==='on';
+soundToggle.onchange=function(){store('nubbi-intro-audio',soundToggle.checked?'on':'off');if(!soundToggle.checked)stopIntroAudio();};
+soundLabel.append(soundToggle,document.createTextNode(' Sonido de bienvenida'));settings.appendChild(soundLabel);
+var motionLabel=document.createElement('label'),motionSelect=document.createElement('select');
+motionSelect.id='welcomeMotion';motionLabel.textContent='Movimiento de la bienvenida';
+[['system','Respetar el sistema'],['on','Mostrar animación'],['off','Sin animación']].forEach(function(item){var option=document.createElement('option');option.value=item[0];option.textContent=item[1];motionSelect.appendChild(option);});
+motionSelect.value=read('nubbi-intro-motion','system');
+motionSelect.onchange=function(){store('nubbi-intro-motion',motionSelect.value);};
+motionLabel.appendChild(motionSelect);settings.appendChild(motionLabel);
+var profile=document.querySelector('#v-prof .prof');if(profile)profile.appendChild(settings);
+// Automatic transition remains available on each entry without a required click.
 var pendingIntro=document.hidden;
 if(!pendingIntro)showIntro();
 window.addEventListener('pageshow',function(event){

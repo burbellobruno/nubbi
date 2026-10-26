@@ -96,6 +96,8 @@ dialog{box-shadow:0 24px 100px #0006}dialog::backdrop{background:#080614b3;backd
 #dlg[data-step="3"] .drow{display:flex;gap:10px;justify-content:space-between}
 .appearance-controls{padding:16px;border:1px solid var(--bd);border-radius:16px;margin:16px 0;background:var(--surface)}
 .appearance-controls label{display:block;font-size:12px;margin-bottom:10px}.appearance-controls input{accent-color:var(--ac);padding:0;margin-top:8px}
+.intro-settings{margin:22px 0;padding:18px;border:1px solid var(--bd);border-radius:20px;background:var(--surface)}
+.intro-settings summary{cursor:pointer;font-weight:600}.intro-settings label{display:block;margin-top:14px}.intro-settings button{margin-top:14px}
 /* Welcome: two clouds find a little home in each other. */
 #nb-intro{inset:0;width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;padding:24px;background:radial-gradient(ellipse at 50% 45%,#30254e 0%,#151127 44%,#0b0914 80%);color:#fff;overflow:hidden;animation:none}
 #nb-intro[open]{display:grid;place-items:center;align-content:center;gap:20px;text-align:center}
@@ -664,3 +666,6 @@ nav .plus span{transition:transform .25s var(--nb-ease),box-shadow .25s var(--nb
 :root[data-anim="off"] #msgs .mr.nb25-message-enter,
 :root[data-anim="off"] .view.on{animation:none!important}
 :root[data-anim="off"] #msgs .typing span{animation:none!important;opacity:.8}
+
+#nb-intro[data-motion="off"] .intro-film{display:none!important}
+#nb-intro[data-motion="off"] .intro-fallback *{animation:none!important;transition:none!important;transform:none!important;opacity:1!important}
