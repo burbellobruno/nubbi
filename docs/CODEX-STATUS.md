@@ -1,5 +1,13 @@
 # Codex status — Nubbi
 
+## Repetición P1 — normalización de descargas cloud, 2026-10-26
+
+Corrección aplicada: se migran idiomas legacy anidados y se completan todos los campos del perfil con valores iniciales antes de persistir una descarga. En esta repetición pasaron Firebase VM (24 grupos, incluidos rechazo/conflicto/cuota sin escritura), account-store, bootstrap y service worker (11 grupos); también `node --check` para los archivos públicos y pruebas tocados y `git diff --check`. La prueba de navegador que verifica perfil parcial, `custom[0].lang = "es-AR"`, igualdad inmediata/tras reload y una escritura no pudo ejecutarse porque `playwright` no está instalado/resoluble (`Cannot find module 'playwright'`); no se instalaron dependencias. El pase browser de 32 grupos mencionado en entradas anteriores es histórico y no valida este nuevo caso. El campo desconocido y la recuperación se verificaron en la suite Firebase VM. Service worker `nubbi-v34`.
+
+## Descarga Firebase P1 — 2026-10-26
+
+La descarga ahora reemplaza el estado con valores iniciales de la aplicación más el snapshot remoto validado. Nunca retiene secciones locales omitidas. Estado visible y persistido se sincronizan en el mismo objeto raíz. Nueve suites y store/bootstrap pasaron; Firebase VM 24; navegador 32; bienvenida 6; offline v33 21 archivos; emulador Firestore 12; sintaxis 27. Sin commit ni push.
+
 ## P1 — Auditoría corregida, 2026-10-26
 
 Validación profunda de respaldos y restauración completa de archivo implementadas sobre 6123c64 en la misma rama local. Sin mezcla de campos anteriores; respaldo obligatorio antes del reemplazo; formatos antiguos de imagen conservados. SW v32. Regresiones, 30 grupos de navegador, seis escenarios de bienvenida, offline y 12 grupos del emulador aprobados. Ver CODEX-ACCOUNT-ISOLATION.md. Sin publicación remota ni cambios de producción.

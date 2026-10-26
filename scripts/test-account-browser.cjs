@@ -79,7 +79,7 @@ new (require('node:vm').Script)(sdk); // Fail early if the simulated SDK is inva
    await upload({chats:{p0:[{role:'user',content}]}});await rejected;
    assert.equal(await page.evaluate(()=>localStorage.getItem(NubbiAccountStore.key())),preserved.raw);
    await page.evaluate(raw=>localStorage.setItem('test-cloud:C',raw),JSON.stringify({chats:{p0:[{role:'assistant',content}]}}));
-   await assert.rejects(page.evaluate(()=>cloudSync.load()),/content/);
+   assert.equal(await page.evaluate(()=>cloudSync.load()),false,'A malformed cloud snapshot is rejected before replacing local data');
    assert.equal(await page.evaluate(()=>JSON.stringify(st)),preserved.live);
    for(const view of ['home','chats','prof'])await page.evaluate(v=>NubbiApp.go(v),view);
   }passed++;
@@ -102,6 +102,23 @@ new (require('node:vm').Script)(sdk); // Fail early if the simulated SDK is inva
   for(const view of ['home','chats','prof'])await page.evaluate(v=>NubbiApp.go(v),view);
   await page.evaluate(()=>NubbiOpenChat('p0'));assert.equal(await page.locator('#msgs img').count(),1);
   await page.locator('#back').click();passed++;
+  const untouched=await page.evaluate(()=>({legacy:localStorage.getItem('nubbi-v1'),guest:localStorage.getItem('nubbi:state:v2:guest'),a:localStorage.getItem('nubbi:state:v2:user:A'),b:localStorage.getItem('nubbi:state:v2:user:B')}));
+  await page.evaluate(()=>{localStorage.setItem('test-cloud:C',JSON.stringify({prof:{name:'Remoto válido',lang:'es-LAT',imgProvider:'forge'},chats:{},custom:[{id:'lang-test',name:'Idioma antiguo',lang:'es-AR'}],serverExtension:{retained:true}}));sessionStorage.setItem('cloud-target-writes','0');window.originalSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k===NubbiAccountStore.key())sessionStorage.setItem('cloud-target-writes',String(Number(sessionStorage.getItem('cloud-target-writes')||0)+1));return window.originalSetItem.call(this,k,v)}});
+  await profile();await page.locator('#syncDown').click();await page.waitForFunction(()=>window.st?.prof.name==='Remoto válido');await ready('user:C');
+  async function assertPartial(){
+   const state=await page.evaluate(()=>JSON.parse(JSON.stringify(st)));
+   const defaultKeys=Object.keys(await page.evaluate(()=>NubbiAppDefaults()));
+   assert.ok(defaultKeys.every(key=>Object.prototype.hasOwnProperty.call(state,key)),'Every application default field is present');
+   assert.deepEqual(Object.keys(state).filter(key=>!defaultKeys.includes(key)),['serverExtension'],'Only the safe unknown remote extension is additional');
+   assert.deepEqual(state.chats,{});assert.deepEqual(state.custom,[{id:'lang-test',name:'Idioma antiguo',lang:'es-LAT'}]);assert.deepEqual(state.cfg,{});assert.deepEqual(state.favs,[]);assert.deepEqual(state.personas,[]);assert.deepEqual(state.branches,{});
+   assert.equal(state.serverExtension.retained,true);assert.equal(state.prof.name,'Remoto válido');assert.equal(state.prof.lang,'es-LAT');assert.equal(state.prof.imgProvider,'forge');assert.equal(state.prof.intensity,'rom');assert.equal(state.prof.bio,'');assert.equal(state.prof.img,'');
+   assert.deepEqual(state.prof.voice,{enabled:true,auto:false,rate:1,pitch:1,voiceURI:''});
+   assert.equal(await page.evaluate(()=>localStorage.getItem(NubbiAccountStore.key())),JSON.stringify(state),'Visible state exactly equals persisted state');
+   assert.equal(await page.evaluate(()=>sessionStorage.getItem('cloud-target-writes')),'1','Normalization is included in the initial persistence write');
+  }
+  await assertPartial();await page.reload();await ready('user:C');await assertPartial();
+  assert.deepEqual(await page.evaluate(()=>({legacy:localStorage.getItem('nubbi-v1'),guest:localStorage.getItem('nubbi:state:v2:guest'),a:localStorage.getItem('nubbi:state:v2:user:A'),b:localStorage.getItem('nubbi:state:v2:user:B')})),untouched);
+  assert.ok((await page.evaluate(()=>NubbiAccountStore.listRecoveries())).length>=1);passed++;
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'No horizontal page overflow');
   assert.deepEqual(errors,[]);console.log('PASS P1 browser '+(mobile?'mobile':'desktop')+': guest, explicit migration, A/B, logout, hydration, external transition, sync failure/recovery, explicit upload, registration');
   await context.close();

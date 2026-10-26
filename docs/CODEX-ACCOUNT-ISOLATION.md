@@ -1,5 +1,11 @@
 # P1 — Account isolation and safe persistence
 
+## 2026-10-26 — Reemplazo completo al descargar de Firebase
+
+`persistDownloadedSnapshot()` ya construye el snapshot desde `NubbiAppDefaults()` y sobreescribe solo con los campos remotos validados. No incorpora secciones del estado local previo. Antes de serializar, el normalizador compartido migra recursivamente idiomas históricos como `es-AR` también en campos anidados y completa `prof` con todos sus valores iniciales. Después de `AccountStore.replace()` actualiza el mismo objeto raíz en memoria para que `st` corresponda exactamente al estado persistido. Se conserva el respaldo recuperable obligatorio, conflicto local, aislamiento por UID y campos remotos desconocidos seguros. La caché pública es `nubbi-v34` por los cambios públicos de esta corrección.
+
+Pruebas de esta corrección cubren el perfil parcial, campos de idioma anidados `es-AR`, normalización antes de persistir, igualdad entre memoria y almacenamiento antes y después de recargar, una sola escritura, extensión remota segura y copia recuperable. Las suites VM/browser verifican además ausencia de escritura ante validación inválida, conflicto y fallo de almacenamiento. Los resultados de esta repetición se registran por separado en `CODEX-STATUS.md`; no deben confundirse con resultados de revisiones anteriores.
+
 ## 2026-10-26 — Correcciones de auditoría (sobre 6123c64)
 
 Se corrigieron los dos hallazgos autorizados, únicamente en `fix/nubbi-account-isolation`:
@@ -12,7 +18,7 @@ Se corrigieron los dos hallazgos autorizados, únicamente en `fix/nubbi-account-
 - `scripts/test-account-browser.cjs`: archivo y nube con `content` objeto/array, continuidad de Inicio/Chats/Perfil después del rechazo, cuota simulada al respaldar, reemplazo parcial, preservación de legacy/A/B, recuperación, imágenes antiguas y contenido válido de memoria/personas/ramas.
 - Este informe, `CODEX-STATUS.md` y `CODEX-CHANGELOG.md`: documentación del cierre.
 
-Validación repetida: nueve suites JS existentes; suites de store/bootstrap; 30 grupos de navegador en escritorio/móvil (incluyen aislamiento A/B, persistencia y chat simulado); seis escenarios de bienvenida; offline escritorio/móvil con v32 y 21 archivos; emulador oficial Firestore, 12 grupos; sintaxis de 27 archivos; `git diff --check`. Todo aprobado. Comandos y requisitos del entorno: sección de validación original debajo. El harness offline ahora espera v32.
+Validación repetida para esta corrección: nueve suites JS existentes; suites de store/bootstrap; Firebase VM, 24 grupos; navegador, 32 grupos de cuenta en escritorio/móvil, incluido restore parcial y comprobación de estado tras reload; seis escenarios de bienvenida; offline escritorio/móvil con v33 y 21 archivos; emulador oficial Firestore, 12 grupos; sintaxis de 27 archivos; `git diff --check`. Todo aprobado. Comandos y requisitos del entorno: sección de validación original debajo. El harness offline espera v33.
 
 No se modificaron backend, proveedores, Firebase, reglas ni el checkout original. No se hizo push/PR/merge/deploy. La validación no incluye cuentas reales ni inferencia paga. Continúan los límites de localStorage, cuota y acceso offline descritos al final. Un respaldo inválido se conserva en su origen y debe corregirse fuera de la cuenta activa; no se intenta reparar automáticamente. No se encontraron bloqueos adicionales fuera del alcance de estas correcciones.
 
@@ -111,4 +117,4 @@ The two workspace harnesses are local validation infrastructure, not application
 
 LocalStorage isolation prevents accidental application-level mixing; it is not encryption against another person with browser-profile/devtools access. The legacy key remains recoverable on this device by explicit action. Welcome/audio and moderation safety preferences stored outside the main snapshot remain device preferences. A cold offline start without Firebase identity confirmation offers guest data only, never guesses the last authenticated UID. Changing identities reloads the page and ends active streams. Recovery copies consume storage; no automatic deletion is performed. Concurrent edits in two tabs of the same UID remain last-writer-wins, as before; account-transition races are guarded. An already-dispatched cloud write can finish for its original UID, but is never retargeted to the next account.
 
-This change is validated locally, not deployed. A rollback to the old application would read the untouched legacy key and would not read newly scoped snapshots; export scoped data before any approved rollback. Production promotion requires separate approval and should retain the same Firebase project and rules.
+Firebase restores now use remote fields plus application defaults for omitted fields. A rollback to the old application would read the untouched legacy key and would not read newly scoped snapshots; export scoped data before any approved rollback. Production promotion requires separate approval and should retain the same Firebase project and rules. This correction remains local and uncommitted.

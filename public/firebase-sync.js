@@ -93,6 +93,8 @@
     for(const key of ["persona", "cur"]){
       if(Object.prototype.hasOwnProperty.call(data, key) && data[key] !== null && typeof data[key] !== "string") throw new Error("El respaldo contiene una selección inválida.");
     }
+    if(!window.NubbiAccountStore) throw new Error("El almacenamiento seguro todavía no está listo.");
+    window.NubbiAccountStore.validate(JSON.stringify(data));
     return data;
   }
 
@@ -103,7 +105,12 @@
   }
 
   function persistDownloadedSnapshot(data, localBefore, ticket){
-    const staged = Object.assign({}, st, data);
+    if(typeof window.NubbiAppDefaults !== 'function') throw new Error("No se pudieron preparar los valores iniciales de Nubbi.");
+    // A cloud download is a restore: omitted sections reset to app defaults,
+    // never to stale values from this browser. Unknown safe remote fields remain.
+    const staged = Object.assign(window.NubbiAppDefaults(), data);
+    if(typeof window.NubbiNormalizePrefs !== 'function') throw new Error("No se pudieron normalizar las preferencias de Nubbi.");
+    window.NubbiNormalizePrefs(staged);
     const serialized = JSON.stringify(staged);
     assertSession(ticket);
     window.NubbiAccountStore.assertUser(ticket.user);
@@ -116,8 +123,9 @@
       if(error.code==='account/storage'){const wrapped=new Error(error.message);wrapped.code='sync/local-storage';throw wrapped;}
       throw error;
     }
-    // Preserve object identity of sections omitted by a partial cloud snapshot.
-    for(const key of Object.keys(data)) st[key] = committed[key];
+    // Keep the live root object identity while making it exactly match storage.
+    for(const key of Object.keys(st)) delete st[key];
+    Object.assign(st, committed);
   }
 
   window.cloudSync = {

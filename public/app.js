@@ -14,7 +14,11 @@ var LANGS={
 };
 var RAW=window.NUBBI_RAW||[];
 var CAT=RAW.map(function(r,i){return{id:"p"+i,emoji:r[0],name:r[1],desc:r[2],role:r[3],gender:r[4],tags:r[5],persona:r[6],greeting:r[7]};});
-var st={custom:[],chats:{},cfg:{},favs:[],personas:[],persona:null,branches:{},prof:{name:"",bio:"",img:"",intensity:"rom",theme:"dark",accent:"violet",fontScale:"md",density:"comfortable",anim:true,lang:"es-LAT",temp:"balanced",len:"normal",adult:false},cur:null};
+function createDefaultState(){return{custom:[],chats:{},cfg:{},favs:[],personas:[],persona:null,branches:{},prof:{name:"",bio:"",img:"",intensity:"rom",theme:"dark",accent:"violet",fontScale:"md",density:"comfortable",anim:true,lang:"es-LAT",temp:"balanced",len:"normal",adult:false},cur:null};}
+var st=createDefaultState();
+window.NubbiAppDefaults=createDefaultState;
+function normalizePrefs(snapshot){var changed=!!migrateLangs(snapshot),defaults=createDefaultState().prof,p=snapshot.prof=Object.assign({},defaults,snapshot.prof||{});if(p.lang==="es"||p.lang==="es-AR"||!LANGS[p.lang]){p.lang="es-LAT";changed=true;}p.temp=p.temp||"balanced";p.len=p.len||"normal";p.model=p.model||"";p.adult=p.adult===true;if(["forge","cloudflare","huggingface"].indexOf(p.imgProvider)<0&&p.imgProvider!==""){p.imgProvider="";changed=true;}p.voice=p.voice||{};p.voice.enabled=p.voice.enabled!==false;p.voice.auto=!!p.voice.auto;p.voice.rate=Number(p.voice.rate)||1;p.voice.pitch=Number(p.voice.pitch)||1;p.voice.voiceURI=p.voice.voiceURI||"";p.theme=p.theme||"dark";p.accent=p.accent||"violet";p.fontScale=p.fontScale||"md";p.density=p.density||"comfortable";p.anim=(p.anim===false?false:true);return changed;}
+window.NubbiNormalizePrefs=function(snapshot){normalizePrefs(snapshot);return snapshot;};
 function migrateLangs(obj){if(!obj||typeof obj!=="object")return false;var changed=false;for(var k in obj){if(k==="lang"&&(obj[k]==="es-AR"||obj[k]==="es")){obj[k]="es-LAT";changed=true;}else if(obj[k]&&typeof obj[k]==="object"){if(migrateLangs(obj[k]))changed=true;}}return changed;}
 window.NubbiMigrateLangs=migrateLangs;
 window.st=st;
@@ -25,7 +29,7 @@ try{if(localStorage.getItem("nubbi-adult-optin-v1:"+accountStore.principal)!=="1
 applyPrefs();
 var storageWarningShown=false;
 function save(){try{accountStore.write(JSON.stringify(st));}catch(e){if(!storageWarningShown){storageWarningShown=true;alert("No se pudieron guardar los cambios. Exporta tus datos y libera espacio antes de continuar.");}console.warn("Nubbi: almacenamiento no disponible",e);}}
-function applyPrefs(){var p=st.prof=st.prof||{},changed=false;if(p.lang==="es"||p.lang==="es-AR"||!LANGS[p.lang]){p.lang="es-LAT";changed=true;}p.temp=p.temp||"balanced";p.len=p.len||"normal";p.model=p.model||"";p.adult=p.adult===true;if(["forge","cloudflare","huggingface"].indexOf(p.imgProvider)<0){p.imgProvider="";changed=true;}p.voice=p.voice||{};p.voice.enabled=p.voice.enabled!==false;p.voice.auto=!!p.voice.auto;p.voice.rate=Number(p.voice.rate)||1;p.voice.pitch=Number(p.voice.pitch)||1;p.voice.voiceURI=p.voice.voiceURI||"";var r=document.documentElement;p.theme=p.theme||"dark";p.accent=p.accent||"violet";p.fontScale=p.fontScale||"md";p.density=p.density||"comfortable";p.anim=(p.anim===false?false:true);if(p.theme==="system")delete r.dataset.theme;else r.dataset.theme=p.theme;r.dataset.accent=p.accent;r.dataset.density=p.density;r.dataset.anim=p.anim?"on":"off";var sizes={sm:"14px",md:"15px",lg:"17px"};r.style.setProperty("--fs",sizes[p.fontScale]||"15px");if(changed)save();}
+function applyPrefs(){var changed=normalizePrefs(st),p=st.prof,r=document.documentElement;if(p.theme==="system")delete r.dataset.theme;else r.dataset.theme=p.theme;r.dataset.accent=p.accent;r.dataset.density=p.density;r.dataset.anim=p.anim?"on":"off";var sizes={sm:"14px",md:"15px",lg:"17px"};r.style.setProperty("--fs",sizes[p.fontScale]||"15px");if(changed)save();}
 var $=function(i){return document.getElementById(i)};
 function icon(name,cls){return '<svg class="icon'+(cls?' '+cls:'')+'" aria-hidden="true" focusable="false"><use href="#i-'+name+'"></use></svg>';}
 function setHeart(btn,on,label){if(!btn)return;btn.innerHTML=icon("heart",on?"is-filled":"");btn.classList.toggle("is-fav",!!on);btn.setAttribute("aria-pressed",on?"true":"false");btn.setAttribute("aria-label",label||(on?"Quitar de favoritos":"Agregar a favoritos"));}
@@ -617,7 +621,7 @@ if($("onbStart"))$("onbStart").onclick=function(){if($("onbAdult")&&!$("onbAdult
 if($("onboard"))$("onboard").addEventListener("cancel",function(e){if(localStorage.getItem("nubbi-adult-ok")!=="1")e.preventDefault();});
 refreshAdultProvider();
 window.save=save; window.applyPrefs=applyPrefs; window.renderAll=renderAll;
-window.NubbiApp={grad:grad,fmt:fmt,openChat:openChat,openSheet:openSheet,go:go,renderAll:renderAll,save:save,adultOn:adultOn};
+window.NubbiApp={grad:grad,fmt:fmt,openChat:openChat,openSheet:openSheet,go:go,renderAll:renderAll,save:save,adultOn:adultOn,createDefaultState:createDefaultState,normalizePrefs:window.NubbiNormalizePrefs};
 if(window.cloudSync&&window.cloudSync.onAuth){window.cloudSync.onAuth(function(){renderAccount();});}
 renderAll();
 })();

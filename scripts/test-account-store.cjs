@@ -16,7 +16,10 @@ const storage = {
 function snapshot(text) { return JSON.stringify({custom:[],chats:{p0:[{role:'user',content:text}]},cfg:{},favs:[],personas:[],prof:{name:text},branches:{},cur:'p0',persona:null}); }
 function boot(user) {
   const doc = {documentElement: {removeAttribute() {}}};
-  const window = {document:doc, localStorage:storage, cloudSync:{currentUser(){ return window.activeUser; }},activeUser:user};
+  const window = {document:doc, localStorage:storage, cloudSync:{currentUser(){ return window.activeUser; }},activeUser:user,
+    NubbiAppDefaults(){return{custom:[],chats:{},cfg:{},favs:[],personas:[],persona:null,branches:{},prof:{name:'',bio:'',img:'',intensity:'rom',theme:'dark',accent:'violet',fontScale:'md',density:'comfortable',anim:true,lang:'es-LAT',temp:'balanced',len:'normal',adult:false},cur:null};},
+    NubbiMigrateLangs(state){function visit(value){if(!value||typeof value!=='object')return;if(value.lang==='es-AR'||value.lang==='es')value.lang='es-LAT';for(const key of Object.keys(value))if(value[key]&&typeof value[key]==='object')visit(value[key]);}visit(state);return state;},
+    NubbiNormalizePrefs(state){window.NubbiMigrateLangs(state);state.prof=Object.assign({},window.NubbiAppDefaults().prof,state.prof||{});state.prof.model=state.prof.model||'';state.prof.voice=Object.assign({enabled:true,auto:false,rate:1,pitch:1,voiceURI:''},state.prof.voice||{});return state;}};
   const ctx=vm.createContext({window});
   vm.runInContext(source,ctx,{filename:'account-store.js'});
   window.NubbiAccountStore.activate(user);

@@ -1,5 +1,17 @@
 # Codex changelog
 
+## P1 — Normalización completa antes de persistir descarga Firebase, 2026-10-26
+
+- Migrar idiomas históricos recursivamente (incluido `custom[0].lang = "es-AR"`) y completar perfiles parciales con todos los valores iniciales antes de serializar la única escritura.
+- Agregar regresiones para igualdad inmediata/tras reload, una sola escritura, extensiones remotas seguras, copia recuperable y cero escrituras ante validación inválida, conflicto o error de almacenamiento.
+- Service worker `nubbi-v34`. La validación de esta corrección se registra separada de ejecuciones anteriores.
+
+## P1 — Descarga Firebase como reemplazo, 2026-10-26
+
+- Sustituir la mezcla local/remota por defaults de Nubbi y secciones remotas, preservando solo extensiones desconocidas del respaldo remoto.
+- Sincronizar el objeto de estado vivo completo tras persistir; mantener recuperación obligatoria y guardas contra conflicto.
+- Cubrir snapshot parcial, backup histórico completo, recuperación, cuota y aislamiento en pruebas. Nueve suites, Firebase VM 24, navegador 32, bienvenida 6, offline v33/21 archivos y emulador Firestore 12: pasaron. Sin commit/push.
+
 ## 2026-10-26 — Cierre de auditoría P1
 
 - Rechazar mensajes y campos de renderizado malformados antes de persistir; conservar datos desconocidos seguros e imágenes antiguas sin leyenda.
