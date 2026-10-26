@@ -71,6 +71,37 @@ new (require('node:vm').Script)(sdk); // Fail early if the simulated SDK is inva
   await page.waitForFunction(()=>Object.values(st.chats).some(messages=>messages.some(m=>m.role==='assistant'&&m.content.includes('Respuesta local'))));
   await page.reload();await ready('user:C');assert.equal(await page.evaluate(()=>st.custom[0].name),'Personaje local');
   assert.ok(await page.evaluate(()=>Object.values(st.chats).some(messages=>messages.some(m=>m.content.includes('Respuesta local')))));passed++;
+  await profile();
+  const preserved=await page.evaluate(()=>({raw:localStorage.getItem(NubbiAccountStore.key()),live:JSON.stringify(st),legacy:localStorage.getItem('nubbi-v1'),a:localStorage.getItem('nubbi:state:v2:user:A'),b:localStorage.getItem('nubbi:state:v2:user:B')}));
+  async function upload(data){await page.locator('#importFile').setInputFiles({name:'backup.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(data))});}
+  for(const content of [{},[]]){
+   const rejected=page.waitForEvent('dialog',{predicate:d=>d.type()==='alert'&&d.message().includes('No se importó')});
+   await upload({chats:{p0:[{role:'user',content}]}});await rejected;
+   assert.equal(await page.evaluate(()=>localStorage.getItem(NubbiAccountStore.key())),preserved.raw);
+   await page.evaluate(raw=>localStorage.setItem('test-cloud:C',raw),JSON.stringify({chats:{p0:[{role:'assistant',content}]}}));
+   await assert.rejects(page.evaluate(()=>cloudSync.load()),/content/);
+   assert.equal(await page.evaluate(()=>JSON.stringify(st)),preserved.live);
+   for(const view of ['home','chats','prof'])await page.evaluate(v=>NubbiApp.go(v),view);
+  }passed++;
+  await page.evaluate(()=>{window.originalStorageSet=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k.includes(':recovery:'))throw Error('Simulated quota');return window.originalStorageSet.call(this,k,v)};});
+  const quotaRejected=page.waitForEvent('dialog',{predicate:d=>d.type()==='alert'&&d.message().includes('No se importó')});
+  await upload({prof:{name:'Must not replace'}});await quotaRejected;
+  assert.equal(await page.evaluate(()=>JSON.stringify(st)),preserved.live);
+  assert.equal(await page.evaluate(()=>localStorage.getItem(NubbiAccountStore.key())),preserved.raw);
+  await page.evaluate(()=>{Storage.prototype.setItem=window.originalStorageSet});passed++;
+  await upload({prof:{name:'Partial restore'},allowedUnknown:{kept:true}});
+  await page.waitForFunction(()=>window.st?.prof.name==='Partial restore');await ready('user:C');
+  assert.deepEqual(await page.evaluate(()=>({chats:st.chats,custom:st.custom,cfg:st.cfg,favs:st.favs,personas:st.personas,branches:st.branches})),{chats:{},custom:[],cfg:{},favs:[],personas:[],branches:{}});
+  assert.equal(await page.evaluate(()=>st.allowedUnknown.kept),true);
+  assert.deepEqual(await page.evaluate(()=>({legacy:localStorage.getItem('nubbi-v1'),a:localStorage.getItem('nubbi:state:v2:user:A'),b:localStorage.getItem('nubbi:state:v2:user:B')})),{legacy:preserved.legacy,a:preserved.a,b:preserved.b});
+  await profile();await page.getByRole('button',{name:/Restaurar copia de recuperación/}).click();
+  await page.waitForFunction(()=>window.st?.custom?.[0]?.name==='Personaje local');await ready('user:C');
+  assert.ok(await page.evaluate(()=>Object.values(st.chats).some(messages=>messages.some(m=>m.content.includes('Respuesta local')))));passed++;
+  await profile();await upload({prof:{name:'Legacy image'},chats:{p0:[{role:'image',image:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII='}]},personas:[{name:'Persona'}],cfg:{p0:{memory:'Memoria',memoryNotes:[{text:'Recuerdo'}]}},branches:{p0:[{messages:[{role:'user',content:'Rama'}]}]}});
+  await page.waitForFunction(()=>window.st?.prof.name==='Legacy image');await ready('user:C');
+  for(const view of ['home','chats','prof'])await page.evaluate(v=>NubbiApp.go(v),view);
+  await page.evaluate(()=>NubbiOpenChat('p0'));assert.equal(await page.locator('#msgs img').count(),1);
+  await page.locator('#back').click();passed++;
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'No horizontal page overflow');
   assert.deepEqual(errors,[]);console.log('PASS P1 browser '+(mobile?'mobile':'desktop')+': guest, explicit migration, A/B, logout, hydration, external transition, sync failure/recovery, explicit upload, registration');
   await context.close();

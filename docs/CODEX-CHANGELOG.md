@@ -1,5 +1,11 @@
 # Codex changelog
 
+## 2026-10-26 — Cierre de auditoría P1
+
+- Rechazar mensajes y campos de renderizado malformados antes de persistir; conservar datos desconocidos seguros e imágenes antiguas sin leyenda.
+- Restauración completa desde archivo, con confirmación precisa, valores iniciales para campos omitidos y copia recuperable obligatoria. Sin mezcla con el estado anterior.
+- Nuevas regresiones de rechazo por archivo/nube, recuperación, cuota y reemplazo parcial en navegador desktop/mobile. SW v32; nueve suites, store/bootstrap, 30 grupos browser, bienvenida, offline y emulador aprobados. Solo commit local.
+
 ## 2026-10-26 — P1 account isolation and safe persistence
 
 - Separate main snapshots by Firebase UID and guest; wait for auth hydration before loading private state. Lock and reload on identity changes, retaining asynchronous session guards.

@@ -84,6 +84,55 @@
         throw fail('account/bad-data', 'Una selección del respaldo es inválida.');
       }
     }
+    // Validate known renderer inputs without stripping unknown legacy fields.
+    function bad(path) { throw fail('account/bad-data', 'Campo inválido en el respaldo: ' + path); }
+    function strings(value, fields, path) {
+      fields.forEach(function (field) {
+        if (value[field] != null && typeof value[field] !== 'string') bad(path + '.' + field);
+      });
+    }
+    function messages(items, path) {
+      if (!Array.isArray(items)) bad(path);
+      items.forEach(function (message, i) {
+        var at = path + '[' + i + ']';
+        if (!record(message)) bad(at);
+        strings(message, ['role', 'image', 'emo'], at);
+        // Legacy image messages can omit their caption; text messages cannot.
+        if (!(message.role === 'image' && !Object.prototype.hasOwnProperty.call(message, 'content')) &&
+            typeof message.content !== 'string') bad(at + '.content');
+      });
+    }
+    function config(value, path) {
+      if (!record(value)) bad(path);
+      strings(value, ['memory', 'scenario', 'userRole', 'instructions', 'goal', 'secret', 'arc', 'bg', 'bubble', 'voiceURI', 'visualProfile'], path);
+      ['memoryNotes', 'autoMem'].forEach(function (field) {
+        if (value[field] == null) return;
+        if (!Array.isArray(value[field])) bad(path + '.' + field);
+        value[field].forEach(function (note) {
+          if (!record(note) || typeof note.text !== 'string') bad(path + '.' + field);
+        });
+      });
+      if (value.relation != null && !record(value.relation)) bad(path + '.relation');
+    }
+    (data.custom || []).forEach(function (c) {
+      strings(c, ['id', 'name', 'desc', 'role', 'gender', 'tags', 'persona', 'greeting', 'img', 'image', 'emoji', 'imagePrompt'], 'custom');
+    });
+    (data.personas || []).forEach(function (p) {
+      strings(p, ['id', 'name', 'bio', 'pronouns', 'appearance', 'relation'], 'personas');
+    });
+    if (data.prof) {
+      strings(data.prof, ['name', 'bio', 'img', 'lang', 'theme', 'accent', 'model', 'imgProvider'], 'prof');
+      if (data.prof.voice != null && !record(data.prof.voice)) bad('prof.voice');
+    }
+    Object.keys(data.chats || {}).forEach(function (id) { messages(data.chats[id], 'chats.' + id); });
+    Object.keys(data.cfg || {}).forEach(function (id) { config(data.cfg[id], 'cfg.' + id); });
+    Object.keys(data.branches || {}).forEach(function (id) {
+      data.branches[id].forEach(function (branch) {
+        strings(branch, ['id', 'name'], 'branches.' + id);
+        if (branch.messages !== undefined) messages(branch.messages, 'branches.' + id + '.messages');
+        if (branch.cfg !== undefined) config(branch.cfg, 'branches.' + id + '.cfg');
+      });
+    });
     return data;
   }
   function storage() {

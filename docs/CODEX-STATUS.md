@@ -1,5 +1,9 @@
 # Codex status — Nubbi
 
+## P1 — Auditoría corregida, 2026-10-26
+
+Validación profunda de respaldos y restauración completa de archivo implementadas sobre 6123c64 en la misma rama local. Sin mezcla de campos anteriores; respaldo obligatorio antes del reemplazo; formatos antiguos de imagen conservados. SW v32. Regresiones, 30 grupos de navegador, seis escenarios de bienvenida, offline y 12 grupos del emulador aprobados. Ver CODEX-ACCOUNT-ISOLATION.md. Sin publicación remota ni cambios de producción.
+
 ## 2026-10-26 — P1 account isolation (local only)
 
 Implemented on `fix/nubbi-account-isolation`, based on remote main `b05ea99ec7346febbd673b7d8e69e5bf2040719d`, in a separate worktree. UID/guest persistence, auth hydration gate, explicit non-destructive legacy migration, recovery snapshots and manual cloud sync are validated. Nine existing JS suites, new store/bootstrap/browser tests, six welcome browser scenarios and 12 official Firestore emulator groups passed. SW v31 verifies all 21 shell assets. Original dirty checkout/index preserved. No push, PR, production operation or rules change. See [P1 report](CODEX-ACCOUNT-ISOLATION.md). Entries below are historical.

@@ -1,5 +1,25 @@
 # P1 — Account isolation and safe persistence
 
+## 2026-10-26 — Correcciones de auditoría (sobre 6123c64)
+
+Se corrigieron los dos hallazgos autorizados, únicamente en `fix/nubbi-account-isolation`:
+
+- `public/account-store.js`: validación de `content` antes de cualquier escritura. Rechaza objetos, arrays, null, números y booleanos. Verifica también campos de texto de personajes/personas/perfil, estructura de voz, notas de memoria, relación y mensajes/configuración de ramas. Conserva campos desconocidos seguros y formatos válidos antiguos, incluidos mensajes de imagen sin leyenda. No convierte ni descarta silenciosamente datos inválidos.
+- `public/app.js`: restaurar un archivo reemplaza el snapshot completo, sin mezclar `st`. Los campos omitidos reciben los valores iniciales de la aplicación tras recargar. Conserva el respaldo obligatorio antes de reemplazar y cancela ante error. Las imágenes sin leyenda tienen texto de presentación compatible en lista/chat y al guardarlas como recuerdo, sin alterar el snapshot importado.
+- `public/index.html`: la acción se llama «Restaurar archivo»; la confirmación explica el reemplazo completo y los campos omitidos.
+- `public/sw.js`: caché v32 por los archivos públicos modificados; mismas 21 entradas y política de seguridad.
+- `scripts/test-account-store.cjs`: entradas malformadas, ausencia de escrituras ante rechazo, validación anidada, reemplazo parcial sin mezcla y restauración exacta de la copia anterior.
+- `scripts/test-account-browser.cjs`: archivo y nube con `content` objeto/array, continuidad de Inicio/Chats/Perfil después del rechazo, cuota simulada al respaldar, reemplazo parcial, preservación de legacy/A/B, recuperación, imágenes antiguas y contenido válido de memoria/personas/ramas.
+- Este informe, `CODEX-STATUS.md` y `CODEX-CHANGELOG.md`: documentación del cierre.
+
+Validación repetida: nueve suites JS existentes; suites de store/bootstrap; 30 grupos de navegador en escritorio/móvil (incluyen aislamiento A/B, persistencia y chat simulado); seis escenarios de bienvenida; offline escritorio/móvil con v32 y 21 archivos; emulador oficial Firestore, 12 grupos; sintaxis de 27 archivos; `git diff --check`. Todo aprobado. Comandos y requisitos del entorno: sección de validación original debajo. El harness offline ahora espera v32.
+
+No se modificaron backend, proveedores, Firebase, reglas ni el checkout original. No se hizo push/PR/merge/deploy. La validación no incluye cuentas reales ni inferencia paga. Continúan los límites de localStorage, cuota y acceso offline descritos al final. Un respaldo inválido se conserva en su origen y debe corregirse fuera de la cuenta activa; no se intenta reparar automáticamente. No se encontraron bloqueos adicionales fuera del alcance de estas correcciones.
+
+Verificación manual recomendada: exportar un respaldo de prueba, cambiar un `content` por `{}` y restaurarlo; confirmar el rechazo y navegar por Inicio/Chats/Perfil. Luego restaurar un archivo con solo `prof`, verificar que no quedan chats/personajes previos y recuperar la copia anterior desde Perfil. Repetir con una segunda cuenta y comprobar que su espacio y `nubbi-v1` siguen intactos.
+
+## Implementación inicial (histórico)
+
 Date: 2026-10-26. Branch: `fix/nubbi-account-isolation`.
 Base: `b05ea99ec7346febbd673b7d8e69e5bf2040719d` (remote main verified).
 Local main is older; it was not moved. Work is isolated in a separate worktree; the original checkout and index are untouched. No push, PR, deployment, rules publication or production writes.

@@ -87,6 +87,20 @@ function boot(user) {
   unicode.NubbiAccountStore.importSource('legacy');
   assert.equal(JSON.stringify(unicode.NubbiAccountStore.read()),rich,'Migration preserves all nested and unknown safe fields');
   assert.equal(storageData.get('nubbi-v1'),rich);
+  for (const content of [{}, [], null, 42, true]) {
+    const before = [...storageData.entries()];
+    assert.throws(()=>unicode.NubbiAccountStore.replace(JSON.stringify({chats:{p0:[{role:'user',content}]}}),'file'),/content/);
+    assert.deepEqual([...storageData.entries()],before,'Invalid input must not even create a recovery write');
+  }
+  for (const malformed of [
+    {custom:[{tags:[]}]}, {personas:[{name:{}}]}, {prof:{voice:[]}},
+    {cfg:{p0:{memoryNotes:[null]}}}, {branches:{p0:[{messages:[{role:'assistant',content:{}}]}]}}
+  ]) assert.throws(()=>unicode.NubbiAccountStore.validate(JSON.stringify(malformed)),/inválido/);
+  const beforePartial=storageData.get(unicode.NubbiAccountStore.key());
+  unicode.NubbiAccountStore.replace('{"prof":{"name":"Partial"}}','file');
+  assert.equal(unicode.NubbiAccountStore.read().chats,undefined,'Replace must not merge omitted fields');
+  unicode.NubbiAccountStore.restoreRecovery(unicode.NubbiAccountStore.listRecoveries()[0]);
+  assert.equal(storageData.get(unicode.NubbiAccountStore.key()),beforePartial);
   // Check user-bound Firestore sync and transactional download.
   const win=boot({uid:'SyncU',isAnonymous:false,email:'sync@example.invalid'});
   const user=win.activeUser;
