@@ -25,7 +25,11 @@ if(new URL(url).hostname!=='127.0.0.1')throw Error('Local test server required')
    for(let load=0;load<2;load++){
     if(load)await page.reload();else await page.goto(url);
     await page.waitForSelector('#nb-intro[open]');
-    await page.evaluate(()=>{st.prof.anim=false;save();applyPrefs();});
+    // The welcome modal makes the profile inert. Dispatch the real control's
+    // change event without reaching into app.js state; reload verifies persistence.
+    if(load===0)await page.locator('#panim').evaluate(select=>{
+     select.value='off';select.dispatchEvent(new Event('change',{bubbles:true}));
+    });
     assert.equal(await page.evaluate(()=>document.documentElement.dataset.anim),'off');
     assert.equal(await page.locator('#welcomeMotion').count(),0);
     assert.equal(await page.locator('#nb-intro').getAttribute('data-motion'),mode==='reduced'?'gentle':'on');
