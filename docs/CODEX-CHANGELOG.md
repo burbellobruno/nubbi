@@ -1,5 +1,30 @@
 # Codex changelog
 
+## P1 — Normalización completa antes de persistir descarga Firebase, 2026-10-26
+
+- Migrar idiomas históricos recursivamente (incluido `custom[0].lang = "es-AR"`) y completar perfiles parciales con todos los valores iniciales antes de serializar la única escritura.
+- Agregar regresiones para igualdad inmediata/tras reload, una sola escritura, extensiones remotas seguras, copia recuperable y cero escrituras ante validación inválida, conflicto o error de almacenamiento.
+- Service worker `nubbi-v34`. La validación de esta corrección se registra separada de ejecuciones anteriores.
+
+## P1 — Descarga Firebase como reemplazo, 2026-10-26
+
+- Sustituir la mezcla local/remota por defaults de Nubbi y secciones remotas, preservando solo extensiones desconocidas del respaldo remoto.
+- Sincronizar el objeto de estado vivo completo tras persistir; mantener recuperación obligatoria y guardas contra conflicto.
+- Cubrir snapshot parcial, backup histórico completo, recuperación, cuota y aislamiento en pruebas. Nueve suites, Firebase VM 24, navegador 32, bienvenida 6, offline v33/21 archivos y emulador Firestore 12: pasaron. Sin commit/push.
+
+## 2026-10-26 — Cierre de auditoría P1
+
+- Rechazar mensajes y campos de renderizado malformados antes de persistir; conservar datos desconocidos seguros e imágenes antiguas sin leyenda.
+- Restauración completa desde archivo, con confirmación precisa, valores iniciales para campos omitidos y copia recuperable obligatoria. Sin mezcla con el estado anterior.
+- Nuevas regresiones de rechazo por archivo/nube, recuperación, cuota y reemplazo parcial en navegador desktop/mobile. SW v32; nueve suites, store/bootstrap, 30 grupos browser, bienvenida, offline y emulador aprobados. Solo commit local.
+
+## 2026-10-26 — P1 account isolation and safe persistence
+
+- Separate main snapshots by Firebase UID and guest; wait for auth hydration before loading private state. Lock and reload on identity changes, retaining asynchronous session guards.
+- Remove automatic login/registration upload/download. Add explicit legacy/guest import, backup-before-replacement, safe file restoration and recovery export. Keep legacy sources untouched.
+- Add store/bootstrap/browser regressions and adapt existing Firebase security tests. Validate all existing suites, actual SW assets, desktop/mobile welcome and offline behavior, and official Firestore emulator (12 groups).
+- Bump the public shell to v31. Preserve Firebase configuration, rules, backend, providers, existing UX and original working tree. Local branch only; no remote publication or production changes. See CODEX-ACCOUNT-ISOLATION.md for commands and limitations.
+
 ## 2026-10-25 — Initial read-only audit
 - Parsed the OpenCode conversation export and inspected its earlier backup in an isolated scratch directory.
 - Inspected the current project, copied a secret-free source/Git snapshot for diagnostics, and compared selected archived source hashes.

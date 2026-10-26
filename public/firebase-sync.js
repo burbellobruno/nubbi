@@ -93,6 +93,8 @@
     for(const key of ["persona", "cur"]){
       if(Object.prototype.hasOwnProperty.call(data, key) && data[key] !== null && typeof data[key] !== "string") throw new Error("El respaldo contiene una selección inválida.");
     }
+    if(!window.NubbiAccountStore) throw new Error("El almacenamiento seguro todavía no está listo.");
+    window.NubbiAccountStore.validate(JSON.stringify(data));
     return data;
   }
 
@@ -103,23 +105,27 @@
   }
 
   function persistDownloadedSnapshot(data, localBefore, ticket){
-    // Stage the merge without touching live state. The app's save hook catches storage
-    // errors, so this download uses the local storage primitive directly and never
-    // calls an ambiguous global save or a cloud upload method.
-    const staged = Object.assign({}, st, data);
+    if(typeof window.NubbiAppDefaults !== 'function') throw new Error("No se pudieron preparar los valores iniciales de Nubbi.");
+    // A cloud download is a restore: omitted sections reset to app defaults,
+    // never to stale values from this browser. Unknown safe remote fields remain.
+    const staged = Object.assign(window.NubbiAppDefaults(), data);
+    if(typeof window.NubbiNormalizePrefs !== 'function') throw new Error("No se pudieron normalizar las preferencias de Nubbi.");
+    window.NubbiNormalizePrefs(staged);
     const serialized = JSON.stringify(staged);
     assertSession(ticket);
+    window.NubbiAccountStore.assertUser(ticket.user);
     if(JSON.stringify(st) !== localBefore) throw localConflict();
-    try{
-      // Web Storage writes are synchronous/atomic: failure leaves the previous value.
-      window.localStorage.setItem("nubbi-v1", serialized);
-    }catch(cause){
-      const error = new Error("No se pudo guardar el respaldo en este dispositivo. Los datos locales no se reemplazaron.");
-      error.code = "sync/local-storage";
+    // AccountStore backs up an existing local snapshot before replacement.
+    // On quota/storage errors, the old snapshot and live state remain untouched.
+    let committed;
+    try{committed = window.NubbiAccountStore.replace(serialized, 'cloud');}
+    catch(error){
+      if(error.code==='account/storage'){const wrapped=new Error(error.message);wrapped.code='sync/local-storage';throw wrapped;}
       throw error;
     }
-    // There is no await between the final guards, storage write and state commit.
-    for(const key of Object.keys(data)) st[key] = data[key];
+    // Keep the live root object identity while making it exactly match storage.
+    for(const key of Object.keys(st)) delete st[key];
+    Object.assign(st, committed);
   }
 
   window.cloudSync = {
@@ -159,8 +165,10 @@
     async hasData(){
       const ticket = await sessionUser();
       assertSession(ticket);
+      window.NubbiAccountStore.assertUser(ticket.user);
       const doc = await db.collection("users").doc(ticket.user.uid).get();
       assertSession(ticket);
+      window.NubbiAccountStore.assertUser(ticket.user);
       return doc.exists;
     },
 
@@ -170,6 +178,7 @@
       validSnapshot(snapshot);
       const ticket = await sessionUser();
       assertSession(ticket);
+      window.NubbiAccountStore.assertUser(ticket.user);
       await db.collection("users").doc(ticket.user.uid).set({
         data: snapshot,
         updated: Date.now(),
@@ -183,8 +192,10 @@
       const localBefore = JSON.stringify(st);
       const ticket = await sessionUser();
       assertSession(ticket);
+      window.NubbiAccountStore.assertUser(ticket.user);
       const doc = await db.collection("users").doc(ticket.user.uid).get();
       assertSession(ticket);
+      window.NubbiAccountStore.assertUser(ticket.user);
       if(JSON.stringify(st) !== localBefore) throw localConflict();
       if(!doc.exists){
         alert("No hay datos en la nube para este usuario.");

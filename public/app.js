@@ -1,5 +1,7 @@
 (function(){
-var KEY="nubbi-v1";
+var accountStore=window.NubbiAccountStore;
+if(!accountStore)throw new Error('Account isolation must initialize before app.js');
+var KEY=accountStore.key();
 var EMO={feliz:"😊",triste:"😢",enojado:"😠",celoso:"😒",timido:"😳",enamorado:"😍",sorprendido:"😮",nervioso:"😰",burlon:"😏",neutral:"😐",asustado:"😨",pensativo:"🤔"};
 var LANGS={
 "es-LAT":{label:"Español latinoamericano neutro",instr:"español latinoamericano neutro (usa 'tú'; evita modismos regionales)"},
@@ -12,17 +14,22 @@ var LANGS={
 };
 var RAW=window.NUBBI_RAW||[];
 var CAT=RAW.map(function(r,i){return{id:"p"+i,emoji:r[0],name:r[1],desc:r[2],role:r[3],gender:r[4],tags:r[5],persona:r[6],greeting:r[7]};});
-var st={custom:[],chats:{},cfg:{},favs:[],personas:[],persona:null,branches:{},prof:{name:"",bio:"",img:"",intensity:"rom",theme:"dark",accent:"violet",fontScale:"md",density:"comfortable",anim:true,lang:"es-LAT",temp:"balanced",len:"normal",adult:false},cur:null};
+function createDefaultState(){return{custom:[],chats:{},cfg:{},favs:[],personas:[],persona:null,branches:{},prof:{name:"",bio:"",img:"",intensity:"rom",theme:"dark",accent:"violet",fontScale:"md",density:"comfortable",anim:true,lang:"es-LAT",temp:"balanced",len:"normal",adult:false},cur:null};}
+var st=createDefaultState();
+window.NubbiAppDefaults=createDefaultState;
+function normalizePrefs(snapshot){var changed=!!migrateLangs(snapshot),defaults=createDefaultState().prof,p=snapshot.prof=Object.assign({},defaults,snapshot.prof||{});if(p.lang==="es"||p.lang==="es-AR"||!LANGS[p.lang]){p.lang="es-LAT";changed=true;}p.temp=p.temp||"balanced";p.len=p.len||"normal";p.model=p.model||"";p.adult=p.adult===true;if(["forge","cloudflare","huggingface"].indexOf(p.imgProvider)<0&&p.imgProvider!==""){p.imgProvider="";changed=true;}p.voice=p.voice||{};p.voice.enabled=p.voice.enabled!==false;p.voice.auto=!!p.voice.auto;p.voice.rate=Number(p.voice.rate)||1;p.voice.pitch=Number(p.voice.pitch)||1;p.voice.voiceURI=p.voice.voiceURI||"";p.theme=p.theme||"dark";p.accent=p.accent||"violet";p.fontScale=p.fontScale||"md";p.density=p.density||"comfortable";p.anim=(p.anim===false?false:true);return changed;}
+window.NubbiNormalizePrefs=function(snapshot){normalizePrefs(snapshot);return snapshot;};
 function migrateLangs(obj){if(!obj||typeof obj!=="object")return false;var changed=false;for(var k in obj){if(k==="lang"&&(obj[k]==="es-AR"||obj[k]==="es")){obj[k]="es-LAT";changed=true;}else if(obj[k]&&typeof obj[k]==="object"){if(migrateLangs(obj[k]))changed=true;}}return changed;}
 window.NubbiMigrateLangs=migrateLangs;
 window.st=st;
-try{var raw=localStorage.getItem(KEY)||localStorage.getItem("mochi-chat-v3");if(raw){var o=JSON.parse(raw);if(o)for(var k in o)st[k]=o[k];}}catch(e){}
+// Read only the account-scoped snapshot, never someone else's legacy data.
+var accountSnapshot=accountStore.read();if(accountSnapshot)for(var k in accountSnapshot)st[k]=accountSnapshot[k];
 try{migrateLangs(st);}catch(e){}
-try{if(localStorage.getItem("nubbi-adult-optin-v1")!=="1"){st.prof=st.prof||{};st.prof.adult=false;localStorage.setItem(KEY,JSON.stringify(st));localStorage.setItem("nubbi-adult-optin-v1","1");}}catch(e){}
+try{if(localStorage.getItem("nubbi-adult-optin-v1:"+accountStore.principal)!=="1"){st.prof=st.prof||{};st.prof.adult=false;accountStore.write(JSON.stringify(st));localStorage.setItem("nubbi-adult-optin-v1:"+accountStore.principal,"1");}}catch(e){}
 applyPrefs();
 var storageWarningShown=false;
-function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){if(!storageWarningShown){storageWarningShown=true;alert("No se pudieron guardar los cambios. Exporta tus datos y libera espacio antes de continuar.");}console.warn("Nubbi: almacenamiento no disponible",e);}}
-function applyPrefs(){var p=st.prof=st.prof||{},changed=false;if(p.lang==="es"||p.lang==="es-AR"||!LANGS[p.lang]){p.lang="es-LAT";changed=true;}p.temp=p.temp||"balanced";p.len=p.len||"normal";p.model=p.model||"";p.adult=p.adult===true;if(["forge","cloudflare","huggingface"].indexOf(p.imgProvider)<0){p.imgProvider="";changed=true;}p.voice=p.voice||{};p.voice.enabled=p.voice.enabled!==false;p.voice.auto=!!p.voice.auto;p.voice.rate=Number(p.voice.rate)||1;p.voice.pitch=Number(p.voice.pitch)||1;p.voice.voiceURI=p.voice.voiceURI||"";var r=document.documentElement;p.theme=p.theme||"dark";p.accent=p.accent||"violet";p.fontScale=p.fontScale||"md";p.density=p.density||"comfortable";p.anim=(p.anim===false?false:true);if(p.theme==="system")delete r.dataset.theme;else r.dataset.theme=p.theme;r.dataset.accent=p.accent;r.dataset.density=p.density;r.dataset.anim=p.anim?"on":"off";var sizes={sm:"14px",md:"15px",lg:"17px"};r.style.setProperty("--fs",sizes[p.fontScale]||"15px");if(changed)save();}
+function save(){try{accountStore.write(JSON.stringify(st));}catch(e){if(!storageWarningShown){storageWarningShown=true;alert("No se pudieron guardar los cambios. Exporta tus datos y libera espacio antes de continuar.");}console.warn("Nubbi: almacenamiento no disponible",e);}}
+function applyPrefs(){var changed=normalizePrefs(st),p=st.prof,r=document.documentElement;if(p.theme==="system")delete r.dataset.theme;else r.dataset.theme=p.theme;r.dataset.accent=p.accent;r.dataset.density=p.density;r.dataset.anim=p.anim?"on":"off";var sizes={sm:"14px",md:"15px",lg:"17px"};r.style.setProperty("--fs",sizes[p.fontScale]||"15px");if(changed)save();}
 var $=function(i){return document.getElementById(i)};
 function icon(name,cls){return '<svg class="icon'+(cls?' '+cls:'')+'" aria-hidden="true" focusable="false"><use href="#i-'+name+'"></use></svg>';}
 function setHeart(btn,on,label){if(!btn)return;btn.innerHTML=icon("heart",on?"is-filled":"");btn.classList.toggle("is-fav",!!on);btn.setAttribute("aria-pressed",on?"true":"false");btn.setAttribute("aria-label",label||(on?"Quitar de favoritos":"Agregar a favoritos"));}
@@ -66,9 +73,9 @@ function branchStore(id){if(!st.branches)st.branches={};if(!st.branches[id])st.b
 function saveBranchSnapshot(id,name,msgs){var bc=deepCopy(cfg(id));delete bc.bg;var b={id:"br"+Date.now()+Math.floor(Math.random()*99),name:name||("Rama "+new Date().toLocaleString()),ts:Date.now(),messages:deepCopy(msgs||hist(id)),cfg:bc};var arr=branchStore(id);arr.unshift(b);if(arr.length>20)arr.length=20;save();return b;}
 function firebaseToken(){try{var u=window.cloudSync&&window.cloudSync.currentUser?window.cloudSync.currentUser():null;return u&&u.getIdToken?u.getIdToken().catch(function(){return "";}):Promise.resolve("");}catch(e){return Promise.resolve("");}}
 function imageAuthReady(){try{return !!(window.cloudSync&&window.cloudSync.currentUser&&window.cloudSync.currentUser()&&!window.cloudSync.isAnonymous());}catch(e){return false;}}
-function api(url,body){var headers={"Content-Type":"application/json"};var tokenP=url.indexOf("/api/image")===0?firebaseToken():Promise.resolve("");return tokenP.then(function(t){if(t)headers.Authorization="Bearer "+t;return fetch(url,{method:"POST",headers:headers,body:JSON.stringify(body)});}).then(function(r){return r.text().then(function(t){var j=null;try{j=JSON.parse(t);}catch(e){}if(!j){var bad=new Error("El servidor no respondió. Cierra Live Server, ejecuta npm run dev y entra a http://localhost:3000");bad.status=r.status;bad.code="BAD_RESPONSE";throw bad;}if(j.error){var err=new Error(j.error);err.status=r.status;err.code=j.code||"";throw err;}return j;});},function(){var net=new Error("No hay conexión con el servidor. Ejecuta npm run dev y entra a http://localhost:3000");net.status=0;net.code="NETWORK";throw net;});}
+function api(url,body){accountStore.assertActive();var headers={"Content-Type":"application/json"};var tokenP=url.indexOf("/api/image")===0?firebaseToken():Promise.resolve("");return tokenP.then(function(t){accountStore.assertActive();if(t)headers.Authorization="Bearer "+t;return fetch(url,{method:"POST",headers:headers,body:JSON.stringify(body)});}).then(function(r){return r.text().then(function(t){var j=null;try{j=JSON.parse(t);}catch(e){}if(!j){var bad=new Error("El servidor no respondió. Cierra Live Server, ejecuta npm run dev y entra a http://localhost:3000");bad.status=r.status;bad.code="BAD_RESPONSE";throw bad;}accountStore.assertActive();if(j.error){var err=new Error(j.error);err.status=r.status;err.code=j.code||"";throw err;}return j;});},function(){var net=new Error("No hay conexión con el servidor. Ejecuta npm run dev y entra a http://localhost:3000");net.status=0;net.code="NETWORK";throw net;});}
 var sample=null,busy=false,imgData="",editingId=null,gF="Todos",tF="",view="home",homeTab="explore",homeLimit=12;
-sample=async function(prompt,opts){opts=opts||{};var body={prompt:prompt,adult:adultOn()};if(st.prof&&st.prof.model)body.model=st.prof.model;if(opts.response_format)body.response_format=opts.response_format;if(opts.stream)body.stream=true;if(opts.temperature!=null)body.temperature=opts.temperature;if(opts.top_p!=null)body.top_p=opts.top_p;if(opts.max_tokens!=null)body.max_tokens=opts.max_tokens;if(opts.presence_penalty!=null)body.presence_penalty=opts.presence_penalty;if(opts.frequency_penalty!=null)body.frequency_penalty=opts.frequency_penalty;if(!opts.stream){var j=await api("/api/chat",body);if(opts.onText)opts.onText({text:j.text});return{text:j.text};}var response=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!response.ok){var error=await response.json().catch(function(){return {};});throw new Error(error.error||"No se pudo generar la respuesta.");}return window.NubbiReadSSE(response,opts.onText);};
+sample=async function(prompt,opts){accountStore.assertActive();opts=opts||{};var body={prompt:prompt,adult:adultOn()};if(st.prof&&st.prof.model)body.model=st.prof.model;if(opts.response_format)body.response_format=opts.response_format;if(opts.stream)body.stream=true;if(opts.temperature!=null)body.temperature=opts.temperature;if(opts.top_p!=null)body.top_p=opts.top_p;if(opts.max_tokens!=null)body.max_tokens=opts.max_tokens;if(opts.presence_penalty!=null)body.presence_penalty=opts.presence_penalty;if(opts.frequency_penalty!=null)body.frequency_penalty=opts.frequency_penalty;if(!opts.stream){var j=await api("/api/chat",body);if(opts.onText)opts.onText({text:j.text});return{text:j.text};}var response=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!response.ok){var error=await response.json().catch(function(){return {};});throw new Error(error.error||"No se pudo generar la respuesta.");}accountStore.assertActive();var result=await window.NubbiReadSSE(response,function(chunk){accountStore.assertActive();if(opts.onText)opts.onText(chunk);});accountStore.assertActive();return result;};
 function all(){return st.custom.concat(CAT);}
 function byId(id){return all().find(function(c){return c.id===id});}
 function userMsgCount(id){var h=st.chats[id];if(!h||!h.length)return 0;return h.filter(function(m){return m.role==="user";}).length;}
@@ -131,7 +138,7 @@ var lm=$("loadMore");if(lm){lm.style.display=homeLimit<list.length?"block":"none
 }
 function fmtTime(ts){if(!ts)return"";var d=new Date(ts),now=new Date();var sameDay=d.toDateString()===now.toDateString();if(sameDay)return d.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});var yest=new Date(now);yest.setDate(now.getDate()-1);if(d.toDateString()===yest.toDateString())return"ayer";return d.toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});}
 function renderChats(){var l=$("chl");l.innerHTML="";var ids=Object.keys(st.chats).filter(function(i){return byId(i)});if(!ids.length){l.innerHTML='<div class="empty">Todavía no tenés chats. Elegí un personaje en Inicio.</div>';return;}
-ids.forEach(function(id){var c=byId(id),h=st.chats[id],r=document.createElement("div");r.className="row";var a=document.createElement("div");a.className="av square";av(a,c);var t=document.createElement("div");var b=document.createElement("b");b.textContent=c.name;var s=document.createElement("small");s.textContent=h.length?h[h.length-1].content.replace(/\*/g,""):c.desc;t.appendChild(b);t.appendChild(s);r.appendChild(a);r.appendChild(t);var time=document.createElement("span");time.className="time";time.textContent=fmtTime(h.length?h[h.length-1].ts:0);r.appendChild(time);r.onclick=function(){openChat(id)};l.appendChild(r);});}
+ids.forEach(function(id){var c=byId(id),h=st.chats[id],r=document.createElement("div");r.className="row";var a=document.createElement("div");a.className="av square";av(a,c);var t=document.createElement("div");var b=document.createElement("b");b.textContent=c.name;var s=document.createElement("small");s.textContent=h.length?(h[h.length-1].content===undefined?"Imagen de la escena":h[h.length-1].content).replace(/\*/g,""):c.desc;t.appendChild(b);t.appendChild(s);r.appendChild(a);r.appendChild(t);var time=document.createElement("span");time.className="time";time.textContent=fmtTime(h.length?h[h.length-1].ts:0);r.appendChild(time);r.onclick=function(){openChat(id)};l.appendChild(r);});}
 function renderFavs(){$("fg").innerHTML="";var l=st.favs.map(byId).filter(Boolean);if(!l.length)$("fg").innerHTML='<div class="empty">Tocá el corazón en un personaje para guardarlo acá.</div>';l.forEach(function(c){$("fg").appendChild(mkCard(c));});}
 function renderProf(){var p=st.prof;av($("pav"),{name:p.name||"yo",emoji:"👤",img:p.img});$("pav").style.background="linear-gradient(135deg,var(--ac),var(--ac2))";$("pn").value=p.name||"";$("pb").value=p.bio||"";$("pint").value=p.intensity||"rom";$("s1").textContent=Object.keys(st.chats).length;$("s2").textContent=st.custom.length;$("s3").textContent=st.favs.length;if($("ptheme"))$("ptheme").value=p.theme||"system";if($("pfont"))$("pfont").value=p.fontScale||"md";if($("pdensity"))$("pdensity").value=p.density||"comfortable";if($("plang"))$("plang").value=langKey();if($("ptemp"))$("ptemp").value=p.temp||"balanced";if($("plen"))$("plen").value=p.len||"normal";if($("pmodel"))$("pmodel").value=p.model||"";if($("padult"))$("padult").value=p.adult===true?"on":"off";var v=voiceCfg();if($("pvoice"))$("pvoice").value=v.voiceURI||"";if($("pvoicerate"))$("pvoicerate").value=v.rate||1;if($("pvoicepitch"))$("pvoicepitch").value=v.pitch||1;if($("pvoiceauto"))$("pvoiceauto").value=v.auto?"on":"off";renderAccentPills();}
 function renderAccentPills(){var el=$("paccent");if(!el)return;var accents=[{k:"violet",l:"Violeta"},{k:"blue",l:"Azul"},{k:"pink",l:"Rosa"},{k:"orange",l:"Naranja"},{k:"green",l:"Verde"}];el.innerHTML="";accents.forEach(function(a){var p=document.createElement("div");p.className="pill"+(st.prof.accent===a.k?" on":"");p.textContent=a.l;p.onclick=function(){st.prof.accent=a.k;save();applyPrefs();renderProf();};el.appendChild(p);});}
@@ -141,7 +148,7 @@ function go(v){view=v;document.querySelectorAll(".view").forEach(function(e){e.c
 document.querySelectorAll("nav>div[data-v]").forEach(function(e){e.onclick=function(){go(e.dataset.v)}});
 $("q").oninput=renderHome;
 
-function bubble(role,text,emo,idx){var c=cur(),r=document.createElement("div");r.className="mr "+(role==="user"?"u":"b");
+function bubble(role,text,emo,idx){if(role==="image"&&text===undefined)text="Imagen de la escena";var c=cur(),r=document.createElement("div");r.className="mr "+(role==="user"?"u":"b");
 if(role!=="user"){var a=document.createElement("div");a.className="av";av(a,c);r.appendChild(a);}
 var d=document.createElement("div");d.className="m "+(role==="user"?"u":"b");
 if(role!=="user"&&emo&&emo!=="neutral"&&EMO[emo]){var s=document.createElement("span");s.className="emo";s.textContent=emo;s.setAttribute("aria-label","Emoción: "+emo);d.appendChild(s);}
@@ -152,7 +159,7 @@ function renderChat(){var c=cur();if(!c)return;av($("hav"),c);$("hname").textCon
 function editMsg(i){var c=cur();if(!c||busy)return;var h=hist(c.id),m=h[i];if(!m)return;var t=prompt("Editar mensaje:",m.content);if(t==null)return;t=t.trim();if(!t)return;m.content=t;save();renderChat();}
 function delMsg(i){var c=cur();if(!c||busy)return;var h=hist(c.id),m=h[i];if(!m)return;if(!confirm("¿Borrar este mensaje?"))return;h.splice(i,1);save();renderChat();}
 function rewindMsg(i){var c=cur();if(!c||busy)return;var h=hist(c.id);if(!h[i]||i>=h.length-1)return;if(!confirm("¿Rebobinar hasta este mensaje? Se borra todo lo que vino después."))return;h.splice(i+1);save();renderChat();}
-function rememberMsg(i){var c=cur();if(!c||busy)return;var h=hist(c.id),m=h[i];if(!m)return;var g=cfg(c.id);g.memoryNotes=g.memoryNotes||[];g.memoryNotes.unshift({ts:Date.now(),text:m.content});if(g.memoryNotes.length>50)g.memoryNotes.length=50;save();alert("Guardado en la memoria del personaje.");}
+function rememberMsg(i){var c=cur();if(!c||busy)return;var h=hist(c.id),m=h[i];if(!m)return;var g=cfg(c.id);g.memoryNotes=g.memoryNotes||[];g.memoryNotes.unshift({ts:Date.now(),text:m.content===undefined&&m.role==="image"?"Imagen de la escena":m.content});if(g.memoryNotes.length>50)g.memoryNotes.length=50;save();alert("Guardado en la memoria del personaje.");}
 function branchMsg(i){var c=cur();if(!c||busy)return;var h=hist(c.id),m=h[i];if(!m)return;var def="Rama: "+(m.content||"").replace(/\s+/g," ").slice(0,28);var name=prompt("Nombre de la rama:",def);if(name==null)return;name=(name||def).trim()||def;saveBranchSnapshot(c.id,name,h.slice(0,i+1));alert("Rama guardada. Podés abrirla desde Ramas.");}
 function openSheet(id){var c=byId(id);if(!c)return;var sh=$("sheet");if(!sh)return;var img=$("shimg");img.innerHTML="";var src=portrait(c);if(src){var i=document.createElement("img");i.src=src;i.alt="";i.onerror=function(){i.remove();img.textContent=(c.name?c.name.charAt(0).toUpperCase():"?");};img.appendChild(i);}else img.textContent=(c.name?c.name.charAt(0).toUpperCase():"?");$("shname").textContent=c.name;$("shrole").textContent=c.role||"";$("shdesc").textContent=c.desc||"";var tg=$("shtags");tg.innerHTML="";(c.tags||"").split(",").forEach(function(x){if(!x)return;var sp=document.createElement("span");sp.className="tg";sp.textContent=x;tg.appendChild(sp);});
 var h=st.chats[c.id]||[];
@@ -198,7 +205,7 @@ async function generateChatImage(index){
  var scene="Create one coherent fictional scene illustration, preserve the adult character appearance, no collage, no lettering.\nCharacter: "+c.name+". Age description: "+c.desc+"\nPermanent visual profile: "+visualProfile(c)+"\nScenario: "+String(g.scenario||"").slice(0,700)+"\n"+(focus?"Exact moment: "+String(focus.content||"").slice(0,900):recent);
  try{var imageDesc=window.NubbiImageCharacterDescription(c,g.imageCharacterAge);scene="Character age declaration: "+imageDesc+"\n"+scene;}catch(e){alert(e.message+" Abre Escena y completa la edad del personaje para imágenes.");return;}
  var button=$("bImage");imageBusy=true;if(button){button.disabled=true;button.textContent="Generando imagen…";}
- try{var provider=st.prof.imgProvider||"",j=await api("/api/image",{prompt:buildImagePrompt(scene,"anime",c.tags),style:"anime",tags:c.tags||"",provider:provider,model:window.NubbiImageModelForProvider(st.prof,provider),adult:adultOn(),width:640,height:896,seed:stableImageSeed(id)});var image=await compressChatImage("data:"+(j.mime||"image/png")+";base64,"+j.image);
+ try{var provider=st.prof.imgProvider||"",j=await api("/api/image",{prompt:buildImagePrompt(scene,"anime",c.tags),style:"anime",tags:c.tags||"",provider:provider,model:window.NubbiImageModelForProvider(st.prof,provider),adult:adultOn(),width:640,height:896,seed:stableImageSeed(id)});var image=await compressChatImage("data:"+(j.mime||"image/png")+";base64,"+j.image);accountStore.assertActive();
  if(st.chats[id]!==h){alert("La historia cambió durante la generación. No se agregó la imagen.");return;}
  h.push({role:"image",image:image,content:"Imagen de la escena",ts:Date.now()});save();if(st.cur===id)renderChat();
  }catch(e){alert("No se pudo generar la imagen: "+e.message);}finally{imageBusy=false;if(button){button.disabled=false;button.textContent="Crear imagen";}}
@@ -352,7 +359,15 @@ $("theme").onclick=function(){var r=document.documentElement,d=r.dataset.theme==
 $("wipe").onclick=function(){if(confirm("¿Borrar todos tus chats?")){if("speechSynthesis" in window)speechSynthesis.cancel();st.chats={};save();renderAll();}};
 if($("exportData"))$("exportData").onclick=function(){var blob=new Blob([JSON.stringify(st)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="nubbi-backup.json";a.click();URL.revokeObjectURL(a.href);};
 if($("importData"))$("importData").onclick=function(){$("importFile").click();};
-if($("importFile"))$("importFile").onchange=function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);for(var k in o)st[k]=o[k];save();applyPrefs();renderAll();alert("Datos importados.");}catch(e){alert("Archivo inválido.");}};r.readAsText(f);};
+if($("importFile"))$("importFile").onchange=function(){
+ var f=this.files[0];if(!f)return;var owner=accountStore.key();
+ if(!confirm('¿Reemplazar TODOS los datos de esta cuenta con el archivo? Los campos ausentes volverán a sus valores iniciales. No se subirá a Firebase. Es obligatorio guardar una copia recuperable antes de reemplazar datos existentes.'))return;
+ var r=new FileReader();r.onerror=function(){alert('No se pudo leer el respaldo. Los datos no cambiaron.');};
+ r.onload=function(){try{
+  if(accountStore.key()!==owner)throw new Error('La cuenta cambió.');
+  var o=accountStore.validate(r.result);accountStore.replace(JSON.stringify(o),'file');location.reload();
+ }catch(e){alert('No se importó el respaldo: '+e.message);}};r.readAsText(f);
+};
 if($("importChar"))$("importChar").onclick=importChar;
 function renderAccount(){
 var box=$("accBox");if(!box)return;
@@ -361,7 +376,7 @@ var status=$("accStatus"),guest=$("accGuest"),user=$("accUser"),emailShow=$("acc
 if(!cs){if(status)status.textContent="Sincronización no configurada.";if(guest)guest.style.display="none";if(user)user.style.display="none";return;}
 var u=cs.currentUser();
 if(u&&!u.isAnonymous){
-if(status)status.textContent="Sesión iniciada";
+if(status)status.textContent="Cuenta privada · datos locales separados · sincronización manual";
 if(emailShow)emailShow.textContent=u.email||"(cuenta)";
 if(guest)guest.style.display="none";
 if(user)user.style.display="block";
@@ -373,35 +388,24 @@ if(user)user.style.display="none";
 }
 function accCreds(){var e=($("accEmail").value||"").trim(),p=$("accPass").value||"";if(!e||!p){alert("Completá email y contraseña.");return null;}if(p.length<6){alert("La contraseña debe tener al menos 6 caracteres.");return null;}return{email:e,pass:p};}
 if($("accRegister"))$("accRegister").onclick=async function(){
-var cs=window.cloudSync;if(!cs){alert("Firebase no está configurado.");return;}
-var c=accCreds();if(!c)return;var b=this;b.disabled=true;b.textContent="Creando...";
-try{await cs.register(c.email,c.pass);await cs.save();$("accPass").value="";renderAccount();alert("Cuenta creada. Tus datos se subieron a la nube.");}
-catch(e){alert(cs.friendly?cs.friendly(e):("Error: "+e.message));}
-b.disabled=false;b.textContent="Crear cuenta";
+ var cs=window.cloudSync;if(!cs){alert('Firebase no está configurado.');return;}
+ var c=accCreds();if(!c)return;var b=this;b.disabled=true;b.textContent='Creando...';
+ try{await cs.register(c.email,c.pass);$('accPass').value='';
+  // Explicit reload also handles anonymous->registered linking (same Firebase UID).
+  accountStore.lock();location.reload();
+ }catch(e){alert(cs.friendly?cs.friendly(e):('Error: '+e.message));b.disabled=false;b.textContent='Crear cuenta';}
 };
 if($("accLogin"))$("accLogin").onclick=async function(){
-var cs=window.cloudSync;if(!cs){alert("Firebase no está configurado.");return;}
-var c=accCreds();if(!c)return;var b=this;b.disabled=true;b.textContent="Entrando...";
-try{
-await cs.signIn(c.email,c.pass);$("accPass").value="";
-var has=await cs.hasData();
-if(has){
-if(confirm("Tu cuenta tiene datos en la nube. ¿Querés bajarlos a este dispositivo? Si cancelás, se suben los datos locales y se reemplazan los de la nube.")){
-await cs.load();
-}else if(confirm("¿Subir los datos de este dispositivo y reemplazar los de la nube?")){
-await cs.save();alert("Datos subidos a tu cuenta.");
-}
-}else{
-await cs.save();alert("Sesión iniciada. Tus datos locales se subieron a tu cuenta.");
-}
-renderAccount();
-}catch(e){alert(cs.friendly?cs.friendly(e):("Error: "+e.message));}
-b.disabled=false;b.textContent="Iniciar sesión";
+ var cs=window.cloudSync;if(!cs){alert('Firebase no está configurado.');return;}
+ var c=accCreds();if(!c)return;var b=this;b.disabled=true;b.textContent='Entrando...';
+ try{await cs.signIn(c.email,c.pass);$('accPass').value='';
+  // Nothing uploads or downloads on sign-in. Use explicit sync controls afterward.
+  accountStore.lock();location.reload();
+ }catch(e){alert(cs.friendly?cs.friendly(e):('Error: '+e.message));b.disabled=false;b.textContent='Iniciar sesión';}
 };
 if($("accLogout"))$("accLogout").onclick=async function(){
-var cs=window.cloudSync;if(!cs)return;
-try{await cs.signOut();renderAccount();alert("Sesión cerrada. Seguís en modo invitado.");}
-catch(e){alert(cs.friendly?cs.friendly(e):("Error: "+e.message));}
+ var cs=window.cloudSync;if(!cs)return;
+ try{await cs.signOut();accountStore.lock();location.reload();}catch(e){alert(cs.friendly?cs.friendly(e):('Error: '+e.message));}
 };
 if($("accReset"))$("accReset").onclick=async function(){
 var cs=window.cloudSync;if(!cs){alert("Firebase no está configurado.");return;}
@@ -409,8 +413,59 @@ var e=($("accEmail").value||"").trim();if(!e){alert("Escribí tu email arriba pa
 try{await cs.reset(e);alert("Te enviamos un email para restablecer la contraseña.");}
 catch(err){alert(cs.friendly?cs.friendly(err):("Error: "+err.message));}
 };
-if($("syncUp"))$("syncUp").onclick=async function(){if(!window.cloudSync){alert("Configurá Firebase en firebase-config.js primero.");return;}try{await window.cloudSync.save();renderAccount();alert("Datos subidos a la nube.");}catch(e){alert("Error al subir: "+e.message);}};
-if($("syncDown"))$("syncDown").onclick=async function(){if(!window.cloudSync){alert("Configurá Firebase en firebase-config.js primero.");return;}try{await window.cloudSync.load();renderAccount();}catch(e){alert("Error al bajar: "+e.message);}};
+if($("syncUp"))$("syncUp").onclick=async function(){
+ if(!window.cloudSync){alert('Configurá Firebase primero.');return;}
+ if(!confirm('¿Subir los datos de ESTA cuenta y reemplazar su copia de Firebase? Descargá/exportá un respaldo antes de continuar.'))return;
+ try{await window.cloudSync.save();renderAccount();alert('Datos subidos a la nube.');}catch(e){alert('Error al subir: '+e.message);}
+};
+if($("syncDown"))$("syncDown").onclick=async function(){
+ if(!window.cloudSync){alert('Configurá Firebase primero.');return;}
+ if(!confirm('¿Reemplazar los datos locales de ESTA cuenta con su respaldo de Firebase? Nubbi intentará guardar una copia de recuperación antes.'))return;
+ try{if(await window.cloudSync.load())location.reload();}catch(e){alert('Error al bajar: '+e.message);}
+};
+// Explicit migration: the original nubbi-v1 key and guest copy are never deleted.
+(function accountImportControls(){
+ var host=document.querySelector('#v-prof .prof');if(!host)return;
+ var section=document.createElement('section');section.className='appearance-controls nb-account-migration';
+ var title=document.createElement('h4');title.textContent='Privacidad y datos de esta cuenta';section.appendChild(title);
+ var note=document.createElement('p');note.className='note';note.textContent=(accountStore.principal==='guest'?'Estás en el espacio de invitado de este navegador.':'Estás en el espacio privado de la cuenta iniciada.')+' No se copian ni suben datos al iniciar sesión. Los datos anteriores no tienen propietario identificado: importalos solo si te pertenecen.';section.appendChild(note);
+ function addImport(source,label){
+  if(!accountStore.hasSource(source))return;
+  var b=document.createElement('button');b.type='button';b.className='g';b.textContent=label;b.dataset.accountImport=source;
+  b.onclick=function(){
+   if(!confirm('¿Importar TODOS esos datos al espacio actual y reemplazar su historial, personajes y ajustes locales? No se borrará el origen. Se intentará guardar una copia de recuperación del destino.'))return;
+   try{accountStore.importSource(source);location.reload();}
+   catch(e){alert('No se pudo importar: '+e.message);}
+  };
+  section.appendChild(b);
+ }
+ addImport('legacy','Importar datos anteriores de Nubbi');
+ if(accountStore.principal!=='guest')addImport('guest','Importar datos de invitado');
+ var recoveries=accountStore.listRecoveries();
+ if(recoveries.length){
+  var recovery=document.createElement('button');recovery.type='button';recovery.className='g';
+  recovery.textContent='Restaurar copia de recuperación ('+recoveries.length+')';
+  recovery.onclick=function(){
+   if(!confirm('¿Restaurar la copia anterior más reciente de ESTA cuenta? El estado actual también quedará respaldado antes de reemplazarlo.'))return;
+   try{accountStore.restoreRecovery(recoveries[0]);location.reload();}
+   catch(e){alert('No se pudo restaurar: '+e.message);}
+  };
+  section.appendChild(recovery);
+ }
+ host.appendChild(section);
+ // Tell returning users why old data is not shown until they assign ownership.
+ var hasOwnData=(st.custom||[]).length || Object.keys(st.chats||{}).length || (st.favs||[]).length;
+ if(!hasOwnData&&accountStore.hasSource('legacy')){
+  var home=document.getElementById('v-home');
+  if(home){
+   var callout=document.createElement('section');callout.className='appearance-controls';
+   var copy=document.createElement('p');copy.textContent='Encontramos datos anteriores en este navegador. No los importamos automáticamente para evitar mezclarlos entre cuentas.';
+   var open=document.createElement('button');open.type='button';open.className='g';open.textContent='Revisar mis datos anteriores';
+   open.onclick=function(){go('prof');section.scrollIntoView({block:'start'});};
+   callout.append(copy,open);home.insertBefore(callout,home.firstChild);
+  }
+ }
+})();
 $("newPersona").onclick=function(){["pname","pbio","page","ppron","papp","prel"].forEach(function(i){if($(i))$(i).value="";});$("pdlg").showModal();};$("pcancel").onclick=function(){$("pdlg").close();};$("psave").onclick=function(){var n=$("pname").value.trim();if(!n)return;var per={id:"per"+Date.now(),name:n,bio:$("pbio").value.trim(),age:($("page")?$("page").value.trim():""),pronouns:($("ppron")?$("ppron").value.trim():""),appearance:($("papp")?$("papp").value.trim():""),relation:($("prel")?$("prel").value.trim():"")};st.personas=st.personas||[];st.personas.unshift(per);st.persona=per.id;save();$("pdlg").close();["pname","pbio","page","ppron","papp","prel"].forEach(function(i){if($(i))$(i).value="";});renderPersonas();renderProf();};
 
 $("plus").onclick=function(){editingId=null;showWzError("");imgData="";$("pr").style.display="none";$("imagePrompt").value="";$("dlg").querySelector("h3").textContent="Crear personaje";["n","d","r","p","gr","idea"].forEach(function(i){if($(i))$(i).value="";});$("e").value="🦇";$("gen2").value="Masculino";if($("genStatus"))$("genStatus").textContent="";$("save").textContent="Guardar";if($("iprov"))$("iprov").value=(st.prof&&st.prof.imgProvider)||"";fillImageEngine(true);$("dlg").showModal();};
@@ -566,7 +621,7 @@ if($("onbStart"))$("onbStart").onclick=function(){if($("onbAdult")&&!$("onbAdult
 if($("onboard"))$("onboard").addEventListener("cancel",function(e){if(localStorage.getItem("nubbi-adult-ok")!=="1")e.preventDefault();});
 refreshAdultProvider();
 window.save=save; window.applyPrefs=applyPrefs; window.renderAll=renderAll;
-window.NubbiApp={grad:grad,fmt:fmt,openChat:openChat,openSheet:openSheet,go:go,renderAll:renderAll,save:save,adultOn:adultOn};
+window.NubbiApp={grad:grad,fmt:fmt,openChat:openChat,openSheet:openSheet,go:go,renderAll:renderAll,save:save,adultOn:adultOn,createDefaultState:createDefaultState,normalizePrefs:window.NubbiNormalizePrefs};
 if(window.cloudSync&&window.cloudSync.onAuth){window.cloudSync.onAuth(function(){renderAccount();});}
 renderAll();
 })();
