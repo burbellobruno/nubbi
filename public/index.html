@@ -98,15 +98,20 @@
 </section>
 <section class="view" id="v-favs"><h2>Favoritos</h2><div class="grid" id="fg"></div></section>
 <section class="view" id="v-prof"><div class="prof">
+<section class="profile-card profile-identity" aria-label="Tu perfil">
 <div class="av" id="pav" style="background:linear-gradient(135deg,var(--ac),var(--ac2))"></div>
 <input type="file" id="pimg" accept="image/*" style="display:none">
 <input id="pn" placeholder="Tu nombre" style="text-align:center"><br><br>
 <textarea id="pb" rows="2" placeholder="Sobre vos (los personajes lo van a tener en cuenta)"></textarea>
 <div class="stats"><div><b id="s1">0</b>chats</div><div><b id="s2">0</b>creados</div><div><b id="s3">0</b>favoritos</div></div>
-<label class="note">Tus personas</label>
+</section>
+<section class="profile-card" aria-labelledby="personasTitle">
+<h3 id="personasTitle">Tus personas</h3>
 <div id="plist"></div>
 <button class="g" id="newPersona" style="margin:8px 0">+ Nueva persona</button>
-<label class="note" style="display:block;margin-top:14px">Cuenta</label>
+</section>
+<section class="profile-card" aria-labelledby="accountTitle">
+<h3 id="accountTitle">Cuenta</h3>
 <div class="account" id="accBox">
 <div class="acc-status" id="accStatus">Invitado · tus datos se guardan en este dispositivo</div>
 <div id="accGuest">
@@ -124,7 +129,9 @@
 <button class="g" id="accLogout" type="button">Cerrar sesión</button>
 </div>
 </div>
-<label class="note" style="display:block;margin-top:14px">Perfil de creador</label>
+</section>
+<section class="profile-card" aria-labelledby="creatorTitle">
+<h3 id="creatorTitle">Perfil de creador</h3>
 <div class="account" id="creatorBox">
 <div class="acc-status" id="creatorStatus">Creá una cuenta para publicar personajes y tener perfil de creador.</div>
 <div class="acc-btns">
@@ -133,19 +140,30 @@
 </div>
 <div class="note">Se usa tu nombre y bio del perfil. Solo se comparte lo que publicás en la comunidad.</div>
 </div>
+</section>
+<section class="profile-card" aria-labelledby="chatPrefsTitle">
+<h3 id="chatPrefsTitle">Preferencias de conversación</h3>
 <label>Contenido adulto en mis chats</label>
 <select id="padult"><option value="on">Permitido (18+)</option><option value="off">Solo sugerente, sin sexo explícito</option></select>
 <p class="note" id="adultProviderNote">Verificando el proveedor de texto...</p>
 <p class="note" id="imageStatusNote"></p>
 <label class="note">Intensidad por defecto en chats nuevos</label>
 <select id="pint"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, puede ser explícito)</option><option value="libre">Libre (iniciativa; puede ser explícito)</option></select><br><br>
+</section>
+<section class="profile-card profile-data" aria-labelledby="dataTitle">
+<h3 id="dataTitle">Datos y sincronización</h3>
+<p class="note">La sincronización es manual: elegí cuándo subir los datos de este dispositivo o descargar tu respaldo.</p>
+<div class="profile-actions">
 <button class="g" id="theme">Cambiar tema claro/oscuro</button> <button class="g" id="wipe">Borrar chats</button>
 <button class="g" id="exportData">Exportar datos</button> <button class="g" id="importData">Restaurar archivo</button>
 <button class="g" id="importChar">Importar personaje</button>
 <button class="g" id="syncUp">Subir a la nube</button> <button class="g" id="syncDown">Bajar de la nube</button>
 <input type="file" id="importFile" accept="application/json" style="display:none">
+</div>
+</section>
+<section class="profile-card profile-settings" aria-labelledby="settingsTitle">
+<h3 id="settingsTitle">Configuración</h3>
 <div class="pers">
-<label class="note">Configuración</label>
 <label>Idioma del chat</label><select id="plang"><option value="es-AR">Español rioplatense (Argentina)</option><option value="es-LAT">Español latinoamericano neutro</option><option value="es-MX">Español mexicano</option><option value="es-CO">Español colombiano</option><option value="es-CL">Español chileno</option><option value="es-ES">Español de España</option><option value="en">English</option><option value="pt-BR">Português (Brasil)</option></select>
 <label>Tema</label><select id="ptheme"><option value="system">Sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select>
 <label>Color de acento</label><div class="pills" id="paccent"></div>
@@ -161,6 +179,7 @@
 <label>Leer respuestas automáticamente</label><select id="pvoiceauto"><option value="off">No</option><option value="on">Sí</option></select>
 <button class="g" id="pvoicetest" type="button"><svg class="icon"><use href="#i-speaker"></use></svg><span>Probar voz</span></button>
 </div>
+</section>
 <p class="note">Confirmo que tengo 18 años o más. Todos los personajes son adultos.</p>
 </div></section>
 </div>

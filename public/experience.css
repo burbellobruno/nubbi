@@ -666,3 +666,50 @@ nav .plus span{transition:transform .25s var(--nb-ease),box-shadow .25s var(--nb
 :root[data-anim="off"] #msgs .mr.nb25-message-enter,
 :root[data-anim="off"] .view.on{animation:none!important}
 :root[data-anim="off"] #msgs .typing span{animation:none!important;opacity:.8}
+
+/* P1 interface polish: scoped to Home and Profile; account actions are unchanged. */
+#v-home .nb-legacy-notice{display:flex;align-items:center;gap:16px;padding:12px 16px;margin:0 0 16px;text-align:left}
+#v-home .nb-legacy-notice p{flex:1;margin:0;font-size:12px;line-height:1.55;color:var(--mut)}
+#v-home .nb-legacy-notice button{flex:none;min-height:44px;font-size:12px;white-space:normal}
+#v-home .top{padding-block:4px 12px;min-height:48px}
+#v-home .hero{min-height:250px;padding:28px 32px!important;margin-bottom:20px}
+#v-home .hero h1{font-size:clamp(34px,4vw,48px)!important;margin:12px 0}
+#v-home .hero p{line-height:1.6;margin-bottom:16px}
+#v-home .hero-clouds{top:12px;height:230px}
+#v-home .style-discovery{margin:20px 0}
+#v-home .style-tile{min-height:100px;padding:12px}
+#v-home .style-tile b{margin-top:8px}
+#v-home .catalog-filters{margin-bottom:16px}
+#v-prof .prof{max-width:1040px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;text-align:left;align-items:start}
+#v-prof .prof> :not(.profile-card){grid-column:1/-1}
+#v-prof .profile-card{min-width:0;padding:20px;border:1px solid var(--bd);border-radius:20px;background:var(--surface)}
+#v-prof .profile-card h3{font-size:16px;line-height:1.4;margin:0 0 16px}
+#v-prof .profile-card>label{display:block;font-size:12px;margin:12px 0 8px}
+#v-prof .profile-card .account{margin:0;border:0;padding:0;background:transparent}
+#v-prof #accGuest input+input{margin-top:8px}
+#v-prof .profile-card .acc-btns{margin-top:8px}
+#v-prof .profile-card .note{font-size:12px;overflow-wrap:anywhere}
+#v-prof .profile-identity{text-align:center}
+#v-prof .profile-identity br{display:none}
+#v-prof .profile-identity #pn{margin:12px 0}
+#v-prof .profile-identity .stats{margin-bottom:0}
+#v-prof .profile-actions{display:flex;flex-wrap:wrap;gap:8px}
+#v-prof .profile-actions button,#v-prof .acc-btns button{min-width:0;min-height:44px;white-space:normal;overflow-wrap:anywhere}
+#v-prof .profile-actions button{flex:1 1 180px}
+#v-prof .profile-settings{grid-column:1/-1}
+#v-prof .profile-settings .pers{margin:0}
+#v-prof .nb-account-migration{margin:0;text-align:left;scroll-margin-top:20px}
+#v-prof .nb-account-migration button{margin:4px 8px 4px 0;min-height:44px;white-space:normal}
+@media(max-width:700px){
+ #v-home .nb-legacy-notice{align-items:stretch;flex-direction:column;gap:8px;padding:12px;margin-bottom:12px}
+ #v-home .nb-legacy-notice button{align-self:flex-start;text-align:left}
+ #v-home .hero{min-height:0;padding:22px!important;margin-bottom:16px}
+ #v-home .hero h1{font-size:36px!important;max-width:230px;margin:12px 0}
+ #v-home .hero p{max-width:240px;margin-bottom:12px}
+ #v-home .hero-actions{margin-top:14px}
+ #v-home .hero-clouds{top:12px;right:-30px;height:150px}
+ #v-home .style-discovery{margin:16px 0}
+ #v-prof .prof{grid-template-columns:minmax(0,1fr);gap:12px}
+ #v-prof .profile-card{padding:16px}
+ #v-prof .profile-actions button{flex-basis:145px}
+}
