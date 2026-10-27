@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict'),client=require('../public/ai-client.js');
+const character={name:'Iria',desc:'Cartógrafa, 29 años',imagePrompt:'29 years old, silver hair, green eyes, blue coat '+('p'.repeat(1500))+' distinctive scar'};
+const history=Array.from({length:40},(_,i)=>({role:i%2?'assistant':'user',content:'Old moment '+i}));
+history.push({role:'user',content:'Keep the window closed '+('x'.repeat(2000))+' LAST_ACTION_RED_LANTERN'});
+const before=JSON.stringify(history),scene=client.NubbiBuildImageScene(character,{scenario:'Harbor '+('s'.repeat(1600))},history);
+assert.ok(scene.length<=1200);assert.match(scene,/silver hair/);assert.match(scene,/distinctive scar/);assert.match(scene,/LAST_ACTION_RED_LANTERN/);assert.ok(!scene.includes('Old moment 1 '));assert.equal(JSON.stringify(history),before);
+const focused=client.NubbiBuildImageScene(character,{visualProfile:'black hair, amber eyes'},history,{content:'The selected historical moment'});
+assert.match(focused,/black hair, amber eyes/);assert.match(focused,/selected historical moment/);assert.ok(!focused.includes('LAST_ACTION_RED_LANTERN'),'historical visualization must not import a later event');
+assert.ok(!focused.includes('silver hair'),'explicit visual profile takes precedence');
+assert.equal(client.NubbiBuildImageScene(null,null,null).includes('undefined'),false);
+console.log('PASS bounded image scene: appearance, chosen/current moment, long-message tail, no history mutation');

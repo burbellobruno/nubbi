@@ -30,7 +30,7 @@ const ctx = {
     if (name === "./public/ai-client.js") return require("../public/ai-client.js");
     throw new Error("Unexpected dependency: " + name);
   },
-  process: { env }, Buffer, URL, AbortSignal, Date: Clock,
+  process: { env }, Buffer, URL, AbortSignal, FormData, Date: Clock,
   setInterval: () => ({ unref() {} }), console,
   async fetch(url, options) {
     if (url.includes("accounts:lookup")) {
@@ -42,10 +42,18 @@ const ctx = {
         json: async () => token === "invalid" ? { error: { message: "INVALID_ID_TOKEN" } } : { users: [user] } };
     }
     providerCalls++;
-    const payload = JSON.parse(options.body);lastProviderRequest={url,payload};
+    const multipart = options.body instanceof FormData;
+    let payload, contentType;
+    if(multipart){
+      assert.equal(options.headers['content-type'],undefined,'fetch must set the multipart boundary');
+      const serialized=new Request(url,{method:'POST',headers:options.headers,body:options.body});
+      contentType=serialized.headers.get('content-type');assert.match(contentType,/^multipart\/form-data; boundary=.+/);
+      payload=Object.fromEntries((await serialized.formData()).entries());
+    }else payload=JSON.parse(options.body);
+    lastProviderRequest={url,payload,multipart,contentType};
     const prompt = payload.prompt;
     assert.match(prompt, /years old/);
-    if(url.includes('lucid-origin'))return {ok:true,status:200,headers:{get:()=>"application/json"},text:async()=>JSON.stringify({result:{image:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64').toString('base64')}})};
+    if(url.includes('lucid-origin')||url.includes('flux-2-klein-4b'))return {ok:true,status:200,headers:{get:()=>"application/json"},text:async()=>JSON.stringify({result:{image:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64').toString('base64')}})};
     return { ok: true, status: 200, headers: { get: () => "image/png" }, arrayBuffer: async () => Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64') };
   },
 };
@@ -110,10 +118,23 @@ async function request(token, prompt = "Portrait of a person, 28 years old", ext
   assert.match(lastProviderRequest.url,/flux-1-schnell/,'explicit choice must take precedence over style recommendation');
   assert.equal((await request('auto-alias',undefined,{style:'manwha',model:'auto'})).code,200);
   assert.match(lastProviderRequest.url,/lucid-origin/);
+  const klein=await request('klein-user',undefined,{model:'@cf/black-forest-labs/flux-2-klein-4b',width:'640',height:896,seed:0,steps:8});
+  assert.equal(klein.code,200);assert.equal(klein.body.model,'@cf/black-forest-labs/flux-2-klein-4b');assert.equal(lastProviderRequest.multipart,true);
+  assert.deepEqual(Object.keys(lastProviderRequest.payload).sort(),['height','prompt','seed','width']);
+  assert.equal(lastProviderRequest.payload.width,'640');assert.equal(lastProviderRequest.payload.height,'896');assert.equal(lastProviderRequest.payload.seed,'0');
+  assert.equal((await request('klein-user',undefined,{model:'@cf/black-forest-labs/flux-2-klein-4b',width:1920,height:256})).code,200);
+  assert.equal(lastProviderRequest.payload.width,'1920');assert.equal(lastProviderRequest.payload.height,'256');assert.equal(Object.hasOwn(lastProviderRequest.payload,'seed'),false,'omitted seed keeps provider random behavior');
+  for(const model of ['@cf/leonardo/lucid-origin','@cf/leonardo/phoenix-1.0']){
+    assert.equal((await request('sized-'+model,undefined,{model,width:640,height:896,seed:123})).code,200);
+    assert.equal(lastProviderRequest.payload.width,640);assert.equal(lastProviderRequest.payload.height,896);assert.equal(lastProviderRequest.payload.seed,123);
+  }
+  assert.equal((await request('schnell-seed',undefined,{model:'@cf/black-forest-labs/flux-1-schnell',seed:0})).code,200);
+  assert.equal(lastProviderRequest.payload.seed,0);
   let capabilities;
   routes['GET /api/image/capabilities']({}, {json(value){capabilities=value;}});
   assert.equal(capabilities.providers.cloudflare.freeTier.unlimited,false);
   assert.equal(capabilities.providers.cloudflare.styles.length,10);
+  assert.equal(capabilities.providers.cloudflare.models.find(m=>m.id==='@cf/black-forest-labs/flux-2-klein-4b').candidate,true);
   assert.ok(!JSON.stringify(capabilities).includes('test-only'),'capabilities must not expose tokens');
   delete env.FIREBASE_API_KEY;
   assert.equal((await request("user-c")).code, 503);

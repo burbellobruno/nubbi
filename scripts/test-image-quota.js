@@ -10,7 +10,7 @@ function fixture(options={}){
  class Clock extends Date{constructor(...a){super(...(a.length?a:[now]))}static now(){return now}}
  const env={FIREBASE_API_KEY:'test-only',IMAGE_PROVIDER:'cloudflare',CF_ACCOUNT_ID:'a'.repeat(32),CF_API_TOKEN:'test-only',HF_TOKEN:'test-only',SD_URL:'http://127.0.0.1:7860',IMAGE_DAILY_LIMIT:String(options.limit||2),IMAGE_DAILY_ATTEMPT_LIMIT:String(options.attemptLimit||4)};
  let provider=async()=>new Response(PNG,{headers:{'content-type':'image/png'}});
- const ctx={require(n){if(n==='dotenv')return{config(){}};if(n==='express')return express;if(n==='./public/ai-client.js')return require('../public/ai-client.js');throw new Error(n)},process:{env},Buffer,URL,AbortSignal,Date:Clock,setInterval:()=>({unref(){}}),console,
+ const ctx={require(n){if(n==='dotenv')return{config(){}};if(n==='express')return express;if(n==='./public/ai-client.js')return require('../public/ai-client.js');throw new Error(n)},process:{env},Buffer,URL,AbortSignal,FormData,Date:Clock,setInterval:()=>({unref(){}}),console,
  async fetch(url,opts){if(url.includes('accounts:lookup')){const uid=JSON.parse(opts.body).idToken;return{ok:true,json:async()=>({users:[{localId:uid,email:'test@example.test'}]})}}calls++;return provider(url,opts)}};
  vm.createContext(ctx);vm.runInContext('"use strict";\n'+source,ctx);
  async function request(uid='user',body={},sendFailure=false){const res={code:200,status(n){this.code=n;return this},json(v){if(sendFailure){sendFailure=false;throw new Error('simulated disconnected client')}this.body=v;return this}};await routes['/api/image']({body:{prompt:'Portrait, 29 years old',...body},headers:{authorization:'Bearer '+uid}},res);return res;}
@@ -39,5 +39,17 @@ let passed=0;async function test(name,fn){await fn();passed++;console.log('PASS:
  await test('Forge resolves configured aliases and native checkpoint titles to a prepared payload',async()=>{for(const [model,expected]of [['counterfeit','Counterfeit-V3.0_fp16'],['model.safetensors','model.safetensors'],['My installed model [abcd]','My installed model [abcd]'],['','']]){const f=fixture();let payload;f.provider(async(url,opts)=>{payload=JSON.parse(opts.body);return Response.json({images:[PNG.toString('base64')]});});assert.equal((await f.request('user',{provider:'forge',model,width:'640',height:896,steps:25,cfg_scale:6.5,seed:0})).code,200);assert.equal(payload.override_settings?.sd_model_checkpoint||'',expected);assert.equal(payload.width,640);assert.equal(payload.seed,0);assert.equal(f.quota().attempts,1);}});
  await test('Forge rejects malformed alias-map configuration before reserving attempts',async()=>{for(const value of ['{bad','[]','null','true','"mapping"']){const f=fixture();f.env.SD_CHECKPOINTS=value;assert.equal((await f.request('user',{provider:'forge',model:'counterfeit'})).code,500);assert.equal(f.calls(),0);assert.equal(f.quota().attempts,0);}});
  await test('automatic style choice never retries a rejected model or fans out to another provider',async()=>{for(const status of [403,429,503]){const f=fixture();let endpoint='';f.provider(async url=>{endpoint=url;return new Response('provider rejected request',{status})});assert.equal((await f.request('user',{model:'auto',style:'anime'})).code,502);assert.match(endpoint,/lucid-origin/);assert.equal(f.calls(),1);assert.deepEqual([f.quota().count,f.quota().pending,f.quota().attempts],[0,0,1]);}});
+ await test('Cloudflare dimensions and seed reject invalid values before reservation for every model',async()=>{
+  for(const model of ['@cf/black-forest-labs/flux-1-schnell','@cf/black-forest-labs/flux-2-klein-4b','@cf/leonardo/lucid-origin','@cf/leonardo/phoenix-1.0']){
+   const f=fixture();for(const body of [{width:255},{height:2501},{width:768.5},{width:null},{height:[]},{height:{}},{height:false},{width:''},{seed:null},{seed:[]},{seed:''},{seed:-1},{seed:1.5},{seed:2147483648},{seed:Infinity},{seed:NaN}])assert.equal((await f.request('user',{model,...body})).code,400,model+' '+JSON.stringify(body));
+   if(model.includes('klein'))assert.equal((await f.request('user',{model,width:1921})).code,400);
+   assert.equal(f.calls(),0);assert.deepEqual([f.quota().count,f.quota().pending,f.quota().attempts],[0,0,0]);
+  }
+ });
+ await test('Klein failures release quota without retry or fallback and success commits once',async()=>{
+  const f=fixture({limit:1});let url='';f.provider(async endpoint=>{url=endpoint;return Response.json({success:false,errors:[{message:'provider unavailable'}]},{status:503});});
+  assert.equal((await f.request('user',{model:'@cf/black-forest-labs/flux-2-klein-4b'})).code,502);assert.match(url,/flux-2-klein-4b/);assert.equal(f.calls(),1);assert.deepEqual([f.quota().count,f.quota().pending,f.quota().attempts],[0,0,1]);
+  f.provider(async()=>Response.json({result:{image:PNG.toString('base64')}}));assert.equal((await f.request('user',{model:'@cf/black-forest-labs/flux-2-klein-4b'})).code,200);assert.deepEqual([f.quota().count,f.quota().pending,f.quota().attempts],[1,0,2]);assert.equal((await f.request()).code,429);
+ });
  console.log(`Image quota lifecycle: ${passed} groups passed (simulated providers only)`);
 })().catch(e=>{console.error(e);process.exitCode=1});

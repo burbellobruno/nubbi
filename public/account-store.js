@@ -104,7 +104,7 @@
     }
     function config(value, path) {
       if (!record(value)) bad(path);
-      strings(value, ['memory', 'scenario', 'userRole', 'instructions', 'goal', 'secret', 'arc', 'bg', 'bubble', 'voiceURI', 'visualProfile'], path);
+      strings(value, ['memory', 'scenario', 'userRole', 'instructions', 'goal', 'secret', 'arc', 'bg', 'bubble', 'voiceURI', 'visualProfile', 'imageStyle'], path);
       ['memoryNotes', 'autoMem'].forEach(function (field) {
         if (value[field] == null) return;
         if (!Array.isArray(value[field])) bad(path + '.' + field);
@@ -115,7 +115,7 @@
       if (value.relation != null && !record(value.relation)) bad(path + '.relation');
     }
     (data.custom || []).forEach(function (c) {
-      strings(c, ['id', 'name', 'desc', 'role', 'gender', 'tags', 'persona', 'greeting', 'img', 'image', 'emoji', 'imagePrompt'], 'custom');
+      strings(c, ['id', 'name', 'desc', 'role', 'gender', 'tags', 'persona', 'greeting', 'img', 'image', 'emoji', 'imagePrompt', 'imageStyle'], 'custom');
     });
     (data.personas || []).forEach(function (p) {
       strings(p, ['id', 'name', 'bio', 'pronouns', 'appearance', 'relation', 'img'], 'personas');

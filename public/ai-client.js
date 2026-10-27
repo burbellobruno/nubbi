@@ -99,6 +99,16 @@ root.NubbiGenerateCharacter=async function(prompt,request,options){
  }
  throw last;
 };
+// Reserve space for the requested moment instead of losing it behind a long
+// appearance/history prefix when the provider caps the image prompt.
+root.NubbiBuildImageScene=function(character,config,history,focus){
+ character=character||{};config=config||{};
+ function clip(value,max){value=String(value||'').replace(/\s+/g,' ').trim();if(value.length<=max)return value;var start=Math.floor((max-3)*.6);return value.slice(0,start)+'...'+value.slice(-(max-3-start));}
+ var appearance=config.visualProfile||character.imagePrompt||[character.name,character.desc,character.role].filter(Boolean).join('; ');
+ var recent=(Array.isArray(history)?history:[]).filter(function(m){return m&&(m.role==='user'||m.role==='assistant')&&typeof m.content==='string';}).slice(-2);
+ var moment=focus&&typeof focus.content==='string'?clip(focus.content,430):recent.map(function(m){return (m.role==='user'?'User: ':'Character: ')+clip(m.content,195);}).join(' ');
+ return 'One coherent fictional scene, no collage or lettering. Keep the established appearance.\nCharacter: '+clip(character.name,50)+'\nAppearance: '+clip(appearance,300)+'\nSetting: '+clip(config.scenario,130)+'\nRequested moment: '+moment;
+};
 root.NubbiImageModelForProvider=function(profile,provider){
  profile=profile||{};
  var legacy=String(profile.imgModel||"");
