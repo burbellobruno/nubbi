@@ -1,0 +1,65 @@
+// Per-chat writing directions and real model ids: loopback + mock SDK/providers only.
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {chromium}=require(process.env.NUBBI_PLAYWRIGHT_MODULE||'playwright');
+const url=new URL(process.env.NUBBI_TEST_URL||'http://127.0.0.1:43983/');
+if(!['127.0.0.1','localhost'].includes(url.hostname))throw Error('Loopback required');
+const out=process.env.NUBBI_REVIEW_OUTPUT||path.join(__dirname,'../review/experiences');fs.mkdirSync(out,{recursive:true});
+const small='openai/gpt-oss-20b',large='openai/gpt-oss-120b',cid='c-experience';
+const character={id:cid,name:'Iria',emoji:'✧',desc:'Cartógrafa de 29 años',role:'Guía del faro',persona:'Habla con frases cortas, observa con cautela y no confía de inmediato en desconocidos. No abandona sus mapas.',greeting:'*Iria aparta una carta náutica.* ¿Qué ruta buscas?',imagePrompt:'A cartographer, 29 years old, silver hair, green coat',img:'',imageStyle:'realista',legacyCharacterField:{kept:true}};
+const snapshot=owner=>({custom:[character,{...character,id:'c-other',name:'Mateo',persona:'Habla con calma y protege sus herramientas.'}],chats:{},cfg:{},branches:{},favs:[],personas:[],persona:null,prof:{name:owner,model:small,anim:false},cur:null});
+const sdk=`(()=>{const listeners=[];const auth={currentUser:null,onAuthStateChanged(cb){listeners.push(cb);setTimeout(()=>{this.currentUser=JSON.parse(sessionStorage.getItem('experiences-auth')||'null');cb(this.currentUser)},25);return()=>{}},emit(u){sessionStorage.setItem('experiences-auth',JSON.stringify(u));this.currentUser=u;listeners.forEach(cb=>cb(u))},async signInWithEmailAndPassword(email){const user={uid:email.split('@')[0],email,isAnonymous:false};this.emit(user);return{user}},async signOut(){this.emit(null)},async sendPasswordResetEmail(){},async signInAnonymously(){throw Error('Unexpected anonymous sign-in')}};const db={collection(){return{doc(){return{async get(){return{exists:false}},async set(){throw Error('Unexpected cloud write')}}},where(){return this},limit(){return this},orderBy(){return this},async get(){return{docs:[],forEach(){}}}}}};const authFn=()=>auth;authFn.EmailAuthProvider={credential:()=>({})};window.firebase={initializeApp(){},auth:authFn,firestore:()=>db};})();`;
+(async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.NUBBI_BROWSER_PATH});try{
+ for(const width of [320,390,768,1024,1440]){
+  const context=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block',reducedMotion:'reduce'}),requests=[],errors=[];let allowed=[small,large],returnedModel='';
+  await context.route('**/*',route=>{const req=route.request(),u=new URL(req.url());
+   if(u.pathname==='/firebase-config.js')return route.fulfill({contentType:'application/javascript',body:'window.FIREBASE_CONFIG={apiKey:"synthetic-experiences",projectId:"demo-experiences"};'});
+   if(u.hostname==='www.gstatic.com'&&u.pathname.endsWith('/firebase-app-compat.js'))return route.fulfill({contentType:'application/javascript',body:sdk});
+   if(u.hostname==='www.gstatic.com')return route.fulfill({contentType:'application/javascript',body:''});
+   if(u.origin!==url.origin)return route.abort();
+   if(u.pathname==='/api/health')return route.fulfill({json:{ok:true,provider:'synthetic',model:small,models:allowed,adultConfigured:false,image:{configured:false}}});
+   if(u.pathname==='/api/chat'&&req.method()==='POST'){
+    const body=req.postDataJSON();requests.push(body);
+    if(body.stream)return route.fulfill({contentType:'text/event-stream',headers:{'X-Nubbi-Model':returnedModel||body.model||small},body:'data: '+JSON.stringify({choices:[{delta:{content:'[neutral]\n*Iria sostiene la carta.* Respuesta sintética '+requests.length+'. La llave sigue en tu mochila.'}}]})+'\n\ndata: [DONE]\n\n'});
+    return route.fulfill({json:{text:JSON.stringify({name:'Borrador sintético',emoji:'✧',desc:'Cartógrafa de 29 años',role:'Guía',gender:'Femenino',persona:'Observa los mapas y habla con cautela.',greeting:'*Mira el faro.* Hola.',imagePrompt:'A cartographer, 29 years old, green coat'})}});
+   }
+   if(!['GET','HEAD','OPTIONS'].includes(req.method()))throw Error('Unexpected write '+u.pathname);
+   return route.continue();
+  });
+  await context.addInitScript(({guest,a,b})=>{localStorage.setItem('nubbi-adult-ok','1');if(!sessionStorage.getItem('experiences-seed')){for(const [key,state]of [['guest',guest],['user:A',a],['user:B',b]])localStorage.setItem('nubbi:state:v2:'+key,JSON.stringify(state));sessionStorage.setItem('experiences-seed','1');}},{guest:snapshot('GUEST'),a:snapshot('A'),b:snapshot('B')});
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
+  const ready=async principal=>{await page.waitForFunction(p=>window.NubbiApp&&window.NubbiStory?.experiences&&document.documentElement.dataset.nbAccountReady==='1'&&NubbiAccountStore.principal===p,principal);await page.waitForFunction(()=>!document.querySelector('#nb-intro')?.open,{},{timeout:12000});};
+  const openChat=async()=>page.evaluate(id=>NubbiOpenChat(id),cid);
+  const overflow=async()=>{assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'document overflow '+width);if(await page.locator('#cdlg').getAttribute('open')!==null)assert.ok(await page.locator('#cdlg').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'settings overflow '+width);};
+  const settings=async()=>{await page.locator('#bExperience').click();await page.waitForSelector('#cdlg[open]');};
+  const closeSettings=async()=>page.locator('#csave').click();
+  const send=async(message,chatId=cid)=>{const count=requests.length;await page.locator('#inp').fill(message);await page.locator('#f').evaluate(f=>f.requestSubmit());await page.waitForFunction(id=>st.chats[id].at(-1)?.role==='assistant'&&st.chats[id].at(-1)?.content.includes('Respuesta sintética'),chatId);for(let i=0;i<100&&requests.length===count;i++)await page.waitForTimeout(20);assert.equal(requests.length,count+1);return requests.at(-1);};
+  await page.goto(url.href);await ready('guest');await openChat();
+  const beforeCharacter=await page.evaluate(id=>JSON.stringify(st.custom.find(c=>c.id===id)),cid);
+  const expected=['pulso','escena','novela','vinculo','aventura','universo'];
+  await settings();assert.equal(await page.locator('#experienceSelect option').evaluateAll(options=>options.filter(o=>o.value).length),6);assert.ok(await page.locator('#chatModelSelect option[value="'+large+'"]').count());
+  for(const key of expected){await page.locator('#experienceSelect').selectOption(key);const description=await page.locator('#experienceDescription').textContent();assert.ok(description.trim().length>20,key+' description');await closeSettings();assert.equal(await page.evaluate(id=>st.cfg[id].storyExperience,cid),key);assert.equal(await page.evaluate(id=>JSON.stringify(st.custom.find(c=>c.id===id)),cid),beforeCharacter);await settings();}
+  await page.locator('#experienceSelect').selectOption('novela');await page.locator('#chatModelSelect').selectOption(large);await overflow();await page.locator('#experienceSelect').scrollIntoViewIfNeeded();await page.screenshot({animations:'disabled',path:path.join(out,'experience-settings-'+width+'.png')});await closeSettings();
+  assert.equal(await page.evaluate(id=>st.cfg[id].chatModel,cid),large);assert.equal(await page.evaluate(()=>st.prof.model),small);
+  await page.reload();await ready('guest');await openChat();await settings();assert.equal(await page.locator('#experienceSelect').inputValue(),'novela');assert.equal(await page.locator('#chatModelSelect').inputValue(),large);await closeSettings();
+  let payload=await send('¿Dónde está la llave?');assert.equal(payload.model,large,'chat request uses selected real model id');assert.match(payload.storyMessages[0].content,/Experiencia elegida: Novela/);assert.match(payload.storyMessages[0].content,/Habla con frases cortas, observa con cautela/);assert.equal(await page.evaluate(id=>JSON.stringify(st.custom.find(c=>c.id===id)),cid),beforeCharacter);
+  assert.deepEqual(await page.evaluate(id=>({model:st.chats[id].at(-1).model,requestedModel:st.chats[id].at(-1).requestedModel}),cid),{model:large,requestedModel:large});assert.equal(await page.locator('#msgs .model-change-notice').count(),0);
+  returnedModel=small;await send('Revisemos la ruta antes de salir.');assert.deepEqual(await page.evaluate(id=>({model:st.chats[id].at(-1).model,requestedModel:st.chats[id].at(-1).requestedModel}),cid),{model:small,requestedModel:large});assert.match(await page.locator('#msgs .model-change-notice').last().textContent(),/openai\/gpt-oss-20b.*openai\/gpt-oss-120b/);returnedModel='';
+  await page.evaluate(()=>NubbiOpenChat('c-other'));payload=await send('¿Podemos revisar la ruta?','c-other');assert.equal(payload.model,small,'another chat inherits the global model');assert.equal(await page.evaluate(()=>st.cfg['c-other'].chatModel||''),'');assert.equal(await page.evaluate(()=>st.cfg['c-other'].storyExperience||''),'');await openChat();
+  // A character draft still uses the global model, despite an active chat override.
+  await page.evaluate(()=>document.querySelector('#heroNew').click());await page.locator('#idea').fill('Cartógrafa adulta de 29 años');await page.locator('#gen').click();await page.waitForFunction(()=>document.querySelector('#genStatus').textContent.includes('Borrador listo'));payload=requests.at(-1);assert.equal(payload.model,small);assert.ok(!Object.hasOwn(payload,'storyMessages'));await page.locator('#dlg .nb-x').click();
+  await settings();await page.locator('#chatModelSelect').selectOption('');await closeSettings();assert.equal(await page.evaluate(id=>st.cfg[id].chatModel||'',cid),'');payload=await send('Continuemos con el mapa.');assert.equal(payload.model,small);
+  const guestCfg=await page.evaluate(id=>JSON.stringify(st.cfg[id]),cid),guestCharacter=await page.evaluate(id=>JSON.stringify(st.custom.find(c=>c.id===id)),cid);
+  async function profile(){await page.evaluate(()=>{document.querySelector('#back').click();NubbiApp.go('prof');});}
+  async function login(id){await profile();await page.locator('#accEmail').fill(id+'@synthetic.invalid');await page.locator('#accPass').fill('synthetic-password');await page.locator('#accLogin').click();await ready('user:'+id);await openChat();}
+  await login('A');assert.equal(await page.evaluate(id=>st.cfg[id].chatModel||'',cid),'');assert.equal(await page.evaluate(id=>st.cfg[id].storyExperience||'',cid),'');await settings();await page.locator('#experienceSelect').selectOption('aventura');await page.locator('#chatModelSelect').selectOption(large);await closeSettings();await profile();await page.locator('#accLogout').click();await ready('guest');await openChat();assert.equal(await page.evaluate(id=>JSON.stringify(st.cfg[id]),cid),guestCfg);assert.equal(await page.evaluate(id=>JSON.stringify(st.custom.find(c=>c.id===id)),cid),guestCharacter);
+  await login('B');assert.equal(await page.evaluate(id=>st.cfg[id].storyExperience||'',cid),'');assert.equal(await page.evaluate(id=>st.cfg[id].chatModel||'',cid),'');await profile();await page.locator('#accLogout').click();await ready('guest');await openChat();
+  assert.equal(await page.evaluate(id=>JSON.stringify(st.cfg[id]),cid),guestCfg);
+  // Simulate a formerly available per-chat model disappearing on the next visit.
+  await page.evaluate(({id,model})=>{st.cfg[id].chatModel=model;NubbiApp.save();},{id:cid,model:large});allowed=[small];await page.reload();await ready('guest');await openChat();
+  const callsBeforeUnavailable=requests.length;await page.locator('#inp').fill('¿Está disponible el motor elegido?');await page.locator('#f').evaluate(f=>f.requestSubmit());
+  await page.waitForFunction(()=>document.querySelector('#msgs').textContent.includes('El motor elegido no está disponible'));
+  assert.equal(requests.length,callsBeforeUnavailable,'unavailable model must not call /api/chat');assert.equal(await page.evaluate(id=>st.cfg[id].chatModel,cid),large);assert.equal(await page.evaluate(id=>JSON.parse(localStorage.getItem('nubbi:state:v2:guest')).cfg[id].chatModel,cid),large);
+  await settings();assert.match(await page.locator('#chatModelStatus').textContent(),/no está disponible/);await page.locator('#chatModelSelect').selectOption('');await closeSettings();payload=await send('Usamos la preferencia general y seguimos.');assert.equal(payload.model,small);assert.equal(await page.evaluate(id=>st.chats[id].at(-1).model,cid),small);
+  await overflow();await page.screenshot({animations:'disabled',path:path.join(out,'experience-chat-'+width+'.png')});assert.deepEqual(errors,[]);await context.close();console.log('PASS experiences '+width+': six writing profiles, saved/reloaded real chat model, global generation unaffected, character immutable, A/B/guest isolated, real/requested metadata, unavailable model blocked/recovered, reduced motion, no overflow/errors');
+ }
+}finally{await browser.close()}})().catch(error=>{console.error(error);process.exitCode=1});

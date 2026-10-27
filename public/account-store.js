@@ -96,7 +96,7 @@
       items.forEach(function (message, i) {
         var at = path + '[' + i + ']';
         if (!record(message)) bad(at);
-        strings(message, ['role', 'image', 'emo'], at);
+        strings(message, ['role', 'image', 'emo', 'model', 'requestedModel'], at);
         // Legacy image messages can omit their caption; text messages cannot.
         if (!(message.role === 'image' && !Object.prototype.hasOwnProperty.call(message, 'content')) &&
             typeof message.content !== 'string') bad(at + '.content');
@@ -104,7 +104,7 @@
     }
     function config(value, path) {
       if (!record(value)) bad(path);
-      strings(value, ['memory', 'scenario', 'userRole', 'instructions', 'goal', 'secret', 'arc', 'bg', 'bubble', 'voiceURI', 'visualProfile', 'imageStyle'], path);
+      strings(value, ['memory', 'scenario', 'userRole', 'instructions', 'goal', 'secret', 'arc', 'bg', 'bubble', 'voiceURI', 'visualProfile', 'imageStyle', 'storyExperience', 'chatModel'], path);
       ['memoryNotes', 'autoMem'].forEach(function (field) {
         if (value[field] == null) return;
         if (!Array.isArray(value[field])) bad(path + '.' + field);

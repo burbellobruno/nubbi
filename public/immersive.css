@@ -91,6 +91,13 @@
 #pdlg{width:min(560px,calc(100vw - 28px));padding:24px;box-sizing:border-box;max-height:90dvh;overflow:auto}
 #pdlg :is(input,textarea){box-sizing:border-box;max-width:100%}
 #pdlgTitle,#pdlgDescription{padding-right:42px}
+.experience-controls{background:linear-gradient(145deg,var(--ac-soft),var(--bg-elevated));border-color:color-mix(in srgb,var(--ac) 40%,var(--bd));box-shadow:0 10px 28px #00000012}
+.experience-controls h4{font-size:17px;text-wrap:balance}
+#experienceDescription{min-height:4em;padding:12px 14px;border-radius:12px;background:var(--surface);line-height:1.7;color:var(--tx)}
+#chatModelStatus{line-height:1.6;overflow-wrap:anywhere}
+.model-change-notice{display:block;margin:10px 0;color:var(--mut);font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+#bExperience{max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-color:var(--ac)!important;background:var(--ac-soft)!important;color:var(--tx)!important}
+@media(max-width:600px){#bExperience{max-width:115px}.experience-controls{padding:16px 14px}.experience-controls h4{font-size:16px}}
 #pdlg label{display:block;margin:16px 0 6px;font-size:13px;color:var(--tx)}
 .persona-image-editor{margin:20px 0;padding:18px;border:1px solid var(--bd);border-radius:18px;background:linear-gradient(135deg,var(--ac-soft),var(--surface));display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
 #pimagePreview,#pimagePlaceholder{width:112px;height:112px;border-radius:26px;object-fit:cover;border:2px solid var(--bd);background:var(--surface)}

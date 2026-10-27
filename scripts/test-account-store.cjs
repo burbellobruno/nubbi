@@ -97,7 +97,7 @@ function boot(user) {
   }
   for (const malformed of [
     {custom:[{tags:[]}]}, {personas:[{name:{}}]}, {prof:{voice:[]}},
-    {cfg:{p0:{memoryNotes:[null]}}}, {branches:{p0:[{messages:[{role:'assistant',content:{}}]}]}}
+    {cfg:{p0:{memoryNotes:[null]}}}, {cfg:{p0:{storyExperience:{}}}}, {cfg:{p0:{chatModel:[]}}}, {branches:{p0:[{messages:[{role:'assistant',content:{}}]}]}}
   ]) assert.throws(()=>unicode.NubbiAccountStore.validate(JSON.stringify(malformed)),/inválido/);
   // Persona portraits remain optional, survive restores, and reject corrupt schema
   // before any replacement or recovery write can occur.
