@@ -1,0 +1,5 @@
+.social-access{padding:16px;border:1px solid var(--bd);border-radius:16px;margin:0 0 18px;background:var(--surface)}
+.social-access h4{margin:0 0 12px;color:var(--tx);font-size:14px}
+.social-access-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.social-access-buttons button{flex:1 1 90px;min-height:44px;font-size:12px}
+.social-access .note{margin:12px 0 0;line-height:1.6}

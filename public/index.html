@@ -18,7 +18,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="firebase-sync.js"></script>
+<link rel="stylesheet" href="social-auth.css">
+<script src="social-auth.js" defer></script>
 <script src="account-store.js"></script>
+<link rel="stylesheet" href="immersive.css">
 </head>
 <body>
 <div id="nb-account-loading" role="status" aria-live="polite">Cargando tu espacio privado de Nubbi…</div>
@@ -58,7 +61,7 @@
 </svg>
 <div id="views">
 <section class="view on" id="v-home">
-<div class="top"><span class="logo"><img src="logo.png" alt="">Nubbi</span><span class="note">+18 · personajes de 21 años o más</span></div>
+<div class="top"><span class="logo"><img src="logo.png" alt="">Nubbi</span><span class="note">+18 · personajes de 18 años o más</span></div>
 <div class="hero"><div class="hero-copy"><span class="eyebrow hero-wordmark">Nubbi</span><h1>Cada historia empieza<br>con un <span>encuentro.</span></h1><p>Descubrí personajes, continuá historias<br>o creá a alguien único.</p><div class="hero-actions"><button id="heroNew"><svg class="icon"><use href="#i-plus"></use></svg><span>Crear personaje</span></button><button class="g" id="surprise"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Inspírame</span></button></div></div><div id="heroClouds" class="hero-clouds" aria-hidden="true"></div></div>
 <section class="style-discovery" aria-labelledby="styleTitle"><div class="section-heading"><div><span class="eyebrow">DALE FORMA A TU IMAGINACIÓN</span><h2 id="styleTitle">Tu personaje, tu estilo</h2></div><span class="note">Un punto de partida para crear</span></div><div id="styleDiscoveryList" class="style-discovery-list"></div></section>
 <section id="recentStories" aria-labelledby="recentTitle" hidden><div class="section-heading"><div><span class="eyebrow">TU PRÓXIMO CAPÍTULO</span><h2 id="recentTitle">Continúa tu historia</h2></div><button type="button" class="g" id="recentAll">Ver chats</button></div><div id="recentStoryList"></div></section>
@@ -150,7 +153,7 @@
 <p class="note" id="adultProviderNote">Verificando el proveedor de texto...</p>
 <p class="note" id="imageStatusNote"></p>
 <label class="note">Intensidad por defecto en chats nuevos</label>
-<select id="pint"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, puede ser explícito)</option><option value="libre">Libre (iniciativa; puede ser explícito)</option></select><br><br>
+<select id="pint"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (tensión dramática)</option><option value="libre">Libre (iniciativa narrativa)</option></select><br><br>
 </section>
 <section class="profile-card profile-data" aria-labelledby="dataTitle">
 <h3 id="dataTitle">Datos y sincronización</h3>
@@ -174,7 +177,7 @@
 <label>Animaciones</label><select id="panim"><option value="on">Activadas</option><option value="off">Desactivadas</option></select>
 <label>Creatividad del personaje</label><select id="ptemp"><option value="precise">Preciso (más coherente)</option><option value="balanced">Equilibrado</option><option value="creative">Creativo</option><option value="wild">Impredecible (más libertad)</option></select>
 <label>Longitud de respuesta</label><select id="plen"><option value="short">Corta</option><option value="normal">Normal</option><option value="long">Larga</option></select>
-<label>Modelo de IA</label><select id="pmodel"><option value="">Automático (rápido)</option><option value="openai/gpt-oss-20b">Rápido · gpt-oss-20b</option><option value="openai/gpt-oss-120b">Profundo · gpt-oss-120b (más lento)</option></select>
+<label>Modelo de IA</label><select id="pmodel"><option value="">Automático (configurado por Nubbi)</option><option value="openai/gpt-oss-20b">gpt-oss-20b · rápido</option><option value="openai/gpt-oss-120b">gpt-oss-120b · mayor tamaño, puede tardar más</option></select>
 <label>Voz del personaje</label><select id="pvoice"><option value="">Automática</option></select>
 <label>Velocidad de voz</label><input id="pvoicerate" type="range" min="0.6" max="1.6" step="0.05" value="1">
 <label>Tono de voz</label><input id="pvoicepitch" type="range" min="0.5" max="1.6" step="0.05" value="1">
@@ -203,18 +206,18 @@
 </div>
 
 <dialog id="dlg">
-<h3 style="margin:0">Crear personaje</h3><div class="note">Todos los personajes tienen 21 años o más</div>
+<h3 style="margin:0">Crear personaje</h3><div class="note">Todos los personajes tienen 18 años o más</div>
 <label>Idea para generarlo con IA</label><input id="idea" placeholder="Ej: rival de la academia, orgulloso pero leal">
 <button id="gen" type="button" style="margin-top:6px"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Generar con IA</span></button>
 <div class="note" id="genStatus" style="margin-top:6px"></div>
 <label>Emoji / foto</label><div style="display:flex;gap:8px"><input id="e" maxlength="4" value="🦇" style="width:80px"><input id="img" type="file" accept="image/*"></div>
-<label>Nombre</label><input id="n"><label>Descripción corta (incluye edad, mínimo 21 años)</label><input id="d"><label>Rol (novio, villano, mentor...)</label><input id="r">
+<label>Nombre</label><input id="n"><label>Descripción corta (incluye edad, mínimo 18 años)</label><input id="d"><label>Rol (novio, villano, mentor...)</label><input id="r">
 <label>Género</label><select id="gen2"><option>Masculino</option><option>Femenino</option><option>Otro</option></select>
 <label>Personalidad y reglas</label><textarea id="p" rows="3"></textarea><label>Primer mensaje</label><input id="gr">
-<label>Proveedor de imagen</label><select id="iprov"><option value="cloudflare">Cloudflare gratis · FLUX.1 schnell</option><option value="forge">Forge local · mis modelos</option><option value="huggingface">HuggingFace · modelo configurado</option></select>
+<label>Proveedor de imagen</label><select id="iprov"><option value="cloudflare">Cloudflare · cuota gratuita compartida</option><option value="forge">Forge local · mis modelos</option><option value="huggingface">HuggingFace · modelo configurado</option></select>
 <label>Modelo de imagen</label><select id="sdm"><option value="">Automático</option></select>
 <div class="note" id="imageEngineNote" style="margin-top:4px">Cloudflare usa FLUX.1 schnell. No usa tus modelos locales ni genera imágenes explícitas.</div>
-<label>Estilo del personaje</label><select id="sty"><option value="anime">Anime</option><option value="realista">Realista</option><option value="semi-realista">Semi-realista</option><option value="pintura digital">Pintura digital / fantasía</option><option value="manhwa">Manhwa / webtoon</option><option value="furry">Furry adulto / antropomórfico</option><option value="3d">Personaje 3D estilizado</option></select>
+<label>Estilo del personaje</label><select id="sty"><option value="anime">Anime</option><option value="webtoon">Webtoon a color</option><option value="manhwa">Manhwa</option><option value="manga">Manga · tinta y tramas</option><option value="bl">BL · romance ilustrado</option><option value="realista">Realista</option><option value="semi-realista">Semi-realista</option><option value="pintura digital">Pintura digital / fantasía</option><option value="furry">Furry adulto / antropomórfico</option><option value="3d">Personaje 3D estilizado</option></select>
 <label for="imagePrompt">Descripción del retrato (opcional, misma edad)</label><textarea id="imagePrompt" rows="3" maxlength="1600" placeholder="Portrait of a person, 29 years old"></textarea>
 <div class="pr" id="pr"></div>
 <button id="genImg" type="button" class="g" style="margin-top:8px"><svg class="icon"><use href="#i-image"></use></svg><span>Generar imagen con IA</span></button>
@@ -223,10 +226,10 @@
 <dialog id="cdlg">
 <h3 style="margin:0">Escena e historia</h3>
 <label>Escenario</label><textarea id="sc" rows="3" placeholder="Ej: Academia de magia, noche de tormenta, biblioteca vacía"></textarea>
-<label for="imageCharacterAge">Edad del personaje para imágenes (21+)</label><input id="imageCharacterAge" type="number" min="21" step="1" placeholder="Completa si tu personaje antiguo no indica edad"><p class="note">No cambia los datos del personaje. Si la descripción ya indica edad, debe coincidir.</p>
+<label for="imageCharacterAge">Edad del personaje para imágenes (18+)</label><input id="imageCharacterAge" type="number" min="18" step="1" placeholder="Completa si tu personaje antiguo no indica edad"><p class="note">No cambia los datos del personaje. Si la descripción ya indica edad, debe coincidir.</p>
 <label>Tu rol en la historia</label><input id="ur">
 <label>Modo</label><select id="mode"><option value="chat">Chat directo</option><option value="story">Historia narrada</option></select>
-<label>Intensidad</label><select id="int"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (sensual, puede ser explícito)</option><option value="libre">Libre (iniciativa; puede ser explícito)</option></select>
+<label>Intensidad</label><select id="int"><option value="soft">Suave</option><option value="rom">Romántico</option><option value="int">Intenso (tensión dramática)</option><option value="libre">Libre (iniciativa narrativa)</option></select>
 <label>Persona (tu personaje en la historia)</label><select id="pcfg"><option value="">Perfil actual</option></select>
 <label>Instrucciones para la IA (opcional)</label><textarea id="ci" rows="2" maxlength="600" placeholder="Ej: no uses emojis, respondé en primera persona, no hagas saltos temporales..."></textarea>
 <label>Objetivo del personaje</label><input id="cgoal" placeholder="Ej: que el usuario confíe en él">
@@ -291,11 +294,11 @@
 <p class="note">App de chat con personajes de IA. Es solo para mayores de 18 años.</p>
 <ul class="note" style="text-align:left">
 <li>Elegí un personaje o creá el tuyo.</li>
-<li>Podés escribir ficción adulta entre personajes de 21 años o más.</li>
+<li>Podés escribir ficción adulta entre personajes de 18 años o más.</li>
 <li>Prohibido: contenido sexual con menores, no consentido, con animales o con personas reales.</li>
 <li>Personalizá tema, acento y tamaño en Perfil.</li>
 </ul>
-<label class="chk"><input type="checkbox" id="onbAdult"> Confirmo que tengo 18 años o más y que todos los personajes tienen 21 años o más.</label>
+<label class="chk"><input type="checkbox" id="onbAdult"> Confirmo que tengo 18 años o más y que todos los personajes tienen 18 años o más.</label>
 <div class="drow"><button id="onbStart" disabled>Entrar</button></div>
 </div>
 </dialog>
@@ -333,7 +336,7 @@
 <label>Tags</label><input id="pubtags" maxlength="120">
 <label>Personalidad y reglas</label><textarea id="pubpersona" rows="4" maxlength="5000"></textarea>
 <label>Primer mensaje</label><textarea id="pubgreet" rows="2" maxlength="2000"></textarea>
-<label class="chk"><input type="checkbox" id="pubadult"> Confirmo que el personaje tiene 21 años o más y que no incluye contenido sexual con menores ni no consentido.</label>
+<label class="chk"><input type="checkbox" id="pubadult"> Confirmo que el personaje tiene 18 años o más y que no incluye contenido sexual con menores ni no consentido.</label>
 <label class="chk"><input type="checkbox" id="pubterms"> Confirmo que tengo derecho a publicar este personaje y acepto las normas de la comunidad.</label>
 <div class="drow"><button class="g" id="pubcancel" type="button">Cancelar</button><button id="pubsend" type="button">Publicar</button></div>
 </dialog>
@@ -375,6 +378,8 @@
 
 <script src="catalog.js"></script>
 <script src="ai-client.js"></script>
+<script src="story-engine.js"></script>
 <script src="account-bootstrap.js"></script>
+<script src="immersive.js"></script>
 </body>
 </html>

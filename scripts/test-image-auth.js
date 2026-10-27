@@ -9,7 +9,7 @@ class Clock extends Date {
   static now() { return now; }
 }
 const app = {
-  set() {}, use() {}, get() {}, listen() {},
+  set() {}, use() {}, get(route, handler) { routes["GET " + route] = handler; }, listen() {},
   post(route, handler) { routes[route] = handler; },
 };
 const express = () => app;
@@ -64,7 +64,7 @@ async function request(token, prompt = "Portrait of a person, 28 years old", ext
   assert.equal(providerCalls, 0);
   assert.equal((await request("user-a", "child portrait")).code, 400);
   // Invalid numeric ages fail before provider calls and do not spend the daily quota.
-  for (const prompt of ["Portrait without an age", "Portrait, 0 years old", "Portrait, 20 years old", "Portrait, 29 years old, 12 years old", "Portrait, 29 years old, 30 years old", "Portrait, age: 21.5"]) {
+  for (const prompt of ["Portrait without an age", "Portrait, 0 years old", "Portrait, 17 years old", "Portrait, 29 years old, 12 years old", "Portrait, 29 years old, 30 years old", "Portrait, age: 21.5"]) {
     const invalid = await request("age-user", prompt);
     assert.equal(invalid.code, 400, prompt);
     assert.equal(invalid.body.code, "INVALID_AGE");
@@ -95,6 +95,26 @@ async function request(token, prompt = "Portrait of a person, 28 years old", ext
   assert.equal((await request('model-user',undefined,{model:'https://attacker.example/model'})).code,400);
   assert.equal((await request('model-user',undefined,{model:'Counterfeit-V3.0_fp16'})).code,400);
   assert.equal((await request('model-user',undefined,{provider:'forge',model:'@cf/leonardo/lucid-origin'})).code,400);
+  // Adult boundary and automatic style routing retain explicit model control.
+  for(const age of [18,19,20])assert.equal((await request('adult-'+age,'Portrait, '+age+' years old')).code,200);
+  for(const style of ['anime','webtoon','manhwa','manga','bl','3d','semi-realista','furry','pintura digital','realista']){
+    const out=await request('style-'+style,undefined,{model:'auto',style});
+    assert.equal(out.code,200,style);
+    assert.equal(out.body.model,style==='realista'?'@cf/black-forest-labs/flux-1-schnell':'@cf/leonardo/lucid-origin');
+    assert.match(lastProviderRequest.payload.prompt,/29|28/);
+    assert.ok(lastProviderRequest.payload.prompt.length<=2048);
+    if(style==='manga')assert.match(lastProviderRequest.payload.prompt,/black-and-white manga/);
+    if(style==='furry')assert.match(lastProviderRequest.payload.prompt,/anthropomorphic/);
+  }
+  assert.equal((await request('explicit-style',undefined,{style:'anime',model:'@cf/black-forest-labs/flux-1-schnell'})).code,200);
+  assert.match(lastProviderRequest.url,/flux-1-schnell/,'explicit choice must take precedence over style recommendation');
+  assert.equal((await request('auto-alias',undefined,{style:'manwha',model:'auto'})).code,200);
+  assert.match(lastProviderRequest.url,/lucid-origin/);
+  let capabilities;
+  routes['GET /api/image/capabilities']({}, {json(value){capabilities=value;}});
+  assert.equal(capabilities.providers.cloudflare.freeTier.unlimited,false);
+  assert.equal(capabilities.providers.cloudflare.styles.length,10);
+  assert.ok(!JSON.stringify(capabilities).includes('test-only'),'capabilities must not expose tokens');
   delete env.FIREBASE_API_KEY;
   assert.equal((await request("user-c")).code, 503);
   console.log("Imágenes: sesión, rechazo anónimo/inhabilitado, menores, cuota por uid, modelos por proveedor y reinicio UTC: OK (proveedores simulados)");

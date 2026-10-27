@@ -751,7 +751,7 @@
     var name = ($("pubname").value || "").trim();
     if(!name){ alert("El personaje necesita un nombre público."); return; }
     if(!$("pubadult").checked || !$("pubterms").checked){
-      alert("Confirmá que el personaje tiene 21 años o más, que no incluye contenido sexual con menores ni no consentido, y que tenés derecho a publicarlo.");
+      alert("Confirmá que el personaje tiene 18 años o más, que no incluye contenido sexual con menores ni no consentido, y que tenés derecho a publicarlo.");
       return;
     }
     var ageIssue = window.NubbiCharacterAgeIssue({desc: $("pubdesc").value, persona: $("pubpersona").value, greeting: $("pubgreet").value});

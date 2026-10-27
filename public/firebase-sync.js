@@ -7,7 +7,7 @@
 
   function friendly(e){
     const code = (e && e.code) || "";
-    if(code === "auth/operation-not-allowed") return "Habilitá Email/Password en Firebase Console → Authentication → Sign-in method.";
+    if(code === "auth/operation-not-allowed") return "Ese método de acceso no está habilitado. Podés usar otro método disponible o contactar al administrador.";
     if(code === "auth/email-already-in-use") return "Ese email ya tiene cuenta. Probá iniciar sesión.";
     if(code === "auth/invalid-email") return "El email no es válido.";
     if(code === "auth/weak-password") return "La contraseña debe tener al menos 6 caracteres.";
@@ -16,6 +16,9 @@
     if(code === "auth/too-many-requests") return "Demasiados intentos. Esperá un momento.";
     if(code === "auth/network-request-failed") return "Sin conexión. Revisá internet.";
     if(code === "auth/unauthorized-domain") return "Este dominio no está autorizado en Firebase. Agregalo en Authentication → Settings → Authorized domains.";
+    if(code === "auth/popup-blocked") return "El navegador bloqueó la ventana de acceso. Permití ventanas emergentes para Nubbi y volvé a intentar.";
+    if(code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return "Se canceló el acceso. Tus datos locales siguen intactos.";
+    if(code === "auth/account-exists-with-different-credential") return "Ya existe una cuenta con ese email y otro método de acceso. Ingresá con el método original; no se mezclaron cuentas.";
     return (e && e.message) || "Error de autenticación.";
   }
 
@@ -154,6 +157,21 @@
       sessionEpoch++;
       const u = (await auth.signInWithEmailAndPassword(email, password)).user;
       return u;
+    },
+
+    async signInSocial(providerId){
+      const constructors = {google: "GoogleAuthProvider", facebook: "FacebookAuthProvider", twitter: "TwitterAuthProvider"};
+      if(!Object.prototype.hasOwnProperty.call(constructors, providerId)) throw new Error("Proveedor de acceso no compatible.");
+      if(auth.currentUser && !auth.currentUser.isAnonymous) throw new Error("Cerrá la sesión actual antes de ingresar con otra cuenta.");
+      const Provider = firebase.auth[constructors[providerId]];
+      if(typeof Provider !== "function" || typeof auth.signInWithPopup !== "function") throw new Error("El SDK de acceso social no está disponible. Recargá la página.");
+      const provider = new Provider();
+      if(providerId === "google") provider.setCustomParameters({prompt: "select_account"});
+      sessionEpoch++;
+      // Never link/merge an anonymous principal automatically. P1's explicit
+      // recovery/import remains the only way to move guest data to a user.
+      const result = await auth.signInWithPopup(provider);
+      return result.user;
     },
 
     async signOut(){ sessionEpoch++; await auth.signOut(); },
