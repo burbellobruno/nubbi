@@ -251,6 +251,7 @@ const CF_DEFAULT_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 const CF_API_BASE = "https://api.cloudflare.com/client/v4";
 const CF_IMAGE_MODELS = [
   { id: CF_DEFAULT_MODEL, name: "FLUX.1 schnell · rápido", engine: "flux", styles: ["realista", "semi-realista", "pintura digital"], consumption: "bajo" },
+  { id: "@cf/black-forest-labs/flux-2-klein-4b", name: "FLUX.2 klein 4B · candidato", engine: "klein", styles: ["anime", "webtoon", "manhwa", "manga", "bl", "realista", "semi-realista", "furry", "3d", "pintura digital"], consumption: "medio", candidate: true },
   { id: "@cf/leonardo/lucid-origin", name: "Lucid Origin · ilustración", engine: "lucid", styles: ["anime", "webtoon", "manhwa", "manga", "bl", "furry", "3d", "pintura digital", "semi-realista"], consumption: "alto" },
   { id: "@cf/leonardo/phoenix-1.0", name: "Phoenix 1.0 · detalle", engine: "phoenix", styles: ["realista", "semi-realista", "pintura digital"], consumption: "alto" }
 ];
@@ -591,7 +592,7 @@ app.get("/api/image/capabilities", (req, res) => {
         configured: !!cf.endpoint,
         defaultModel: cf.cf.model,
         freeTier: { neuronsPerDay: 10000, unlimited: false },
-        models: CF_IMAGE_MODELS.map(model => ({ id: model.id, name: model.name, styles: model.styles, consumption: model.consumption })),
+        models: CF_IMAGE_MODELS.map(model => ({ id: model.id, name: model.name, styles: model.styles, consumption: model.consumption, candidate: !!model.candidate })),
         styles: IMAGE_STYLE_PROFILES.map(profile => ({ ...profile, recommendedModel: recommendedImageModel(profile.id) })),
         note: "Asignación gratuita diaria compartida de Workers AI; el consumo cambia según el motor. No hay generación ilimitada."
       }
@@ -611,7 +612,7 @@ app.get("/api/image/models", async (req, res) => {
         available: !!cf.endpoint,
         configured: !!cf.endpoint,
         model: cf.cf.model,
-        models: CF_IMAGE_MODELS.map(m => ({ title: m.id, name: m.name, styles: m.styles, consumption: m.consumption })),
+        models: CF_IMAGE_MODELS.map(m => ({ title: m.id, name: m.name, styles: m.styles, consumption: m.consumption, candidate: !!m.candidate })),
         free: true,
         autoModel: "auto",
         freeTier: { neuronsPerDay: 10000, unlimited: false },
@@ -809,6 +810,24 @@ function prepareForgeRequest(req, c, safePrompt) {
   return { body, headers };
 }
 
+function cloudflareImageParameters(req, model) {
+  const maximum = model === "@cf/black-forest-labs/flux-2-klein-4b" ? 1920 : model === "@cf/leonardo/lucid-origin" ? 2500 : 2048;
+  function integer(key, fallback, minimum, maximum) {
+    const value = req.body[key];
+    if (value === undefined) return fallback;
+    if ((typeof value !== "number" && typeof value !== "string") || String(value).trim() === "") throw new Error(key);
+    const number = Number(value);
+    if (!Number.isSafeInteger(number) || number < minimum || number > maximum) throw new Error(key);
+    return number;
+  }
+  try {
+    const parameters = { width: integer("width", 768, 256, maximum), height: integer("height", 1024, 256, maximum) };
+    if (req.body.seed !== undefined) parameters.seed = integer("seed", undefined, 0, 2147483647);
+    return { parameters };
+  } catch (error) {
+    return { status: 400, error: "El parámetro de Cloudflare " + error.message + " no es válido." };
+  }
+}
 function imagePreflight(req) {
   let c = imageConfig(req.body.provider);
   if (c.provider === "cloudflare") {
@@ -831,7 +850,9 @@ function imagePreflight(req) {
         return { status: 400, error: "Ese modelo de imagen no está permitido." };
       }
     }
-
+    const prepared = cloudflareImageParameters(req, c.cf.model);
+    if (prepared.error) return prepared;
+    c = { ...c, cf: { ...c.cf, parameters: prepared.parameters } };
   }
   if (!c.endpoint) return { status: 500, error: c.urlError || "Falta configurar el proveedor de imágenes." };
   if (!Number.isInteger(c.timeoutMs)) return { status: 500, error: "El tiempo de espera de imágenes debe ser un número entero." };
@@ -878,17 +899,31 @@ async function generateCloudflareImage(req, res, c, onImage) {
   // descripciones explícitas: Cloudflare las sigue bloqueando.
   const safePrompt = prepareImagePrompt(prompt, req.body.style, req.body.tags, { cloudflare: true });
   try {
+    const parameters = c.cf.parameters;
+    let body, headers = { authorization: "Bearer " + c.cf.apiToken };
+    if (c.cf.model === "@cf/black-forest-labs/flux-2-klein-4b") {
+      // REST requires multipart even for text-only Klein requests. Let fetch
+      // serialize FormData and set its Content-Type boundary; never send steps.
+      body = new FormData();
+      body.set("prompt", safePrompt);
+      body.set("width", String(parameters.width));
+      body.set("height", String(parameters.height));
+      if (parameters.seed !== undefined) body.set("seed", String(parameters.seed));
+    } else {
+      const payload = c.cf.model === "@cf/leonardo/lucid-origin"
+        ? { prompt: safePrompt, width: parameters.width, height: parameters.height, num_steps: 20 }
+        : c.cf.model === "@cf/leonardo/phoenix-1.0"
+          ? { prompt: safePrompt, width: parameters.width, height: parameters.height, num_steps: 25, negative_prompt: "child, minor, underage, teen, loli, shota, kid, lowres, bad anatomy, watermark" }
+          : { prompt: safePrompt, steps: c.cf.steps };
+      // Schnell documents a seed, but not dimensions; do not invent size support.
+      if (parameters.seed !== undefined) payload.seed = parameters.seed;
+      headers["content-type"] = "application/json";
+      body = JSON.stringify(payload);
+    }
     const r = await fetch(c.endpoint, {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: "Bearer " + c.cf.apiToken,
-      },
-      body: JSON.stringify(c.cf.model === "@cf/leonardo/lucid-origin"
-        ? { prompt: safePrompt, width: 768, height: 1024, num_steps: 20 }
-        : c.cf.model === "@cf/leonardo/phoenix-1.0"
-          ? { prompt: safePrompt, width: 768, height: 1024, num_steps: 25, negative_prompt: "child, minor, underage, teen, loli, shota, kid, lowres, bad anatomy, watermark" }
-          : { prompt: safePrompt, steps: c.cf.steps }),
+      headers,
+      body,
       signal: AbortSignal.timeout(c.timeoutMs),
     });
     const ct = (r.headers.get("content-type") || "").toLowerCase();
