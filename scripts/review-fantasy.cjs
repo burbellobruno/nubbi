@@ -32,8 +32,9 @@ const output=process.env.NUBBI_REVIEW_OUTPUT||path.join(__dirname,'../review');f
    if(view==='prof'){
     await page.screenshot({path:path.join(output,'profile-'+width+'.png')});
     await page.locator('#ptheme').selectOption('light');await overflow();
+    await page.waitForFunction(()=>getComputedStyle(document.querySelector('#pn')).backgroundColor==='rgb(255, 255, 255)');
     await page.screenshot({path:path.join(output,'profile-light-'+width+'.png')});
-    await page.locator('#ptheme').selectOption('dark');
+    await page.locator('#ptheme').selectOption('dark');await page.waitForTimeout(350);
    }
   }
   await page.evaluate(()=>NubbiApp.go('home'));
