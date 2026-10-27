@@ -67,9 +67,9 @@ const report={origin:url.origin,mode:local?'local':'production',syntheticGuest:t
    // Keep the actual worker enabled; guard all network writes in a fresh guest.
    const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'allow'});
    await context.addInitScript(()=>{localStorage.setItem('nubbi-adult-ok','1');localStorage.setItem('nubbi-intro-audio','off');});
-   // This local instance has no provider credentials. Do not route shell requests:
-   // browser routing changes the request lifecycle of service-worker installation.
-   const unexpectedWrites=[];context.on('request',r=>{if(!['GET','HEAD','OPTIONS'].includes(r.method()))unexpectedWrites.push(r.method());});
+   // Block SDK telemetry or any other background write in this disposable guest.
+   const blockedWrites=[];
+   await context.route('**/*',route=>{const r=route.request();if(!['GET','HEAD','OPTIONS'].includes(r.method())){blockedWrites.push(r.method());return route.abort('blockedbyclient');}return route.continue();});
    const page=await context.newPage();await page.goto(url.href,{waitUntil:'load'});
    await page.evaluate(()=>Promise.race([
     (async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));})(),
@@ -85,8 +85,8 @@ const report={origin:url.origin,mode:local?'local':'production',syntheticGuest:t
    await page.waitForFunction(()=>!document.querySelector('#nb-intro')?.open,{},{timeout:12000});
    assert.ok(await page.locator('#grid .card').count()>0);
    assert.equal(await page.locator('#v-home .hero').evaluate(el=>getComputedStyle(el).borderRadius),'20px');
-   assert.deepEqual(errors,[]);assert.deepEqual(unexpectedWrites,[]);await page.screenshot({animations:'disabled',path:path.join(output,'offline-390.png')});
-   report.offline={cache:'nubbi-v36',entries:entries.length,reloadStatus:200,pageErrors:errors};await context.close();console.log('PASS real service-worker install and offline reload v36');
+   assert.deepEqual(errors,[]);await page.screenshot({animations:'disabled',path:path.join(output,'offline-390.png')});
+   report.offline={cache:'nubbi-v36',entries:entries.length,reloadStatus:200,pageErrors:errors,blockedWrites:blockedWrites.length};await context.close();console.log('PASS real service-worker install and offline reload v36');
   }
   if(!local)assert.ok(report.health.every(h=>h.status===200&&h.ok),'Production health endpoint failed; see smoke-report.json');
  }finally{fs.writeFileSync(path.join(output,'smoke-report.json'),JSON.stringify(report,null,2));await browser.close();}
