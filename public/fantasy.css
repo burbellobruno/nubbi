@@ -1,5 +1,6 @@
 /* Visual layer only. All application controls retain their original handlers. */
-:root:not([data-theme="light"]){--bg:#090d19;--bg-elevated:#15172a;--sf:#171a2bd9;--surface:#171a2bcc;--surface-2:#202239;--glass-strong:#121525ed;--bot:#24263e;--bd:#b8a0e52e;--mut:#b8b6d0;--tx:#f5efff}
+:root[data-theme="dark"]{--bg:#090d19;--bg-elevated:#15172a;--sf:#171a2bd9;--surface:#171a2bcc;--surface-2:#202239;--glass-strong:#121525ed;--bot:#24263e;--bd:#b8a0e52e;--mut:#b8b6d0;--tx:#f5efff}
+@media(prefers-color-scheme:dark){:root:not([data-theme]){--bg:#090d19;--bg-elevated:#15172a;--sf:#171a2bd9;--surface:#171a2bcc;--surface-2:#202239;--glass-strong:#121525ed;--bot:#24263e;--bd:#b8a0e52e;--mut:#b8b6d0;--tx:#f5efff}}
 body{background:radial-gradient(ellipse at 72% 0%,#8770c51c,transparent 60%),var(--bg)}
 #views{max-width:1800px}
 h2,.section-heading h2{color:var(--ac2);font-size:20px;font-weight:650;letter-spacing:-.02em}
@@ -108,3 +109,14 @@ nav .brand small{display:none}
 :root[data-theme="light"] :is(input,textarea)::placeholder{color:#756985;opacity:1}
 :root[data-theme="light"] button.g{background:#eee7f7;color:#4c356c}
 :root[data-theme="light"] .hero-actions button.g{background:#111326e6;color:#ead5ff}
+
+/* System follows the same light treatment as the explicit preference. */
+@media(prefers-color-scheme:light){
+:root:not([data-theme]) #v-home .hero{color:#fff}
+:root:not([data-theme]) .card{color:#fff}
+:root:not([data-theme]) :is(h2,.section-heading h2,#v-prof h3,dialog h3,dialog h2){color:#74408d}
+:root:not([data-theme]) :is(.prof,dialog) :is(input,textarea,select){background:#fff;color:#35294b;border-color:#b9add0}
+:root:not([data-theme]) :is(input,textarea)::placeholder{color:#756985;opacity:1}
+:root:not([data-theme]) button.g{background:#eee7f7;color:#4c356c}
+:root:not([data-theme]) .hero-actions button.g{background:#111326e6;color:#ead5ff}
+}

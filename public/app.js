@@ -96,7 +96,7 @@ var b=document.createElement("b");b.textContent=c.name;var s=document.createElem
 var t=document.createElement("div");t.className="tags";(c.tags||c.gender||"").split(",").slice(0,3).forEach(function(x){if(!x)return;var sp=document.createElement("span");sp.className="tg";sp.textContent=x;t.appendChild(sp);});d.appendChild(t);
 d.onclick=function(){openSheet(c.id);};return d;}
 function toggleFav(id){var i=st.favs.indexOf(id);if(i>=0)st.favs.splice(i,1);else st.favs.push(id);save();renderAll();}
-function pills(el,items,sel,fn){el.innerHTML="";items.forEach(function(x){var p=document.createElement("div");p.className="pill"+(x===sel?" on":"");p.textContent=x;p.onclick=function(){fn(x);};el.appendChild(p);});}
+function pills(el,items,sel,fn){el.innerHTML="";items.forEach(function(x){var p=document.createElement("button");p.type="button";p.className="pill"+(x===sel?" on":"");p.setAttribute("aria-pressed",x===sel?"true":"false");p.textContent=x;p.onclick=function(){fn(x);};el.appendChild(p);});}
 function renderForYou(){
 var el=$("forYou");if(!el)return;el.innerHTML="";
 var tags={};

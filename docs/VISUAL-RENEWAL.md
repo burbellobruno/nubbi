@@ -2,7 +2,7 @@
 
 ## Base y alcance
 
-Rama: `codex/nubbi-visual-renewal`, creada desde `codex/nubbi-p1-interface` en `1adbee4306a2dac79e151c289a915b53739b787a` (PR #3 abierto). `main` inspeccionado en `7977506026c1b6956ef858322bd4734c26af5da1`. Esta propuesta se apila sobre #3 para conservar sus tarjetas de Perfil y aviso de recuperación. No fusionar ni desplegar sin aprobación del usuario.
+Rama: `codex/nubbi-visual-renewal`, creada desde `codex/nubbi-p1-interface` en `1adbee4306a2dac79e151c289a915b53739b787a`. Tras fusionarse #3, se integró `main` (`5d1ffee4466c52065f1b70da836650064335e446`) mediante merge sin conflictos y el PR #4 se retargeteó a `main`. El usuario autorizó el 27 de octubre de 2026 las correcciones, coordinación, fusión y autodeploy condicionados a verificaciones satisfactorias. Trabajo realizado en copia/worktree aislados, sin tocar el checkout original de Descargas.
 
 Referencia visual: `Nubbi_ Fantasía, Historias y Conexión.png`, recuperada del adjunto de la conversación original. Patrones públicos consultados en https://emochi.com/: descubrimiento mediante búsqueda, pestañas de exploración/tendencias y tarjetas con etiquetas. No se copiaron personajes, textos de catálogo ni imágenes de Emochi.
 
@@ -16,7 +16,7 @@ Referencia visual: `Nubbi_ Fantasía, Historias y Conexión.png`, recuperada del
 - Doce retratos originales de respaldo para `p0` a `p11`. Solo aparecen si falla el retrato del catálogo y no existe `c.img`; no reemplazan imágenes guardadas. El resto del catálogo conserva su respaldo original con iniciales.
 - Nueva hoja `public/fantasy.css`. Caché de recursos públicos incrementada a `nubbi-v36`, incluyendo CSS y las dos imágenes locales. No cambia la política de exclusión de datos privados.
 
-No se modificaron servidor, reglas Firebase, configuración de proveedores, lógica de sincronización, aislamiento, almacenamiento ni código de bienvenida. `app.js` cambia únicamente el respaldo visual de tarjetas. `experience.js` cambia orden de secciones y retratos recientes.
+No se modificaron servidor, reglas Firebase, configuración de proveedores, lógica de sincronización, aislamiento, almacenamiento ni código de bienvenida. `app.js` cambia el respaldo visual de tarjetas y convierte los filtros en botones accesibles con `aria-pressed`, conservando callbacks. `experience.js` cambia orden de secciones y retratos recientes. La revisión independiente corrigió además el tema Sistema con SO claro, que recibía por error los tokens oscuros.
 
 ## Validación local
 
@@ -30,7 +30,15 @@ Servidor Express real local, sin credenciales de proveedores. Edge headless con 
 - `test-security.js` contra servidor local: cabeceras/CSP, JSON, límites, origen, autenticación de imágenes y aislamiento de `.env` aprobados.
 - Comprobación de sintaxis JS y `git diff --check` aprobados.
 
-Limitaciones: no certifica Firebase real junto con Express/CSP en producción, respuestas de proveedores reales, Safari/iOS ni una sesión offline real de navegador. La prueba de caché es automatizada en VM. El rediseño debe revisarse visualmente antes de aprobar su integración. No se fusionó ni desplegó.
+Limitaciones: las regresiones de cuentas usan Firebase simulado y los proveedores son simulados; no certifican escrituras Firebase ni generaciones reales. No se probaron Safari/iOS. `scripts/smoke-browser.cjs` agrega instalación real del service worker v36 y recarga offline en Edge, además de smoke de producción no destructivo con contextos nuevos de invitado y bloqueo de métodos de escritura. Los GET de salud solo comprueban configuración/token, no respuestas de chat o generación. La evidencia de publicación y deploy se registra en comentarios del PR #4 para evitar alterar el commit ya validado.
+
+## Cierre de revisión (27 de octubre de 2026)
+
+- Revisión independiente del código y capturas reales detectó dos defectos: tema Sistema claro y filtros sin teclado. Ambos corregidos; regresiones de Enter/Espacio y Sistema claro/oscuro añadidas en los cinco anchos.
+- Se repitieron las diez suites JS enumeradas arriba, seguridad/CSP, seis escenarios welcome y 32 grupos accounts sobre la integración con main. Todos aprobados antes del cierre; se repetirán sobre el commit final antes de publicar.
+- Las capturas completan las animaciones finitas antes de guardarse (`animations: disabled` solo en la captura); la aplicación conserva sus animaciones y preferencias. Se inspeccionaron las capturas reales de escritorio, móvil, Perfil y creador.
+- Coordinación verificable: https://github.com/burbellobruno/nubbi/pull/4#issuecomment-6432792781. La revisión independiente ocurrió mediante subagente de esta sesión; no se afirma comunicación directa con ChatGPT.
+- La producción previa al merge respondió 200/ok en `/api/health` (Groq) y `/api/image/health` (Cloudflare). No se enviaron mensajes ni se generaron imágenes, ni se accedió a datos de testers.
 
 ## Arte y especificaciones de generación
 
