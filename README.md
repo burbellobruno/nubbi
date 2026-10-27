@@ -176,8 +176,11 @@ Si `ADULT_CHAT_*` no está configurado, el modo adulto usa el proveedor general 
   1. En **Firebase Console → Authentication → Sign-in method**, habilitá **Email/Password**.
   2. En **Authentication → Settings → Authorized domains**, agregá tu dominio de Render (por ejemplo `nubbi.onrender.com`) si no está.
   3. En **Perfil → Cuenta**, completá email y contraseña, y tocá **Crear cuenta**.
-- Al crear la cuenta se suben los datos locales. Al iniciar sesión podés elegir bajar los datos de la nube o subir los de este dispositivo.
-- También podés usar **Subir a la nube** y **Bajar de la nube** manualmente.
+- La sincronización es **exclusivamente manual**. Crear una cuenta, iniciar sesión o cerrar sesión no sube ni descarga respaldos automáticamente.
+- En **Perfil → Datos y sincronización**, usá **Subir a la nube** para guardar el estado actual o **Bajar de la nube** para reemplazarlo por tu respaldo remoto validado. La descarga crea una copia de recuperación local antes de reemplazar datos; si no puede guardarla, no continúa.
+- Cada cuenta y el modo invitado tienen su propio espacio en este navegador. Cambiar de cuenta no copia datos entre ellos.
+- Revisá los datos anteriores desde el aviso de Inicio o **Perfil → Privacidad y datos de esta cuenta**. Importalos solo si te pertenecen: la importación explícita reemplaza el destino con copia de recuperación y conserva el origen.
+- **Exportar datos**, **Restaurar archivo** y las copias de recuperación siguen disponibles en Perfil. Los respaldos locales requieren espacio en el navegador y no están cifrados.
 
 ## Comunidad (Fase 2)
 

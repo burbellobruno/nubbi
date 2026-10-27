@@ -458,7 +458,7 @@ if($("syncDown"))$("syncDown").onclick=async function(){
  if(!hasOwnData&&accountStore.hasSource('legacy')){
   var home=document.getElementById('v-home');
   if(home){
-   var callout=document.createElement('section');callout.className='appearance-controls';
+   var callout=document.createElement('section');callout.className='appearance-controls nb-legacy-notice';
    var copy=document.createElement('p');copy.textContent='Encontramos datos anteriores en este navegador. No los importamos automáticamente para evitar mezclarlos entre cuentas.';
    var open=document.createElement('button');open.type='button';open.className='g';open.textContent='Revisar mis datos anteriores';
    open.onclick=function(){go('prof');section.scrollIntoView({block:'start'});};
