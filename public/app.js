@@ -82,11 +82,11 @@ function byId(id){return all().find(function(c){return c.id===id});}
 function userMsgCount(id){var h=st.chats[id];if(!h||!h.length)return 0;return h.filter(function(m){return m.role==="user";}).length;}
 function cur(){return st.cur?byId(st.cur):null;}
 function grad(c){var h=0,s=c.name;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return"linear-gradient(160deg,hsl("+h+" 70% 48%),hsl("+((h+60)%360)+" 70% 22%))";}
-function cfg(id){if(!st.cfg[id])st.cfg[id]={scenario:"",userRole:"",mode:"chat",intensity:st.prof.intensity||"rom"};var g=st.cfg[id];g.instructions=g.instructions||"";g.goal=g.goal||"";g.secret=g.secret||"";g.arc=g.arc||"";g.memory=g.memory||"";g.memoryNotes=Array.isArray(g.memoryNotes)?g.memoryNotes:[];g.bg=g.bg||"";g.bubble=g.bubble||"rounded";g.bgDim=Number(g.bgDim);if(isNaN(g.bgDim))g.bgDim=0.2;g.voiceURI=g.voiceURI||"";return g;}
+function cfg(id){if(!st.cfg[id])st.cfg[id]={scenario:"",userRole:"",mode:"story",intensity:st.prof.intensity||"rom"};var g=st.cfg[id];g.instructions=g.instructions||"";g.goal=g.goal||"";g.secret=g.secret||"";g.arc=g.arc||"";g.memory=g.memory||"";g.memoryNotes=Array.isArray(g.memoryNotes)?g.memoryNotes:[];g.bg=g.bg||"";g.bubble=g.bubble||"rounded";g.bgDim=Number(g.bgDim);if(isNaN(g.bgDim))g.bgDim=0.2;g.voiceURI=g.voiceURI||"";return g;}
 function hist(id){if(!st.chats[id]){var c=byId(id);st.chats[id]=c&&c.greeting?[{role:"assistant",content:c.greeting,emo:"feliz",ts:Date.now()}]:[];}return st.chats[id];}
 function portrait(c){return c.img||(/^p\d+$/.test(c.id)?"portraits/"+c.id+".png":"");}
 function av(el,c){el.innerHTML="";el.style.background=grad(c);var src=portrait(c);if(src){var i=document.createElement("img");i.alt="";i.loading="lazy";i.onerror=function(){i.remove();el.textContent=(c.name?c.name.charAt(0).toUpperCase():"?");};i.src=src;el.appendChild(i);}else el.textContent=(c.name?c.name.charAt(0).toUpperCase():"?");}
-function fmt(el,t){el.innerHTML="";t.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/).forEach(function(p){if(!p)return;if(p.startsWith("**")&&p.endsWith("**")&&p.length>4){var b=document.createElement("b");b.textContent=p.slice(2,-2);el.appendChild(b);}else if(p[0]==="*"&&p.length>2){var i=document.createElement("i");i.className="act";i.textContent=p.slice(1,-1);el.appendChild(i);}else el.appendChild(document.createTextNode(p));});}
+function fmt(el,t){el.innerHTML="";String(t||"").split(/\n\s*\n/).forEach(function(paragraph){if(!paragraph.trim())return;var block=document.createElement("p");block.className="story-paragraph";paragraph.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/).forEach(function(p){if(!p)return;if(p.startsWith("**")&&p.endsWith("**")&&p.length>4){var b=document.createElement("b");b.textContent=p.slice(2,-2);block.appendChild(b);}else if(p[0]==="*"&&p.length>2){var i=document.createElement("i");i.className="act";i.textContent=p.slice(1,-1);block.appendChild(i);}else block.appendChild(document.createTextNode(p));});el.appendChild(block);});}
 
 function mkCard(c){
 var d=document.createElement("div");d.className="card";d.style.background=grad(c);
@@ -143,7 +143,25 @@ ids.forEach(function(id){var c=byId(id),h=st.chats[id],r=document.createElement(
 function renderFavs(){$("fg").innerHTML="";var l=st.favs.map(byId).filter(Boolean);if(!l.length)$("fg").innerHTML='<div class="empty">Tocá el corazón en un personaje para guardarlo acá.</div>';l.forEach(function(c){$("fg").appendChild(mkCard(c));});}
 function renderProf(){var p=st.prof;av($("pav"),{name:p.name||"yo",emoji:"👤",img:p.img});$("pav").style.background="linear-gradient(135deg,var(--ac),var(--ac2))";$("pn").value=p.name||"";$("pb").value=p.bio||"";$("pint").value=p.intensity||"rom";$("s1").textContent=Object.keys(st.chats).length;$("s2").textContent=st.custom.length;$("s3").textContent=st.favs.length;if($("ptheme"))$("ptheme").value=p.theme||"system";if($("pfont"))$("pfont").value=p.fontScale||"md";if($("pdensity"))$("pdensity").value=p.density||"comfortable";if($("plang"))$("plang").value=langKey();if($("ptemp"))$("ptemp").value=p.temp||"balanced";if($("plen"))$("plen").value=p.len||"normal";if($("pmodel"))$("pmodel").value=p.model||"";if($("padult"))$("padult").value=p.adult===true?"on":"off";var v=voiceCfg();if($("pvoice"))$("pvoice").value=v.voiceURI||"";if($("pvoicerate"))$("pvoicerate").value=v.rate||1;if($("pvoicepitch"))$("pvoicepitch").value=v.pitch||1;if($("pvoiceauto"))$("pvoiceauto").value=v.auto?"on":"off";renderAccentPills();}
 function renderAccentPills(){var el=$("paccent");if(!el)return;var accents=[{k:"violet",l:"Violeta"},{k:"blue",l:"Azul"},{k:"pink",l:"Rosa"},{k:"orange",l:"Naranja"},{k:"green",l:"Verde"}];el.innerHTML="";accents.forEach(function(a){var p=document.createElement("div");p.className="pill"+(st.prof.accent===a.k?" on":"");p.textContent=a.l;p.onclick=function(){st.prof.accent=a.k;save();applyPrefs();renderProf();};el.appendChild(p);});}
-function renderPersonas(){var l=$("plist");if(!l)return;l.innerHTML="";var ps=st.personas||[];if(!ps.length){l.innerHTML='<div class="empty">Todavía no creaste personas.</div>';return;}ps.forEach(function(p){var r=document.createElement("div");r.className="row";if(st.persona===p.id)r.style.borderColor="var(--ac)";var a=document.createElement("div");a.className="av square";a.textContent=(p.name?p.name.charAt(0):"👤");r.appendChild(a);var t=document.createElement("div");var b=document.createElement("b");b.textContent=p.name;var s=document.createElement("small");s.textContent=p.bio||"Sin descripción";t.appendChild(b);t.appendChild(s);r.appendChild(t);var del=document.createElement("button");del.className="g icon-btn sm";del.type="button";del.innerHTML=icon("close");del.setAttribute("aria-label","Eliminar persona");del.title="Eliminar persona";del.onclick=function(ev){ev.stopPropagation();st.personas=st.personas.filter(function(x){return x.id!==p.id});if(st.persona===p.id)st.persona=null;save();renderPersonas();};r.appendChild(del);r.onclick=function(){st.persona=p.id;save();renderPersonas();};l.appendChild(r);});}
+function personaImageIsLocal(value){return typeof value==="string"&&value.length<=600000&&/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);}
+function persistPersonaList(list,selected,owner){accountStore.assertActive();if(accountStore.key()!==owner)throw new Error("La cuenta cambió. Volvé a abrir la persona.");var staged=Object.assign({},st,{personas:list,persona:selected});accountStore.write(JSON.stringify(staged));st.personas=list;st.persona=selected;}
+function renderPersonas(){
+ var l=$("plist");if(!l)return;l.replaceChildren();var ps=st.personas||[];if(!ps.length){l.innerHTML='<div class="empty">Todavía no creaste personas.</div>';return;}
+ var owner=accountStore.key();
+ ps.forEach(function(p){
+  var r=document.createElement("div");r.className="row persona-row";if(st.persona===p.id)r.style.borderColor="var(--ac)";
+  var a=document.createElement("div");a.className="av square persona-avatar";a.setAttribute("aria-hidden","true");a.textContent=p.name?p.name.charAt(0):"👤";
+  if(personaImageIsLocal(p.img)){var im=document.createElement("img");im.src=p.img;im.alt="";im.onerror=function(){im.remove();a.textContent=p.name?p.name.charAt(0):"👤";};a.replaceChildren(im);}r.appendChild(a);
+  var t=document.createElement("div");t.className="persona-copy";var b=document.createElement("b");b.textContent=p.name;var s=document.createElement("small");s.textContent=p.bio||"Sin descripción";t.append(b,s);r.appendChild(t);
+  var actions=document.createElement("div");actions.className="persona-actions";
+  var use=document.createElement("button");use.type="button";use.className="g persona-select";use.textContent=st.persona===p.id?"En uso":"Usar";use.setAttribute("aria-label","Usar persona "+p.name);use.setAttribute("aria-pressed",st.persona===p.id?"true":"false");
+  use.onclick=function(){try{persistPersonaList(st.personas,p.id,owner);renderPersonas();}catch(error){alert("No se pudo seleccionar la persona: "+error.message);}};
+  var edit=document.createElement("button");edit.type="button";edit.className="g persona-edit";edit.textContent="Editar";edit.setAttribute("aria-label","Editar persona "+p.name);edit.onclick=function(){try{if(accountStore.key()!==owner)throw new Error("La cuenta cambió.");openPersonaEditor(p);}catch(error){alert(error.message);}};
+  var del=document.createElement("button");del.type="button";del.className="g icon-btn sm persona-delete";del.innerHTML=icon("close");del.setAttribute("aria-label","Eliminar persona "+p.name);del.title="Eliminar persona";
+  del.onclick=function(){try{persistPersonaList(st.personas.filter(function(x){return x.id!==p.id;}),st.persona===p.id?null:st.persona,owner);renderPersonas();}catch(error){alert("No se pudo eliminar la persona: "+error.message);}};
+  actions.append(use,edit,del);r.appendChild(actions);l.appendChild(r);
+ });
+}
 function renderAll(){renderHome();renderChats();renderFavs();renderProf();renderPersonas();renderAccount();if(cur())setHeart($("fv"),st.favs.indexOf(st.cur)>=0);if(window.NubbiCommunity&&window.NubbiCommunity.render)window.NubbiCommunity.render();}
 function go(v){view=v;document.querySelectorAll(".view").forEach(function(e){e.classList.toggle("on",e.id==="v-"+v)});document.querySelectorAll("nav>div[data-v]").forEach(function(e){e.classList.toggle("on",e.dataset.v===v)});renderAll();$("views").scrollTop=0;}
 document.querySelectorAll("nav>div[data-v]").forEach(function(e){e.onclick=function(){go(e.dataset.v)}});
@@ -261,7 +279,7 @@ var adultRules="- Todos los personajes tienen 18 años o más y el usuario es ad
 +"- Nunca sexualices a personas no adultas ni a personajes que aparenten no ser adultos; no sexualices personas reales ni situaciones no consentidas. Los personajes antropomórficos adultos pueden participar en historias no explícitas como cualquier otro personaje.\n";
 return "Sos "+c.name+(c.role?" ("+c.role+")":"")+", un personaje adulto (18+) en un roleplay interactivo con el usuario"+(pname?", que se llama "+pname:"")+".\n"
 +"Descripción: "+(c.desc||"")+"\n"
-+"Relación: confianza "+g.relation.trust+"/100; afinidad "+g.relation.affinity+"/100; emoción "+g.relation.mood+". Respeta la personalidad establecida; no fuerces sentimientos ni decisiones del usuario.\n"
++"Estado actual de la relación (orientativo, no reemplaza la personalidad): confianza "+g.relation.trust+"/100; afinidad "+g.relation.affinity+"/100; emoción "+g.relation.mood+". La afinidad no implica amor ni consentimiento. Reaccioná gradualmente a los hechos de la historia; no fuerces sentimientos ni decisiones del usuario.\n"
 +"Personalidad y forma de ser: "+(c.persona||"")+"\n"
 +(pbio?"Sobre el usuario: "+pbio+"\n":"")
 +(pextra?"Datos del usuario: "+pextra+"\n":"")
@@ -474,7 +492,54 @@ if($("syncDown"))$("syncDown").onclick=async function(){
   }
  }
 })();
-$("newPersona").onclick=function(){["pname","pbio","page","ppron","papp","prel"].forEach(function(i){if($(i))$(i).value="";});$("pdlg").showModal();};$("pcancel").onclick=function(){$("pdlg").close();};$("psave").onclick=function(){var n=$("pname").value.trim();if(!n)return;var per={id:"per"+Date.now(),name:n,bio:$("pbio").value.trim(),age:($("page")?$("page").value.trim():""),pronouns:($("ppron")?$("ppron").value.trim():""),appearance:($("papp")?$("papp").value.trim():""),relation:($("prel")?$("prel").value.trim():"")};st.personas=st.personas||[];st.personas.unshift(per);st.persona=per.id;save();$("pdlg").close();["pname","pbio","page","ppron","papp","prel"].forEach(function(i){if($(i))$(i).value="";});renderPersonas();renderProf();};
+var personaEditId=null,personaEditOwner=null,personaEditVersion=0,personaDraftImage="",personaImageURL=null;
+function personaImageStatus(text){$("pimageStatus").textContent=text||"";}
+function renderPersonaImagePreview(){var has=personaImageIsLocal(personaDraftImage),preview=$("pimagePreview");preview.hidden=!has;if(has)preview.src=personaDraftImage;else preview.removeAttribute("src");$("pimagePlaceholder").hidden=has;$("premoveimage").disabled=!has;}
+function personaEditorIsCurrent(version,owner){try{return $("pdlg").open&&version===personaEditVersion&&owner===personaEditOwner&&accountStore.key()===owner;}catch(error){return false;}}
+function clearPersonaImageURL(){if(personaImageURL){URL.revokeObjectURL(personaImageURL);personaImageURL=null;}}
+function openPersonaEditor(persona){
+ accountStore.assertActive();clearPersonaImageURL();personaEditVersion++;personaEditOwner=accountStore.key();personaEditId=persona?persona.id:null;personaDraftImage=persona&&personaImageIsLocal(persona.img)?persona.img:"";
+ var fields={pname:"name",pbio:"bio",page:"age",ppron:"pronouns",papp:"appearance",prel:"relation"};Object.keys(fields).forEach(function(id){$(id).value=persona&&persona[fields[id]]!=null?persona[fields[id]]:"";});
+ $("pdlgTitle").textContent=persona?"Editar persona":"Nueva persona";$("pimage").value="";$("psave").disabled=false;$("psave").textContent=persona?"Guardar cambios":"Guardar";personaImageStatus("");renderPersonaImagePreview();if(!$("pdlg").open)$("pdlg").showModal();$("pname").focus();
+}
+function readPersonaImage(file,isCurrent){
+ return Promise.resolve().then(async function(){
+  if(!file||!file.size)throw new Error("Elegí una imagen JPEG, PNG o WebP.");if(file.size>8*1024*1024)throw new Error("La imagen debe pesar 8 MB o menos.");
+  if(file.type&&["image/jpeg","image/png","image/webp"].indexOf(file.type)<0)throw new Error("Solo se admiten imágenes JPEG, PNG o WebP.");
+  var bytes=new Uint8Array(await file.slice(0,32).arrayBuffer()),png=bytes.length>=24&&[137,80,78,71,13,10,26,10].every(function(x,i){return bytes[i]===x;}),jpeg=bytes.length>=3&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255,webp=bytes.length>=16&&String.fromCharCode.apply(null,bytes.slice(0,4))==="RIFF"&&String.fromCharCode.apply(null,bytes.slice(8,12))==="WEBP";
+  if(!png&&!jpeg&&!webp)throw new Error("El archivo no contiene una imagen JPEG, PNG o WebP válida.");
+  if(png){var view=new DataView(bytes.buffer),w=view.getUint32(16),h=view.getUint32(20);if(!w||!h||w>8192||h>8192||w*h>24000000)throw new Error("La imagen supera 8192 píxeles por lado o 24 megapíxeles.");}
+  if(!isCurrent())throw new Error("La edición se canceló o la cuenta cambió.");
+  return new Promise(function(resolve,reject){
+   var image=new Image(),url=URL.createObjectURL(file),timer;personaImageURL=url;
+   function clean(){clearTimeout(timer);image.onload=image.onerror=null;URL.revokeObjectURL(url);if(personaImageURL===url)personaImageURL=null;}
+   function fail(message){clean();reject(new Error(message));}
+   image.onload=function(){
+    try{if(!isCurrent())throw new Error("La edición se canceló o la cuenta cambió.");var w=image.naturalWidth,h=image.naturalHeight;if(!w||!h||w>8192||h>8192||w*h>24000000)throw new Error("La imagen supera 8192 píxeles por lado o 24 megapíxeles.");var canvas=document.createElement("canvas");canvas.width=canvas.height=512;var context=canvas.getContext("2d");if(!context)throw new Error("No pude preparar esta imagen.");context.fillStyle="#ffffff";context.fillRect(0,0,512,512);var side=Math.min(w,h);context.drawImage(image,(w-side)/2,(h-side)/2,side,side,0,0,512,512);var data=canvas.toDataURL("image/jpeg",.82);if(!personaImageIsLocal(data))throw new Error("La imagen preparada es demasiado grande. Probá otra imagen.");clean();resolve(data);}catch(error){fail(error.message||"No pude preparar esta imagen.");}
+   };
+   image.onerror=function(){fail("No pude leer esta imagen. Probá otro archivo.");};timer=setTimeout(function(){fail("La imagen tardó demasiado en abrirse. Probá una más pequeña.");},15000);image.src=url;
+  });
+ });
+}
+$("newPersona").onclick=function(){try{openPersonaEditor(null);}catch(error){alert(error.message);}};
+$("pcancel").onclick=function(){$("pdlg").close();};
+$("pdlg").addEventListener("close",function(){if($("pdlg").open)return;personaEditVersion++;personaEditOwner=null;personaEditId=null;personaDraftImage="";clearPersonaImageURL();$("pimage").value="";$("psave").disabled=false;renderPersonaImagePreview();personaImageStatus("");});
+$("pimage").onchange=async function(){
+ var file=this.files&&this.files[0];if(!file)return;clearPersonaImageURL();var version=++personaEditVersion,owner=personaEditOwner;$("psave").disabled=true;personaImageStatus("Preparando imagen en este dispositivo…");
+ try{var result=await readPersonaImage(file,function(){return personaEditorIsCurrent(version,owner);});if(!personaEditorIsCurrent(version,owner))return;personaDraftImage=result;renderPersonaImagePreview();personaImageStatus("Imagen lista. Se guardará con esta persona cuando pulses Guardar.");}
+ catch(error){if(personaEditorIsCurrent(version,owner))personaImageStatus(error.message);}
+ finally{if(personaEditorIsCurrent(version,owner)){$("psave").disabled=false;$("pimage").value="";}}
+};
+$("premoveimage").onclick=function(){personaEditVersion++;clearPersonaImageURL();personaDraftImage="";$("pimage").value="";$("psave").disabled=false;renderPersonaImagePreview();personaImageStatus("Imagen quitada del borrador. Guardá para aplicar el cambio.");};
+$("psave").onclick=function(){
+ if(this.disabled)return;try{
+  if(!personaEditorIsCurrent(personaEditVersion,personaEditOwner))throw new Error("La cuenta cambió. Cerrá y volvé a abrir la persona.");var n=$("pname").value.trim();if(!n){personaImageStatus("Escribí un nombre para la persona.");$("pname").focus();return;}
+  var age=$("page").value.trim();if(age&&(!Number.isSafeInteger(Number(age))||Number(age)<18)){personaImageStatus("La edad debe ser un número entero de 18 años o más.");$("page").focus();return;}
+  var existing=personaEditId&&(st.personas||[]).find(function(p){return p.id===personaEditId;});if(personaEditId&&!existing)throw new Error("Esta persona ya no existe. Volvé a crearla.");
+  var per=Object.assign({},existing||{},{id:existing?existing.id:"per"+Date.now()+Math.random().toString(36).slice(2,7),name:n,bio:$("pbio").value.trim(),age:age,pronouns:$("ppron").value.trim(),appearance:$("papp").value.trim(),relation:$("prel").value.trim()});if(personaDraftImage)per.img=personaDraftImage;else delete per.img;
+  var next=existing?st.personas.map(function(p){return p.id===existing.id?per:p;}):[per].concat(st.personas||[]);persistPersonaList(next,existing?st.persona:per.id,personaEditOwner);$("pdlg").close();renderPersonas();renderProf();
+ }catch(error){personaImageStatus("No se pudo guardar: "+error.message);}
+};
 
 $("plus").onclick=function(){editingId=null;showWzError("");imgData="";$("pr").style.display="none";$("imagePrompt").value="";$("dlg").querySelector("h3").textContent="Crear personaje";["n","d","r","p","gr","idea"].forEach(function(i){if($(i))$(i).value="";});$("e").value="🦇";$("gen2").value="Masculino";if($("genStatus"))$("genStatus").textContent="";$("save").textContent="Guardar";if($("iprov"))$("iprov").value=(st.prof&&st.prof.imgProvider)||"";fillImageEngine(true);$("dlg").showModal();};
 $("cancel").onclick=function(){if($("genStatus"))$("genStatus").textContent="";$("save").textContent="Guardar";$("dlg").close();};

@@ -6,6 +6,9 @@ assert.equal(story.styleKey({mode:'story'}),'cinematic');
 assert.equal(story.styleKey({mode:'chat',storyStyle:'constructor'}),'dialogue');
 assert.equal(story.lengthKey('__proto__'),'normal');
 assert.equal(story.lengths.extended.tokens,3000);
+assert.match(story.styles.cinematic.instruction,/cambiar algo observable o abrir una posibilidad/);
+assert.match(story.styles.cinematic.instruction,/sin elegir por el usuario/);
+assert.match(story.styles.cinematic.instruction,/no sustituyas la progresión por contemplación/);
 for(const key of Object.keys(story.styles)){
  const text=story.instructions({storyStyle:key,storyCanon:'La llave está en la mochila; no conoce mi nombre.'});
  assert.ok(text.includes(story.styles[key].label));
@@ -13,7 +16,21 @@ for(const key of Object.keys(story.styles)){
  assert.match(text,/no inventes recuerdos compartidos/);
  assert.match(text,/no explícita/);
  assert.match(text,/La llave está en la mochila/);
+ assert.match(text,/El estilo narrativo cambia la presentación, no convierte al personaje en otra persona/);
+ assert.match(text,/vocabulario, el ritmo, el humor y el grado de confianza/);
+ assert.match(text,/Puede discrepar, callar, dudar o poner límites/);
+ assert.match(text,/Una afinidad alta no equivale a amor, confianza absoluta ni consentimiento/);
+ assert.match(text,/No inventes una biografía, un vínculo o un recuerdo/);
+ assert.match(text,/atiende primero la pregunta, propuesta o acción concreta del último mensaje del usuario, antes de añadir ambiente/);
+ assert.match(text,/puede aceptarse, negociarse o rechazarse según su motivación/);
 }
+const reservedCharacter='Personaje: Mara. Habla con frases cortas, desconfía de los extraños y protege a su hermana. No conoce el apellido del usuario.';
+const reservedContext=story.buildPrompt(reservedCharacter+'\n'+story.instructions({storyStyle:'literary'}),[{role:'user',content:'¿Vienes conmigo?'}],{characterName:'Mara'});
+assert.match(reservedContext.messages[0].content,/Habla con frases cortas, desconfía de los extraños/,'narrative style must preserve the supplied character identity');
+assert.match(reservedContext.messages[0].content,/No conoce el apellido del usuario/);
+assert.match(reservedContext.messages[0].content,/Voz propia:/);
+assert.match(reservedContext.messages[0].content,/Evolución emocional:/);
+assert.equal(reservedContext.messages.at(-1).content,'¿Vienes conmigo?');
 const history=Array.from({length:200},(_,i)=>({role:i%2?'assistant':'user',content:'Mensaje '+i+' '+('x'.repeat(5000))}));
 history.push({role:'image',content:'NO INCLUIR MEDIA',image:'data:image/png;base64,AAAA'});
 history.push({role:'user',content:'¿Dónde dejamos la llave?'});
@@ -69,5 +86,5 @@ assert.ok(app.includes('g.storyCanon=$("storyCanon").value.trim().slice(0,1600)'
  assert.ok(!Object.hasOwn(captured,'storyMessages'),'character generation retains unstructured request contract');
  await sampleCtx.sample('Compatibilidad',{storyMessages:[{role:'system',content:'Ficha'},{role:'user',content:'Hola'}]});
  assert.equal(captured.storyMessages.length,2);
- console.log('Story engine: styles, agency, canon, bounded chronological structured roles/UTF-8 payload, per-chat lengths and character fallback: OK');
+ console.log('Story engine: character identity/voice/emotional continuity, styles, agency, canon, bounded roles/UTF-8 payload, per-chat lengths and character fallback: OK');
 })().catch(error=>{console.error(error);process.exitCode=1;});
