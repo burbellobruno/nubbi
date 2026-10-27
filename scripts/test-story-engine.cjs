@@ -19,6 +19,8 @@ history.push({role:'image',content:'NO INCLUIR MEDIA',image:'data:image/png;base
 history.push({role:'user',content:'¿Dónde dejamos la llave?'});
 const before=JSON.stringify(history);
 const result=story.buildPrompt('Personaje: Luna\n'+('y'.repeat(70000))+'\nFORMATO FINAL Y LÍMITES',{bad:'shape'});
+assert.equal(result.messages.length,2,'empty or regenerated initial history needs an actionable user turn');
+assert.equal(result.messages[1].role,'user');assert.match(result.messages[1].content,/Comenzá la escena/);
 assert.ok(result.prompt.length<=30000);
 assert.match(result.prompt,/FORMATO FINAL Y LÍMITES/);
 const bounded=story.buildPrompt('Personaje: Luna\n'+story.instructions({}),history,{characterName:'Luna',language:'español',extra:'Continúa la escena sin decidir por el usuario.'});

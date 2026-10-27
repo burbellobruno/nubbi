@@ -54,6 +54,7 @@ function buildPrompt(system,history,options){
  }
  // Keep roles distinct for providers supporting structured conversations. The plain
  // prompt remains an equivalent, bounded fallback for older compatible backends.
+ if(!selected.length&&!direction){direction='Comenzá la escena desde la situación inicial, sin escribir por el usuario.';ending='\n\n'+direction+'\n\n'+responseInstruction;}
  var structured=[{role:'system',content:boundedSystem+'\n'+responseInstruction}].concat(selected.map(function(m){return {role:m.role,content:m.content};}));
  if(direction)structured.push({role:'user',content:direction});
  var result={prompt:prefix+selected.map(function(m){return m.line;}).join('\n')+ending,messages:structured,messagesUsed:selected.length,omitted:messages.filter(function(m){return m&&(m.role==='user'||m.role==='assistant')&&typeof m.content==='string';}).length-selected.length};
