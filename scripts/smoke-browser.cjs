@@ -77,14 +77,14 @@ const report={origin:url.origin,mode:local?'local':'production',syntheticGuest:t
    ]));
    const entries=await page.evaluate(async()=>{const cache=await caches.open('nubbi-v37');return(await cache.keys()).map(r=>new URL(r.url).pathname);});
    report.offline={cache:'nubbi-v37',entries};
-   for(const asset of ['/index.html','/app.js','/fantasy.css','/fantasy-hero.png','/fantasy-portraits.png'])assert.ok(entries.includes(asset),'missing cached '+asset+' in '+JSON.stringify(entries));
+   for(const asset of ['/index.html','/app.js','/fantasy.css','/fantasy-hero.png','/fantasy-portraits.png','/immersive.css','/immersive.js','/story-engine.js','/social-auth.js'])assert.ok(entries.includes(asset),'missing cached '+asset+' in '+JSON.stringify(entries));
    assert.ok(entries.every(p=>!p.startsWith('/api/')&&!/firebase|account.*json/i.test(p)),'private cache entry');
    await context.setOffline(true);const errors=[];page.on('pageerror',e=>errors.push(e.message));
    const response=await page.reload({waitUntil:'load',timeout:30000});assert.equal(response.status(),200);
-   await page.waitForFunction(()=>window.NubbiApp&&window.st,{},{timeout:15000});
+   await page.waitForFunction(()=>window.NubbiApp&&window.NubbiStory&&document.documentElement.dataset.nbImmersive==='1',{},{timeout:15000});
    await page.waitForFunction(()=>!document.querySelector('#nb-intro')?.open,{},{timeout:12000});
    assert.ok(await page.locator('#grid .card').count()>0);
-   assert.equal(await page.locator('#v-home .hero').evaluate(el=>getComputedStyle(el).borderRadius),'20px');
+   assert.equal(await page.locator('#v-home .hero').evaluate(el=>getComputedStyle(el).borderRadius),'24px');
    assert.deepEqual(errors,[]);await page.screenshot({animations:'disabled',path:path.join(output,'offline-390.png')});
    report.offline={cache:'nubbi-v37',entries:entries.length,reloadStatus:200,pageErrors:errors,blockedWrites:blockedWrites.length};await context.close();console.log('PASS real service-worker install and offline reload v37');
   }
