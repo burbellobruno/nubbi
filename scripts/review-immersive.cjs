@@ -1,0 +1,52 @@
+// Local presentation regression; disposable guest, no network writes or external services.
+const {chromium}=require(process.env.NUBBI_PLAYWRIGHT_MODULE||'playwright');
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const url=new URL(process.env.NUBBI_TEST_URL||'http://127.0.0.1:43973/');
+if(!['127.0.0.1','localhost'].includes(url.hostname))throw Error('Local server required');
+const out=process.env.NUBBI_REVIEW_OUTPUT||path.join(__dirname,'../review/immersive');fs.mkdirSync(out,{recursive:true});
+(async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.NUBBI_BROWSER_PATH});try{
+ for(const width of [1440,1024,768,390,320]){
+  const context=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block'});
+  await context.route('**/*',route=>{const r=route.request();return new URL(r.url()).origin===url.origin&&['GET','HEAD','OPTIONS'].includes(r.method())?route.continue():route.abort();});
+  await context.addInitScript(()=>localStorage.setItem('nubbi-adult-ok','1'));
+  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(url.href);await page.waitForFunction(()=>document.documentElement.dataset.nbImmersive==='1');
+  await page.waitForFunction(()=>!document.querySelector('#nb-intro')?.open,{},{timeout:12000});
+  const overflow=async()=>assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'overflow '+width);
+  await overflow();assert.ok(await page.locator('#nb-catalog-status').textContent());
+  await page.locator('#q').fill('Kael');await page.waitForTimeout(350);
+  assert.ok(await page.locator('.nb-clear-search').isVisible());
+  await page.locator('.nb-clear-search').click();assert.equal(await page.locator('#q').inputValue(),'');
+  await page.waitForTimeout(350);assert.ok(await page.locator('.nb-clear-search').isHidden());
+  await page.screenshot({animations:'disabled',path:path.join(out,'home-'+width+'.png')});
+  await page.locator('#heroNew').click();await page.waitForSelector('#dlg[open]');
+  assert.match(await page.locator('#nb-creator-guide').textContent(),/Paso 1 de 3/);
+  assert.equal(await page.locator('label[for="n"]').count(),1);
+  await page.locator('#n').fill('Elara');await page.locator('#d').fill('Cartógrafa de 29 años que descubre rutas olvidadas.');
+  await page.evaluate(()=>document.querySelector('#wzAuto').checked=false);
+  await page.locator('#wzNext').click();await page.waitForFunction(()=>document.querySelector('#dlg').dataset.step==='2');
+  assert.match(await page.locator('#nb-creator-guide').textContent(),/Paso 2 de 3/);
+  await overflow();await page.screenshot({animations:'disabled',path:path.join(out,'creator-'+width+'.png')});
+  await page.locator('#wzNext').click();await page.waitForFunction(()=>document.querySelector('#dlg').dataset.step==='3');
+  assert.match(await page.locator('#nb-creator-guide').textContent(),/Paso 3 de 3/);
+  await page.evaluate(()=>document.querySelector('#dlg').close());
+  await page.evaluate(()=>{st.chats.p0=[{role:'user',content:'Busco el mapa del faro. La tormenta nos obliga a esperar.',ts:1},{role:'assistant',content:'*Elara desliza una carta náutica hacia la lámpara.* El paso del norte sigue marcado. Podemos revisar la ruta mientras baja la marea.',ts:2}];NubbiOpenChat('p0');});await page.waitForSelector('#chat.open');await overflow();
+  assert.equal(await page.locator('#nb-down').getAttribute('aria-label'),'Volver al último mensaje');
+  await page.screenshot({animations:'disabled',path:path.join(out,'chat-'+width+'.png')});
+  await page.locator('#cfg').click();await page.waitForSelector('#cdlg[open]');
+  await page.locator('#storyStyle').selectOption('literary');
+  assert.match(await page.locator('#storyStyleDescription').textContent(),/Prosa cuidada/);
+  await page.locator('#storyLength').selectOption('extended');
+  await page.locator('#storyCanon').fill('Estamos en el faro; la llave sigue en mi mochila.');
+  await page.locator('.story-controls').scrollIntoViewIfNeeded();await overflow();
+  await page.screenshot({animations:'disabled',path:path.join(out,'story-controls-'+width+'.png')});
+  await page.evaluate(()=>document.querySelector('#cdlg').close());
+  await page.locator('#back').click();await page.evaluate(()=>NubbiApp.go('prof'));await page.locator('#ptheme').selectOption('light');
+  await overflow();await page.screenshot({animations:'disabled',path:path.join(out,'profile-light-'+width+'.png')});
+  await page.emulateMedia({reducedMotion:'reduce'});await page.evaluate(()=>NubbiApp.go('home'));
+  assert.equal(await page.locator('#grid .card').first().evaluate(el=>getComputedStyle(el).animationName),'none');
+  await page.emulateMedia({reducedMotion:'no-preference'});await page.evaluate(()=>document.documentElement.dataset.anim='off');
+  assert.equal(await page.locator('#grid .card').first().evaluate(el=>getComputedStyle(el).animationName),'none');
+  assert.deepEqual(errors,[]);await context.close();console.log('PASS immersive '+width+': search, guide, labels, reading, reduced motion, animations off, no overflow/errors');
+ }
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1});

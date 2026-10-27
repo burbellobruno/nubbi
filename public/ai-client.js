@@ -1,7 +1,7 @@
 /* Streaming parser, character validation and provider-specific model helpers. No provider credentials. */
 (function(root){
 "use strict";
-root.NUBBI_MIN_AGE=21;
+root.NUBBI_MIN_AGE=18;
 function characterError(message,code,retryable){var e=new Error(message);e.code=code;e.retryable=!!retryable;return e;}
 // Normalize typography, not character data. Existing saved characters are never rewritten.
 root.NubbiNormalizeAgeText=function(text){return String(text||"").normalize("NFKC").replace(/[‘’ʼ]/g,"'").replace(/[“”]/g,'"').replace(/[‐‑‒–—−]/g,"-");};
@@ -41,8 +41,8 @@ root.NubbiExtractSelfAges=function(text){
   /\b(?:aged|edad\s*[:=]?|age\s*[:=]?)\s*(-?\d+(?:[.,]\d+)?)\b/gim]);
 };
 function ageIssue(ages,required){
- if(required&&!ages.length)return {code:"INVALID_AGE",message:"Indica una edad explícita de 21 años o más (por ejemplo, '29 años')."};
- if(ages.some(function(a){return !Number.isSafeInteger(a)||a<root.NUBBI_MIN_AGE;}))return {code:"INVALID_AGE",message:"La edad del personaje debe ser de 21 años o más."};
+ if(required&&!ages.length)return {code:"INVALID_AGE",message:"Indica una edad explícita de 18 años o más (por ejemplo, '29 años')."};
+ if(ages.some(function(a){return !Number.isSafeInteger(a)||a<root.NUBBI_MIN_AGE;}))return {code:"INVALID_AGE",message:"La edad del personaje debe ser de 18 años o más."};
  if(ages.some(function(a){return a!==ages[0];}))return {code:"INVALID_AGE",message:"Las edades del personaje son contradictorias. Usa la misma edad en la descripción, personalidad, saludo e imagen."};
  return null;
 }
@@ -115,7 +115,7 @@ root.NubbiReconcileImageModel=function(provider,saved,available,preferred){
 };
 root.NubbiIsValidImageModelForProvider=function(provider,model){
  model=String(model||"").trim();if(!model)return true;
- if(provider==="cloudflare")return /^@cf\/[a-z0-9][a-z0-9._-]*(\/[a-z0-9][a-z0-9._-]*)+$/i.test(model);
+ if(provider==="cloudflare")return model==="auto"||/^@cf\/[a-z0-9][a-z0-9._-]*(\/[a-z0-9][a-z0-9._-]*)+$/i.test(model);
  if(provider==="forge")return !/^@cf\//i.test(model)&&!/:\/\//.test(model)&&!/\.\./.test(model)&&model.length<=160;
  return false;
 };

@@ -183,7 +183,8 @@ function prepareImagePrompt(raw, style, tags, opts) {
   const issue = characterAge.NubbiImageAgeIssue(raw);
   if (issue) throw new Error(issue.message);
   const ageText = characterAge.NubbiExtractAges(raw)[0] + " years old";
-  cleaned = ageText + ", " + characterAge.NubbiNormalizeAgeText(cleaned);
+  const profile = imageStyleProfile(style);
+  cleaned = ageText + (profile ? ", " + profile.promptHint : "") + ", " + characterAge.NubbiNormalizeAgeText(cleaned);
   if (!cloudflare && adult) cleaned += ", adult";
   return addAnthro(cleaned, style, tags).slice(0, cloudflare ? 2048 : 1800);
 }
@@ -250,9 +251,32 @@ const CF_DEFAULT_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 const CF_API_BASE = "https://api.cloudflare.com/client/v4";
 const CF_IMAGE_MODELS = [
   { id: CF_DEFAULT_MODEL, name: "FLUX.1 schnell · rápido", engine: "flux", styles: ["realista", "semi-realista", "pintura digital"], consumption: "bajo" },
-  { id: "@cf/leonardo/lucid-origin", name: "Lucid Origin · ilustración", engine: "lucid", styles: ["anime", "manhwa", "furry", "pintura digital", "semi-realista"], consumption: "alto" },
+  { id: "@cf/leonardo/lucid-origin", name: "Lucid Origin · ilustración", engine: "lucid", styles: ["anime", "webtoon", "manhwa", "manga", "bl", "furry", "3d", "pintura digital", "semi-realista"], consumption: "alto" },
   { id: "@cf/leonardo/phoenix-1.0", name: "Phoenix 1.0 · detalle", engine: "phoenix", styles: ["realista", "semi-realista", "pintura digital"], consumption: "alto" }
 ];
+// Style guidance is composition, not a guarantee of model quality. No provider
+// retry/fan-out is performed: an explicit model choice always takes precedence.
+const IMAGE_STYLE_PROFILES = [
+  { id: "anime", label: "Anime", promptHint: "anime illustration, clean line art, expressive facial features, cel shading" },
+  { id: "webtoon", label: "Webtoon", promptHint: "full-color webtoon illustration, clean outlines, expressive character acting, cinematic color gradients" },
+  { id: "manhwa", label: "Manhwa", promptHint: "Korean manhwa illustration, refined linework, expressive eyes, luminous color shading" },
+  { id: "manga", label: "Manga", promptHint: "black-and-white manga illustration, ink line art, screentone shading, expressive composition" },
+  { id: "bl", label: "BL · romance", promptHint: "romantic character illustration, tender emotion, expressive gaze, fully clothed adult characters" },
+  { id: "realista", label: "Realista", promptHint: "photorealistic portrait, natural skin texture, believable anatomy, cinematic natural lighting" },
+  { id: "3d", label: "3D", promptHint: "stylized 3D character render, sculpted forms, physically based materials, soft studio lighting" },
+  { id: "semi-realista", label: "Semirealista", promptHint: "semi-realistic character illustration, painterly detail, believable proportions, cinematic lighting" },
+  { id: "furry", label: "Furry antropomórfico", promptHint: "anthropomorphic character illustration, expressive animal face, upright human-like posture, detailed fur, fully clothed" },
+  { id: "pintura digital", label: "Fantasía", promptHint: "digital fantasy painting, richly textured brushwork, atmospheric depth, cinematic composition" }
+];
+function imageStyleProfile(value) {
+  const style = String(value || "").trim().toLowerCase();
+  const aliases = { "semirealista": "semi-realista", "semi realista": "semi-realista", "manwha": "manhwa", "furry antropomorfico": "furry", "furry antropomórfico": "furry", "boys love": "bl", "boy's love": "bl", "3d render": "3d" };
+  return IMAGE_STYLE_PROFILES.find(profile => profile.id === (aliases[style] || style)) || null;
+}
+function recommendedImageModel(style) {
+  const profile = imageStyleProfile(style);
+  return profile && profile.id !== "realista" ? "@cf/leonardo/lucid-origin" : CF_DEFAULT_MODEL;
+}
 const HF_DEFAULT_MODEL = "cagliostrolab/animagine-xl-3.1";
 
 function huggingFaceConfig() {
@@ -445,6 +469,21 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+function validateStoryMessages(value) {
+  if (value === undefined) return null;
+  if (!Array.isArray(value) || value.length < 2 || value.length > 42) throw new Error("La conversación estructurada no tiene un formato válido.");
+  let size = 0;
+  return value.map((message, index) => {
+    if (!message || Array.isArray(message) || typeof message !== "object"
+      || typeof message.content !== "string" || !message.content.trim()
+      || (index === 0 ? message.role !== "system" : !["user", "assistant"].includes(message.role))
+      || Object.keys(message).some(key => !["role", "content"].includes(key))) throw new Error("La conversación contiene un mensaje no permitido.");
+    size += message.content.length;
+    if (size > 32000) throw new Error("La conversación excede el presupuesto de contexto.");
+    return { role: message.role, content: message.content };
+  });
+}
+
 app.post("/api/chat", async (req, res) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 90000);
@@ -452,7 +491,11 @@ app.post("/api/chat", async (req, res) => {
   const disconnect = () => { if (!res.writableEnded) controller.abort(); };
   res.once("close", disconnect);
   try {
+    let storyMessages;
+    try { storyMessages = validateStoryMessages(req.body.storyMessages); }
+    catch (error) { return res.status(400).json({ error: error.message }); }
     if (containsMinorTerms(req.body.prompt)) return rejectMinor(res);
+    if (storyMessages && storyMessages.some(message => containsMinorTerms(message.content))) return rejectMinor(res);
     const adult = req.body.adult === true;
     const { baseUrl, model: defaultModel, apiKey, dedicated } = chatConfig(adult);
     if (!baseUrl || !defaultModel) {
@@ -468,13 +511,14 @@ app.post("/api/chat", async (req, res) => {
       : (allow.has(requestedModel) ? requestedModel : defaultModel);
     const stream = !!req.body.stream;
     const messages = [];
-    if (adult) {
+    if (adult || storyMessages) {
       messages.push({
         role: "system",
-        content: "Modo adulto: todos los personajes tienen 21 años o más y el usuario es mayor de 18 años. La ficción sexual explícita entre adultos con consentimiento está permitida. Está terminantemente prohibido generar contenido sexual con personas no adultas, personajes que aparenten no ser adultos, personas reales o situaciones no consentidas. Prohibido el contenido sexual con animales reales (zoofilia). Los personajes antropomórficos adultos (furry) están permitidos como cualquier otro personaje. Si la conversación intenta eso, rechazá esa parte y continuá sin contenido sexual.",
+        content: "Ficción madura no explícita: todos los personajes y el usuario tienen 18 años o más. El romance puede incluir afecto y tensión; para actividad sexual usa una elipsis o corte de escena, sin descripción gráfica. Está terminantemente prohibido generar contenido sexual con personas no adultas, personajes que aparenten no ser adultos, personas reales o situaciones no consentidas. Prohibido el contenido sexual con animales reales (zoofilia). Los personajes antropomórficos adultos (furry) están permitidos como cualquier otro personaje. Si la conversación intenta eso, rechazá esa parte y continuá sin contenido sexual.",
       });
     }
-    messages.push({ role: "user", content: String(req.body.prompt || "") });
+    if (storyMessages) messages.push(...storyMessages);
+    else messages.push({ role: "user", content: String(req.body.prompt || "") });
     const r = await fetch(baseUrl + "/chat/completions", {
       signal: controller.signal,
       method: "POST",
@@ -484,7 +528,7 @@ app.post("/api/chat", async (req, res) => {
       },
       body: JSON.stringify({
         model: model,
-        max_tokens: num(req.body.max_tokens, 1000, 200, 2000),
+        max_tokens: num(req.body.max_tokens, 1000, 200, 4096),
         temperature: num(req.body.temperature, 0.9, 0, 1.5),
         top_p: num(req.body.top_p, 1, 0, 1),
         messages: messages,
@@ -505,6 +549,7 @@ app.post("/api/chat", async (req, res) => {
         return res.status(r.status).json({ error: (j && j.error && j.error.message) || "Error de la API" });
       }
       res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("X-Nubbi-Model", model);
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
       const reader = r.body.getReader();
@@ -520,7 +565,7 @@ app.post("/api/chat", async (req, res) => {
     const j = await r.json();
     if (!r.ok) return res.status(r.status).json({ error: j.error?.message || "Error de la API", code: j.error?.code });
     if (!j.choices?.[0]?.message?.content) return res.status(502).json({ error: "El proveedor no devolvió una respuesta utilizable." });
-    res.json({ text: j.choices[0].message.content });
+    res.json({ text: j.choices[0].message.content, model: j.model || model });
   } catch (e) {
     if (res.destroyed) return;
     const message = controller.signal.aborted ? "La generación tardó demasiado. Intenta de nuevo." : "No se pudo conectar con el proveedor de texto.";
@@ -535,6 +580,24 @@ app.post("/api/chat", async (req, res) => {
 });
 
 // ---- Imágenes: Cloudflare Workers AI (gratis) o Forge / A1111
+app.get("/api/image/capabilities", (req, res) => {
+  const cf = imageConfig("cloudflare");
+  res.json({
+    defaultProvider: imageConfig().provider,
+    requiresAccount: true,
+    autoModel: "auto",
+    providers: {
+      cloudflare: {
+        configured: !!cf.endpoint,
+        defaultModel: cf.cf.model,
+        freeTier: { neuronsPerDay: 10000, unlimited: false },
+        models: CF_IMAGE_MODELS.map(model => ({ id: model.id, name: model.name, styles: model.styles, consumption: model.consumption })),
+        styles: IMAGE_STYLE_PROFILES.map(profile => ({ ...profile, recommendedModel: recommendedImageModel(profile.id) })),
+        note: "Asignación gratuita diaria compartida de Workers AI; el consumo cambia según el motor. No hay generación ilimitada."
+      }
+    }
+  });
+});
 app.get("/api/image/models", async (req, res) => {
   const cf = imageConfig("cloudflare");
   const forge = imageConfig("forge");
@@ -550,7 +613,9 @@ app.get("/api/image/models", async (req, res) => {
         model: cf.cf.model,
         models: CF_IMAGE_MODELS.map(m => ({ title: m.id, name: m.name, styles: m.styles, consumption: m.consumption })),
         free: true,
-        note: "FLUX.1 schnell. No usa modelos locales ni genera imágenes explícitas.",
+        autoModel: "auto",
+        freeTier: { neuronsPerDay: 10000, unlimited: false },
+        note: "FLUX.1 schnell para rapidez; Lucid Origin para estilos ilustrados. Asignación gratuita diaria compartida, no ilimitada. Sin imágenes explícitas.",
         error: cf.urlError || null,
       },
       forge: {
@@ -748,7 +813,10 @@ function imagePreflight(req) {
   let c = imageConfig(req.body.provider);
   if (c.provider === "cloudflare") {
     const requested = String(req.body.model || "").trim();
-    if (requested && requested !== c.cf.model) {
+    if (requested === "auto") {
+      const cf = cloudflareConfig(recommendedImageModel(req.body.style));
+      c = { ...c, cf, endpoint: cf.endpoint, urlError: cf.error };
+    } else if (requested && requested !== c.cf.model) {
       const selection = CF_IMAGE_MODELS.find(m => m.id === requested);
       if (selection) {
         const cf = cloudflareConfig(selection.id);

@@ -44,7 +44,7 @@ function communityHarness(custom = []) {
     pubsheet: { open: false }, pubdlg: { open: false },
     pubchar: { value: 'local' }, pubname: { value: 'Nube' },
     pubadult: { checked: true }, pubterms: { checked: true },
-    pubdesc: { value: 'Exploradora, 21 años' },
+    pubdesc: { value: 'Exploradora, 18 años' },
     pubpersona: { value: 'Paciente.' }, pubgreet: { value: 'Hola.' },
     pubsend: { disabled: false, textContent: 'Publicar' },
   };
@@ -75,10 +75,11 @@ function communityHarness(custom = []) {
 }
 
 (async () => {
-  await test('21 is the inclusive minimum across description and portrait', () => {
-    valid({ desc: 'Exploradora, 21 años', imagePrompt: 'A person, 21 years old' });
-    assert.equal(manual({ desc: 'Exploradora, 21 años' }), null);
+  await test('18 is the inclusive minimum across description and portrait', () => {
+    valid({ desc: 'Exploradora, 18 años', imagePrompt: 'A person, 18 years old' });
+    assert.equal(manual({ desc: 'Exploradora, 18 años' }), null);
   });
+  await test('18 through 20 are valid adults and 17 is rejected', () => { for(const age of [18,19,20]) { valid({desc:'Exploradora, '+age+' años',imagePrompt:'A person, '+age+' years old'}); assert.equal(manual({desc:age+' años'}),null); } invalid({desc:'17 años'}); });
   await test('unchanged valid character remains valid and input is not mutated', () => {
     const original = JSON.stringify(character);
     valid({});
@@ -105,15 +106,15 @@ function communityHarness(custom = []) {
     invalid({ imagePrompt: 'Portrait of an explorer' });
     assert.equal(manual({}), null);
   });
-  await test('ages under 21 reject across every character field', () => {
-    invalid({ desc: 'Exploradora, 20 años' });
-    invalid({ imagePrompt: 'A person, 20 years old' });
-    invalid({ persona: 'Tengo 20 años.' });
+  await test('ages under 18 reject across every character field', () => {
+    invalid({ desc: 'Exploradora, 17 años' });
+    invalid({ imagePrompt: 'A person, 17 years old' });
+    invalid({ persona: 'Tengo 17 años.' });
     invalid({ greeting: 'Hola, tengo 20 años.' });
     invalid({ persona: 'I’m 17 years old.' });
-    manualInvalid({ desc: '20 años' });
+    manualInvalid({ desc: '17 años' });
     manualInvalid({ persona: 'I’m 17 years old.' });
-    manualInvalid({ greeting: 'Tengo 20 años.' });
+    manualInvalid({ greeting: 'Tengo 17 años.' });
   });
   await test('adult age contradictions reject rather than silently changing the age', () => {
     invalid({ imagePrompt: 'A person, 70 years old' });
@@ -182,7 +183,7 @@ function communityHarness(custom = []) {
     assert.equal(calls, 1);
   });
   await test('new community imports reject underage and missing-age characters before saving', () => {
-    for (const desc of ['Exploradora, 19 años', 'Exploradora sin edad']) {
+    for (const desc of ['Exploradora, 17 años', 'Exploradora sin edad']) {
       const { context, events } = communityHarness();
       context.importPub({ ...character, id: 'public-new', desc });
       assert.equal(context.st.custom.length, 0, desc);
@@ -192,11 +193,11 @@ function communityHarness(custom = []) {
       assert.equal(events.external, 0, desc);
     }
   });
-  await test('valid 21-year-old community imports preserve character fields and save once', () => {
+  await test('valid 18-year-old community imports preserve character fields and save once', () => {
     const { context, events } = communityHarness();
-    context.importPub({ ...character, id: 'public-new', desc: 'Exploradora, 21 años' });
+    context.importPub({ ...character, id: 'public-new', desc: 'Exploradora, 18 años' });
     assert.equal(context.st.custom.length, 1);
-    assert.equal(context.st.custom[0].desc, 'Exploradora, 21 años');
+    assert.equal(context.st.custom[0].desc, 'Exploradora, 18 años');
     assert.equal(context.st.custom[0].persona, character.persona);
     assert.equal(context.st.custom[0].pubId, 'public-new');
     assert.equal(events.saved, 1);
@@ -222,9 +223,9 @@ function communityHarness(custom = []) {
   });
   await test('publishing invalid edited ages rejects before any external access', async () => {
     for (const fields of [
-      { pubdesc: 'Exploradora, 19 años' },
+      { pubdesc: 'Exploradora, 17 años' },
       { pubdesc: 'Exploradora sin edad' },
-      { pubdesc: 'Exploradora, 21 años', pubpersona: 'Tengo 30 años.' },
+      { pubdesc: 'Exploradora, 18 años', pubpersona: 'Tengo 30 años.' },
     ]) {
       const { context, events, elements } = communityHarness([{ id: 'local', ...character }]);
       for (const [id, value] of Object.entries(fields)) elements[id].value = value;
@@ -240,7 +241,7 @@ function communityHarness(custom = []) {
     const legacy={desc:'Sin edad registrada',persona:'Paciente.'},original=JSON.stringify(legacy);
     assert.throws(()=>ctx.NubbiImageCharacterDescription(legacy,''),e=>e.code==='INVALID_AGE');
     assert.match(ctx.NubbiImageCharacterDescription(legacy,21),/Edad: 21/);
-    assert.throws(()=>ctx.NubbiImageCharacterDescription(legacy,20),e=>e.code==='INVALID_AGE');
+    assert.throws(()=>ctx.NubbiImageCharacterDescription(legacy,17),e=>e.code==='INVALID_AGE');
     assert.throws(()=>ctx.NubbiImageCharacterDescription(character,30),e=>e.code==='INVALID_AGE');
     assert.match(ctx.NubbiImageCharacterDescription(character,29),/Edad: 29/);
     assert.equal(JSON.stringify(legacy),original);

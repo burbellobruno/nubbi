@@ -1,5 +1,11 @@
 # Nubbi
 
+## Experiencia inmersiva (27/10/2026)
+
+- Estilos narrativos, continuidad, imágenes por estilo, adultos de 18 años o más y acceso Google: `docs/IMMERSIVE-EXPERIENCE.md`.
+- Diseño de suscripciones futuras, sin cobros activados: `docs/PAYMENT-PLAN.md`.
+- Google tiene iniciación OAuth verificada; Facebook/X requieren configuración externa y no se muestran como operativos. Las regresiones de cuentas siguen preservando P1.
+
 ## Actualización de experiencia e imágenes
 
 - Diseño e intro: consulta `DISENO-EXPERIENCIA.md`. El audio original está en `public/nubbi-intro.mp3`.
@@ -43,7 +49,7 @@ App de chat con personajes de IA (adultos), para móvil y PC. El catálogo base 
 
 ## Imágenes gratis con Cloudflare Workers AI
 
-La opción sin GPU es **Cloudflare Workers AI** con **FLUX.1 schnell**. No necesita tarjeta y el plan gratuito incluye **10.000 neuronas por día** (aproximadamente 100–170 imágenes). Cloudflare no genera imágenes sexuales explícitas: sirve para retratos y escenas sugerentes. El texto adulto del chat sigue funcionando igual.
+La opción sin GPU es **Cloudflare Workers AI** con **FLUX.1 schnell**. El nivel gratuito incluye **10.000 neuronas por día compartidas**. La cantidad de imágenes depende del modelo y parámetros; Lucid consume mucho más que FLUX. No es generación ilimitada. Cloudflare no genera imágenes sexuales explícitas: sirve para retratos y escenas sugerentes. Las historias admiten romance adulto no explícito, con elipsis para actividad sexual.
 
 1. Creá una cuenta gratis en [Cloudflare](https://dash.cloudflare.com/sign-up/workers-and-pages).
 2. En el dashboard, entrá a **Workers AI → Use REST API**.
@@ -58,7 +64,7 @@ La opción sin GPU es **Cloudflare Workers AI** con **FLUX.1 schnell**. No neces
 6. En la app, creá o editá un personaje y usá **Generar imagen con IA**.
 
 - Si Cloudflare está configurado, se usa automáticamente en lugar de Forge. Para forzar uno: `IMAGE_PROVIDER=cloudflare` o `IMAGE_PROVIDER=forge`. Si usás Cloudflare, podés borrar `SD_URL`: no hace falta.
-- En Cloudflare, el servidor reemplaza etiquetas meta como `adult`, `adulta` y `18+` por una edad adulta explícita (`28 years old` si el prompt no indica una edad de 21 o más). El modo adulto del chat no cambia: Cloudflare sigue bloqueando descripciones explícitas.
+- En Cloudflare, el servidor reemplaza etiquetas meta como `adult`, `adulta` y `18+` por una edad adulta explícita (`28 years old` si el prompt no indica una edad de 18 o más). El modo adulto del chat no cambia: Cloudflare sigue bloqueando descripciones explícitas.
 - La cuota se reinicia todos los días a las 00:00 UTC. Si se agota, la API devuelve un error hasta el día siguiente.
 
 ## Usar tus modelos locales (Forge)

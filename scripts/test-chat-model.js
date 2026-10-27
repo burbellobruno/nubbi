@@ -71,6 +71,17 @@ async function chat(extra) {
   env.CHAT_MODEL_ALLOWLIST = "openai/gpt-oss-120b";
   out = await chat({ model: "openai/gpt-oss-120b" });
   assert.equal(out.model, "openai/gpt-oss-120b", "allowed override must be honored");
+  out = await chat({ max_tokens: 3000 });
+  assert.equal(out.request.payload.max_tokens, 3000, "chapter budget must reach provider");
+  out = await chat({ max_tokens: 9000 });
+  assert.equal(out.request.payload.max_tokens, 4096, "provider budget must remain bounded");
+  const structured = [{role:"system",content:"Iria, cartógrafa adulta de 28 años."},{role:"assistant",content:"La llave sigue en tu mochila."},{role:"user",content:"Seguimos en el faro."}];
+  out = await chat({ storyMessages: structured });
+  assert.deepEqual(JSON.parse(JSON.stringify(out.request.payload.messages.slice(1))), structured);
+  assert.match(out.request.payload.messages[0].content, /no explícita/);
+  for(const storyMessages of [[], [{role:"user",content:"x"}], [{role:"system",content:"x"},{role:"system",content:"y"}], [{role:"system",content:"x"},{role:"tool",content:"y"}], [{role:"system",content:"x"},{role:"user",content:"y",tool_calls:[]}], [{role:"system",content:"x".repeat(32000)},{role:"user",content:"y"}]]) {
+    out = await chat({ storyMessages });assert.equal(out.status,400);assert.equal(out.request,null,"invalid structured context must not reach provider");
+  }
 
   out = await chat({ model: "evil/model" });
   assert.equal(out.model, "openai/gpt-oss-20b", "unknown model must fall back to the configured one");
@@ -90,7 +101,9 @@ async function chat(extra) {
   env.ADULT_CHAT_API_KEY = "test-only";
   out = await chat({ adult: true, model: "openai/gpt-oss-120b" });
   assert.equal(out.model, "adult-model", "dedicated adult provider must keep its own model");
-  assert.match(out.request.payload.messages[0].content, /Modo adulto/);
+  assert.match(out.request.payload.messages[0].content, /Ficción madura no explícita/);
+  assert.match(out.request.payload.messages[0].content, /18 años o más/);
+  assert.match(out.request.payload.messages[0].content, /sin descripción gráfica/);
 
   console.log("Chat: allowlist de modelos, fallback seguro, health y proveedor adulto: OK");
 })().catch(error => { console.error(error); process.exitCode = 1; });

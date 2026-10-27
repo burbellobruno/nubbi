@@ -40,7 +40,7 @@ function capture(fn){try{fn();}catch(error){return error;}assert.fail('expected 
  assert.equal(ctx.NubbiValidateCharacter(JSON.stringify({...character,desc:'Nació en 1998. Tiene 27 años',imagePrompt:'A person, 27 years old'})).name,'Nube');
  const ageError=capture(()=>ctx.NubbiValidateCharacter(JSON.stringify({...character,desc:'Explorador, 19 años'})));
  assert.equal(ageError.code,'INVALID_AGE');assert.equal(ageError.retryable,false);
- assert.throws(()=>ctx.NubbiValidateCharacter(JSON.stringify({...character,imagePrompt:'A person, 12 years old'})),/21 años/);
+ assert.throws(()=>ctx.NubbiValidateCharacter(JSON.stringify({...character,imagePrompt:'A person, 12 years old'})),/18 años/);
  assert.throws(()=>ctx.NubbiValidateCharacter(JSON.stringify({...character,desc:'Explorador sin edad'})),/edad explícita/);
  assert.throws(()=>ctx.NubbiValidateCharacter('{"name":"Incomplete"}'),/campo válido/);
  const policyError=capture(()=>ctx.NubbiValidateCharacter('No puedo ayudar con esa idea.'));
@@ -49,12 +49,12 @@ function capture(fn){try{fn();}catch(error){return error;}assert.fail('expected 
  // A contradictory self-age in persona/greeting blocks validation; third parties do not.
  const contradiction=capture(()=>ctx.NubbiValidateCharacter(JSON.stringify({...character,persona:'Tengo 17 años.'})));
  assert.equal(contradiction.code,'INVALID_AGE');assert.equal(contradiction.retryable,false);
- assert.throws(()=>ctx.NubbiValidateCharacter(JSON.stringify({...character,greeting:'Hola, tengo 17 años.'})),/21 años/);
+ assert.throws(()=>ctx.NubbiValidateCharacter(JSON.stringify({...character,greeting:'Hola, tengo 17 años.'})),/18 años/);
  assert.equal(ctx.NubbiValidateCharacter(JSON.stringify({...character,persona:'Su hermana tiene 12 años.'})).name,'Nube');
  const ageIssue=ctx.NubbiCharacterAgeIssue({desc:'29 años',persona:'Tengo 17 años.'});
  assert.equal(ageIssue.code,'INVALID_AGE');
  assert.equal(ctx.NubbiCharacterAgeIssue({desc:'29 años',persona:'Su hermana tiene 12 años.'}),null);
- assert.equal(ctx.NubbiCharacterAgeIssue({desc:'19 años'}).code,'INVALID_AGE');
+ assert.equal(ctx.NubbiCharacterAgeIssue({desc:'17 años'}).code,'INVALID_AGE');
 
  // Retry policy: only transient technical failures are retried.
  assert.equal(ctx.NubbiIsRetryableCharacterError(failure('No hay conexión',0,'NETWORK')),true);
@@ -94,11 +94,11 @@ function capture(fn){try{fn();}catch(error){return error;}assert.fail('expected 
  assert.equal(repaired.name,'Nube');assert.equal(calls,2);
 
  calls=0;
- await assert.rejects(ctx.NubbiGenerateCharacter('prompt',async()=>{calls++;return JSON.stringify({...character,desc:'19 años'});},{wait:async()=>{}}),/21 años/);
+ await assert.rejects(ctx.NubbiGenerateCharacter('prompt',async()=>{calls++;return JSON.stringify({...character,desc:'17 años'});},{wait:async()=>{}}),/18 años/);
  assert.equal(calls,1,'age validation must not retry');
 
  calls=0;
- await assert.rejects(ctx.NubbiGenerateCharacter('prompt',async()=>{calls++;return JSON.stringify({...character,persona:'Tengo 17 años.'});},{wait:async()=>{}}),/21 años/);
+ await assert.rejects(ctx.NubbiGenerateCharacter('prompt',async()=>{calls++;return JSON.stringify({...character,persona:'Tengo 17 años.'});},{wait:async()=>{}}),/18 años/);
  assert.equal(calls,1,'self-age contradiction must not retry');
 
  calls=0;

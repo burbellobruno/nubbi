@@ -7,3 +7,6 @@ window.FIREBASE_CONFIG = {
   appId: "1:1332717642:web:1dc3de59d1e85ba8ca5eb3",
   measurementId: "G-6XJL88NCEV"
 };
+// Verified by OAuth URL initiation without signing in on 2026-10-27.
+// Other providers stay hidden/disabled until their external configuration exists.
+window.NUBBI_SOCIAL_PROVIDERS = ["google"];
