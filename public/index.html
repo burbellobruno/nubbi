@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="ui-v2.css">
 <link rel="stylesheet" href="experience.css">
 <link rel="stylesheet" href="account-store.css">
+<link rel="stylesheet" href="fantasy.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -58,10 +59,11 @@
 <div id="views">
 <section class="view on" id="v-home">
 <div class="top"><span class="logo"><img src="logo.png" alt="">Nubbi</span><span class="note">+18 · personajes de 21 años o más</span></div>
-<div class="hero"><div class="hero-copy"><span class="eyebrow">UN UNIVERSO PEQUEÑO. HISTORIAS INFINITAS.</span><h1>Todo empieza<br>con un <span>hola.</span></h1><p>Personajes que despiertan tu imaginación. Conversaciones que se convierten en tu próxima historia.</p><div class="hero-actions"><button id="heroNew"><svg class="icon"><use href="#i-plus"></use></svg><span>Dar vida a un personaje</span></button><button class="g" id="surprise"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Inspírame</span></button></div></div><div id="heroClouds" class="hero-clouds" aria-hidden="true"></div></div>
+<div class="hero"><div class="hero-copy"><span class="eyebrow hero-wordmark">Nubbi</span><h1>Cada historia empieza<br>con un <span>encuentro.</span></h1><p>Descubrí personajes, continuá historias<br>o creá a alguien único.</p><div class="hero-actions"><button id="heroNew"><svg class="icon"><use href="#i-plus"></use></svg><span>Crear personaje</span></button><button class="g" id="surprise"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Inspírame</span></button></div></div><div id="heroClouds" class="hero-clouds" aria-hidden="true"></div></div>
 <section class="style-discovery" aria-labelledby="styleTitle"><div class="section-heading"><div><span class="eyebrow">DALE FORMA A TU IMAGINACIÓN</span><h2 id="styleTitle">Tu personaje, tu estilo</h2></div><span class="note">Un punto de partida para crear</span></div><div id="styleDiscoveryList" class="style-discovery-list"></div></section>
 <section id="recentStories" aria-labelledby="recentTitle" hidden><div class="section-heading"><div><span class="eyebrow">TU PRÓXIMO CAPÍTULO</span><h2 id="recentTitle">Continúa tu historia</h2></div><button type="button" class="g" id="recentAll">Ver chats</button></div><div id="recentStoryList"></div></section>
-<div class="searchbox"><svg class="icon"><use href="#i-search"></use></svg><input id="q" placeholder="Buscar personajes, tags, roles..."></div>
+<div class="section-heading discovery-heading"><h2>✧ Explorá personajes</h2><span class="note">Tu próxima historia te está esperando</span></div>
+<div class="searchbox"><svg class="icon"><use href="#i-search"></use></svg><input id="q" aria-label="Buscar personajes" placeholder="Buscar por nombre, temática o personalidad…"></div>
 <div class="tabs" id="tabs"><button class="tab on" data-tab="explore">Explorar</button><button class="tab" data-tab="trend">Tendencias</button><button class="tab" data-tab="today">Hoy</button><button class="tab" data-tab="new">Nuevos</button></div>
 <details class="catalog-filters"><summary>Filtros y orden <span>Encuentra tu próxima conexión</span></summary><div class="filterrow">
 <select id="sort" aria-label="Ordenar"><option value="reco">Recomendados</option><option value="pop">Populares</option><option value="new">Nuevos</option><option value="az">A-Z</option><option value="chats">Más chateados</option></select>
@@ -184,7 +186,7 @@
 </div></section>
 </div>
 <nav>
-<div class="brand"><img src="logo.png" alt=""><b>Nubbi</b></div>
+<div class="brand"><img src="logo.png" alt=""><b>Nubbi</b><small>PERSONAJES QUE<br>HACEN SENTIR</small></div>
 <div data-v="home" class="on" aria-label="Inicio"><svg class="icon"><use href="#i-home"></use></svg><span class="l">Inicio</span></div>
 <div data-v="chats" aria-label="Chats"><svg class="icon"><use href="#i-chat"></use></svg><span class="l">Chats</span></div>
 <div data-v="community" aria-label="Comunidad"><svg class="icon"><use href="#i-community"></use></svg><span class="l">Comunidad</span></div>

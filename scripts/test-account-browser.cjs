@@ -100,7 +100,8 @@ new (require('node:vm').Script)(sdk); // Fail early if the simulated SDK is inva
   await profile();await upload({prof:{name:'Legacy image'},chats:{p0:[{role:'image',image:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII='}]},personas:[{name:'Persona'}],cfg:{p0:{memory:'Memoria',memoryNotes:[{text:'Recuerdo'}]}},branches:{p0:[{messages:[{role:'user',content:'Rama'}]}]}});
   await page.waitForFunction(()=>window.st?.prof.name==='Legacy image');await ready('user:C');
   for(const view of ['home','chats','prof'])await page.evaluate(v=>NubbiApp.go(v),view);
-  await page.evaluate(()=>NubbiOpenChat('p0'));assert.equal(await page.locator('#msgs img').count(),1);
+  // Count scene media only; character avatar loading is independent of restore.
+  await page.evaluate(()=>NubbiOpenChat('p0'));assert.equal(await page.locator('#msgs .m img').count(),1);
   await page.locator('#back').click();passed++;
   const untouched=await page.evaluate(()=>({legacy:localStorage.getItem('nubbi-v1'),guest:localStorage.getItem('nubbi:state:v2:guest'),a:localStorage.getItem('nubbi:state:v2:user:A'),b:localStorage.getItem('nubbi:state:v2:user:B')}));
   await page.evaluate(()=>{localStorage.setItem('test-cloud:C',JSON.stringify({prof:{name:'Remoto válido',lang:'es-LAT',imgProvider:'forge'},chats:{},custom:[{id:'lang-test',name:'Idioma antiguo',lang:'es-AR'}],serverExtension:{retained:true}}));sessionStorage.setItem('cloud-target-writes','0');window.originalSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k===NubbiAccountStore.key())sessionStorage.setItem('cloud-target-writes',String(Number(sessionStorage.getItem('cloud-target-writes')||0)+1));return window.originalSetItem.call(this,k,v)}});
