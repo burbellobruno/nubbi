@@ -84,3 +84,28 @@
 .story-controls textarea{min-height:112px;padding:12px;line-height:1.65;resize:vertical}
 #storyStyleDescription{margin:10px 0 0;padding:11px 13px;border-radius:10px;background:var(--surface);color:var(--mut);font-size:12px;line-height:1.6}
 @media(max-width:700px){.story-controls{padding:16px 14px;margin-top:18px}.story-controls textarea{min-height:128px}}
+/* Reading rhythm and the private persona portrait editor. */
+#msgs .story-paragraph{margin:0 0 1em;white-space:pre-wrap;overflow-wrap:anywhere}
+#msgs .story-paragraph:last-child{margin-bottom:0}
+#msgs .story-paragraph:has(>i.act:only-child){padding-left:12px;border-left:2px solid var(--bd)}
+#pdlg{width:min(560px,calc(100vw - 28px));padding:24px;box-sizing:border-box;max-height:90dvh;overflow:auto}
+#pdlg :is(input,textarea){box-sizing:border-box;max-width:100%}
+#pdlgTitle,#pdlgDescription{padding-right:42px}
+#pdlg label{display:block;margin:16px 0 6px;font-size:13px;color:var(--tx)}
+.persona-image-editor{margin:20px 0;padding:18px;border:1px solid var(--bd);border-radius:18px;background:linear-gradient(135deg,var(--ac-soft),var(--surface));display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+#pimagePreview,#pimagePlaceholder{width:112px;height:112px;border-radius:26px;object-fit:cover;border:2px solid var(--bd);background:var(--surface)}
+#pimagePlaceholder{display:grid;place-items:center;font-size:38px;color:var(--mut)}
+#pimagePreview[hidden],#pimagePlaceholder[hidden]{display:none}
+#pimage{width:100%;font-size:12px}
+#pimage::file-selector-button{min-height:44px;padding:8px 14px;margin-right:8px;border-radius:10px;background:var(--bg-elevated);color:var(--tx);border:1px solid var(--bd);cursor:pointer}
+#pimageStatus{min-height:1.5em;font-size:12px;line-height:1.6;color:var(--mut);overflow-wrap:anywhere}
+#plist .persona-row{display:flex;align-items:center;gap:12px;padding:16px;border:1px solid var(--bd);border-radius:18px;background:var(--surface);margin:10px 0}
+#plist .persona-avatar{width:64px;height:64px;flex:none;object-fit:cover;border-radius:18px;overflow:hidden;display:grid;place-items:center;background:var(--ac-soft);font-size:24px}
+#plist .persona-avatar img{width:100%;height:100%;object-fit:cover}
+#plist .persona-copy{flex:1;min-width:0;overflow-wrap:anywhere}
+#plist .persona-copy :is(b,small){display:block}
+#plist .persona-copy small{margin-top:5px;color:var(--mut);line-height:1.5;white-space:pre-wrap}
+#plist .persona-actions{display:flex;flex-wrap:wrap;gap:6px;flex:none;max-width:190px}
+#plist .persona-actions button{min-height:44px;padding:8px 12px;font-size:12px}
+#plist .persona-select[aria-pressed=true]{background:var(--ac-soft);color:var(--tx);border-color:var(--ac)}
+@media(max-width:600px){#pdlg{padding:18px}#plist .persona-row{flex-wrap:wrap;padding:14px}#plist .persona-actions{max-width:none;width:100%;padding-top:4px}#plist .persona-actions button{flex:1}.persona-image-editor{padding:14px}}

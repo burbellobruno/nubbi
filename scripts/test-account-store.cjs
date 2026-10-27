@@ -99,6 +99,16 @@ function boot(user) {
     {custom:[{tags:[]}]}, {personas:[{name:{}}]}, {prof:{voice:[]}},
     {cfg:{p0:{memoryNotes:[null]}}}, {branches:{p0:[{messages:[{role:'assistant',content:{}}]}]}}
   ]) assert.throws(()=>unicode.NubbiAccountStore.validate(JSON.stringify(malformed)),/inválido/);
+  // Persona portraits remain optional, survive restores, and reject corrupt schema
+  // before any replacement or recovery write can occur.
+  assert.doesNotThrow(()=>unicode.NubbiAccountStore.validate(JSON.stringify({personas:[{id:'old',name:'Sin imagen'}]})));
+  const portraitSnapshot=JSON.stringify({personas:[{id:'portrait',name:'Con imagen',img:'data:image/jpeg;base64,c3ludGhldGlj',legacyPersonaField:{kept:true}}]});
+  assert.equal(unicode.NubbiAccountStore.validate(portraitSnapshot).personas[0].img,'data:image/jpeg;base64,c3ludGhldGlj');
+  for(const img of [{},[],42,true]){
+    const before=[...storageData.entries()];
+    assert.throws(()=>unicode.NubbiAccountStore.replace(JSON.stringify({personas:[{id:'broken',img}]}),'file'),/personas.img/);
+    assert.deepEqual([...storageData.entries()],before,'Invalid portrait must not create recovery or alter a principal');
+  }
   const beforePartial=storageData.get(unicode.NubbiAccountStore.key());
   unicode.NubbiAccountStore.replace('{"prof":{"name":"Partial"}}','file');
   assert.equal(unicode.NubbiAccountStore.read().chats,undefined,'Replace must not merge omitted fields');

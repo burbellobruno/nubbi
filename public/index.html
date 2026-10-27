@@ -278,14 +278,16 @@
 </div>
 </div>
 </dialog>
-<dialog id="pdlg">
-<h3 style="margin:0">Nueva persona</h3><div class="note">Representás al usuario dentro de la historia</div>
-<label>Nombre</label><input id="pname">
-<label>Edad</label><input id="page" inputmode="numeric" placeholder="Ej: 27">
-<label>Pronombres</label><input id="ppron" placeholder="Ej: ella, él, elle">
-<label>Sobre esta persona</label><textarea id="pbio" rows="2"></textarea>
-<label>Apariencia</label><textarea id="papp" rows="2" placeholder="Rasgos, ropa, detalles que el personaje puede notar"></textarea>
-<label>Relación con el personaje</label><input id="prel" placeholder="Ej: compañera de trabajo, ex, desconocida">
+<dialog id="pdlg" aria-labelledby="pdlgTitle" aria-describedby="pdlgDescription">
+<h3 id="pdlgTitle" style="margin:0">Nueva persona</h3><div id="pdlgDescription" class="note">Representás al usuario dentro de la historia</div>
+<div class="persona-image-editor"><div class="persona-image-frame"><img id="pimagePreview" alt="Imagen de esta persona" hidden><span id="pimagePlaceholder" aria-hidden="true">👤</span></div><div class="persona-image-controls"><label for="pimage">Imagen de tu persona</label><input id="pimage" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="pimageHelp pimageStatus"><p class="note" id="pimageHelp">Elegí una imagen tuya o una imagen de IA ya descargada. JPEG, PNG o WebP, hasta 8 MB. Se recorta al centro y se prepara en este dispositivo; no se envía a un generador. Se incluye en tus respaldos si sincronizás manualmente.</p><button class="g" id="premoveimage" type="button" disabled>Quitar imagen</button></div></div>
+<p id="pimageStatus" class="note" role="status" aria-live="polite" aria-atomic="true"></p>
+<label for="pname">Nombre</label><input id="pname" maxlength="80" required>
+<label for="page">Edad</label><input id="page" type="number" min="18" step="1" inputmode="numeric" placeholder="Ej: 27">
+<label for="ppron">Pronombres</label><input id="ppron" maxlength="80" placeholder="Ej: ella, él, elle">
+<label for="pbio">Sobre esta persona</label><textarea id="pbio" rows="2" maxlength="1600"></textarea>
+<label for="papp">Apariencia</label><textarea id="papp" rows="2" maxlength="1600" placeholder="Rasgos, ropa, detalles que el personaje puede notar"></textarea>
+<label for="prel">Relación con el personaje</label><input id="prel" maxlength="400" placeholder="Ej: compañera de trabajo, ex, desconocida">
 <div class="drow"><button class="g" id="pcancel" type="button">Cancelar</button><button id="psave" type="button">Guardar</button></div>
 </dialog>
 <dialog id="onboard">

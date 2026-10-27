@@ -118,7 +118,7 @@
       strings(c, ['id', 'name', 'desc', 'role', 'gender', 'tags', 'persona', 'greeting', 'img', 'image', 'emoji', 'imagePrompt'], 'custom');
     });
     (data.personas || []).forEach(function (p) {
-      strings(p, ['id', 'name', 'bio', 'pronouns', 'appearance', 'relation'], 'personas');
+      strings(p, ['id', 'name', 'bio', 'pronouns', 'appearance', 'relation', 'img'], 'personas');
     });
     if (data.prof) {
       strings(data.prof, ['name', 'bio', 'img', 'lang', 'theme', 'accent', 'model', 'imgProvider'], 'prof');
