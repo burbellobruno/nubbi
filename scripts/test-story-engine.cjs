@@ -6,6 +6,54 @@ assert.equal(story.styleKey({mode:'story'}),'cinematic');
 assert.equal(story.styleKey({mode:'chat',storyStyle:'constructor'}),'dialogue');
 assert.equal(story.lengthKey('__proto__'),'normal');
 assert.equal(story.lengths.extended.tokens,3000);
+assert.deepEqual(Object.keys(story.experiences),['pulso','escena','novela','vinculo','aventura','universo']);
+for(const invalid of [undefined,null,{},[],{storyExperience:''},{storyExperience:'unknown'},{storyExperience:'constructor'},{storyExperience:'__proto__'},{storyExperience:'toString'},{storyExperience:1},Object.create({storyExperience:'pulso'})]){
+ assert.equal(story.experiencesKey(invalid),'');
+ assert.equal(story.resolveExperience(invalid),null);
+ assert.ok(!story.instructions(invalid).includes('Experiencia elegida:'));
+}
+assert.equal(story.styleKey({storyExperience:'novela'}),'dialogue','no implicit global style changes from profile metadata');
+for(const [key,profile] of Object.entries(story.experiences)){
+ assert.ok(Object.hasOwn(story.styles,profile.style));assert.ok(Object.hasOwn(story.lengths,profile.length));
+ assert.ok(['openai/gpt-oss-20b','openai/gpt-oss-120b'].includes(profile.recommendedModel));
+ const config={storyExperience:key,storyStyle:profile.style,storyLength:profile.length,storyCanon:'El anillo permanece dentro de la caja cerrada. El usuario decide si abrirla.'};
+ const saved=JSON.stringify(config);const direction=story.instructions(config);
+ assert.equal(story.experiencesKey(config),key);assert.equal(story.resolveExperience(config),profile);
+ assert.match(direction,new RegExp('Experiencia elegida: '+profile.label));
+ assert.ok(direction.includes(profile.instruction));
+ assert.match(direction,/no un motor de IA distinto/);
+ assert.match(direction,/no sustituye la personalidad, la continuidad, la agencia ni los límites/);
+ assert.match(direction,/no escribas diálogo, pensamientos, consentimiento ni decisiones del usuario/);
+ assert.match(direction,/ficción no explícita/);assert.match(direction,/El anillo permanece dentro de la caja cerrada/);
+ const context=story.buildPrompt('Personaje: Mara, reservada y obstinada.\n'+direction,Array.from({length:100},(_,i)=>({role:i%2?'assistant':'user',content:'Turno '+i+' '+('x'.repeat(2000))})),{characterName:'Mara'});
+ assert.ok(context.prompt.length<=30000);assert.ok(context.messages.length<=41);
+ assert.ok(context.messages.reduce((n,m)=>n+m.content.length,0)<=30000);
+ assert.ok(Buffer.byteLength(JSON.stringify({prompt:context.prompt,storyMessages:context.messages}),'utf8')<128*1024);
+ assert.match(context.messages[0].content,/Mara, reservada y obstinada/);
+ assert.equal(JSON.stringify(config),saved,'resolving/writing experience must not mutate chat configuration');
+}
+assert.match(story.experiences.vinculo.instruction,/no establece amor, consentimiento ni una relación/);
+assert.match(story.experiences.universo.instruction,/hasta dos personajes secundarios adultos/);
+assert.match(story.experiences.universo.instruction,/no confundas al usuario con un secundario ni tomes decisiones por él/);
+assert.equal(story.experiences.pulso.length,'short');assert.equal(story.experiences.universo.length,'extended');
+for(const supportingCast of [undefined,false,true,'true']){
+ const options={supportingCast,characterName:'Mara',language:'español'};
+ const context=story.buildPrompt('Mara, adulta y reservada.\n'+story.instructions({storyExperience:'universo'}),[{role:'user',content:'¿Quién llamó a la puerta?'}],options);
+ if(supportingCast===true){
+  assert.match(context.prompt,/Tu respuesta \(personaje principal y hasta dos secundarios adultos presentes; no escribas por el usuario/);
+  assert.match(context.messages[0].content,/personaje principal y hasta dos secundarios adultos presentes/);
+  assert.ok(!context.prompt.includes('Tu respuesta (solo el personaje;'));
+ }else{
+  assert.match(context.prompt,/Tu respuesta \(solo el personaje; no escribas por el usuario/);
+  assert.ok(!context.messages[0].content.includes('Tu respuesta (personaje principal y hasta dos secundarios adultos presentes'));
+ }
+ assert.match(context.messages[0].content,/ficción no explícita/);
+ assert.ok(context.prompt.length<=30000);assert.ok(context.messages.reduce((sum,m)=>sum+m.content.length,0)<=30000);
+ assert.equal(options.supportingCast,supportingCast,'cast selection must not mutate options');
+ const huge=story.buildPrompt('漢'.repeat(50000),Array.from({length:60},(_,i)=>({role:i%2?'assistant':'user',content:'\\\"\n'.repeat(10000)})),options);
+ assert.ok(huge.prompt.length<=30000);assert.ok(huge.messages.reduce((sum,m)=>sum+m.content.length,0)<=30000);
+ assert.ok(Buffer.byteLength(JSON.stringify({prompt:huge.prompt,storyMessages:huge.messages}),'utf8')<128*1024);
+}
 assert.match(story.styles.cinematic.instruction,/cambiar algo observable o abrir una posibilidad/);
 assert.match(story.styles.cinematic.instruction,/sin elegir por el usuario/);
 assert.match(story.styles.cinematic.instruction,/no sustituyas la progresión por contemplación/);

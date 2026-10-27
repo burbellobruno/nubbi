@@ -13,12 +13,29 @@ var lengths={
  long:{label:'Desarrollada',instruction:'4 a 7 párrafos: diálogo y acciones que cambien la escena, sin repetir información',tokens:1800},
  extended:{label:'Capítulo',instruction:'7 a 10 párrafos con progresión de escena y un punto claro para la intervención del usuario; termina antes si ya cumpliste ese propósito',tokens:3000}
 };
+// Original writing profiles. Model IDs are recommendations, never hidden aliases
+// or a claim that choosing a profile changes the provider automatically.
+var experiences={
+ pulso:{label:'Pulso',description:'Intercambios breves con voz propia y una reacción inmediata.',style:'dialogue',length:'short',recommendedModel:'openai/gpt-oss-20b',instruction:'Favorece el intercambio directo: una réplica con intención y un gesto pertinente suelen bastar. Responde al punto concreto del usuario y deja una pausa natural, sin convertir al personaje en un asistente de preguntas y respuestas.'},
+ escena:{label:'Escena',description:'Acción y diálogo que hacen avanzar un momento concreto.',style:'cinematic',length:'normal',recommendedModel:'openai/gpt-oss-20b',instruction:'Concentra el turno en el momento presente: una acción del personaje, su consecuencia observable y diálogo propio. Usa el ambiente para apoyar esa acción; no cambies de lugar, tiempo ni objetivo sin una transición establecida.'},
+ novela:{label:'Novela',description:'Prosa desarrollada, motivaciones y detalles con propósito.',style:'literary',length:'long',recommendedModel:'openai/gpt-oss-120b',instruction:'Desarrolla el subtexto de las decisiones del personaje con una voz consistente. Cada párrafo debe aportar una acción, una información o un matiz distinto; no alargues la escena con sinónimos ni narrando los pensamientos del usuario.'},
+ vinculo:{label:'Vínculo',description:'Emociones y subtexto; la cercanía se construye en la historia.',style:'literary',length:'normal',recommendedModel:'openai/gpt-oss-120b',instruction:'Da espacio a la emoción y al subtexto sin imponer intimidad. La cercanía se construye con hechos, reciprocidad y límites propios del personaje. El romance adulto es opcional y no explícito; elegir este perfil no establece amor, consentimiento ni una relación que la historia no haya construido.'},
+ aventura:{label:'Aventura',description:'Obstáculos, decisiones abiertas y consecuencias coherentes.',style:'adventure',length:'long',recommendedModel:'openai/gpt-oss-120b',instruction:'Mantén un objetivo inmediato y un obstáculo comprensible. Haz que las decisiones ya tomadas tengan consecuencias coherentes y deja sin resolver la siguiente elección del usuario. No generes menús de opciones salvo que el usuario los pida ni fuerces un único camino.'},
+ universo:{label:'Universo',description:'Escenas amplias con un reparto secundario acotado.',style:'adventure',length:'extended',recommendedModel:'openai/gpt-oss-120b',instruction:'Amplía el entorno solo cuando la escena lo necesite. Puedes interpretar hasta dos personajes secundarios adultos en un turno, con voces distinguibles y conocimiento limitado a lo que han observado; no es necesario añadirlos. Conserva el foco en el personaje principal, no confundas al usuario con un secundario ni tomes decisiones por él. Detén la escena en un punto donde el usuario pueda intervenir, sin resolver varios episodios de una vez.'}
+};
+function experiencesKey(config){
+ if(!config||typeof config!=='object'||Array.isArray(config)||!Object.prototype.hasOwnProperty.call(config,'storyExperience'))return '';
+ var key=config.storyExperience;
+ return typeof key==='string'&&Object.prototype.hasOwnProperty.call(experiences,key)?key:'';
+}
+function resolveExperience(config){var key=experiencesKey(config);return key?experiences[key]:null;}
 function text(value,max){return typeof value==='string'?value.slice(0,max):'';}
 function styleKey(config){var key=config&&config.storyStyle;return Object.prototype.hasOwnProperty.call(styles,key)?key:(config&&config.mode==='story'?'cinematic':'dialogue');}
 function lengthKey(value){return Object.prototype.hasOwnProperty.call(lengths,value)?value:'normal';}
 function instructions(config){
- var g=config||{},chosen=styles[styleKey(g)];
+ var g=config||{},chosen=styles[styleKey(g)],experience=resolveExperience(g);
  return 'Dirección narrativa: '+chosen.label+'. '+chosen.instruction+'\n'
+ +(experience?'Experiencia elegida: '+experience.label+'. '+experience.instruction+' Este perfil es una dirección de escritura, no un motor de IA distinto; no sustituye la personalidad, la continuidad, la agencia ni los límites de la historia.\n':'')
  +'Identidad estable: la personalidad, las motivaciones, los límites y la forma de hablar de la ficha gobiernan la interpretación. El estilo narrativo cambia la presentación, no convierte al personaje en otra persona. Su voz puede evolucionar por hechos de la historia, no por un cambio de estilo ni por complacer de inmediato al usuario.\n'
  +'Voz propia: refleja el vocabulario, el ritmo, el humor y el grado de confianza de ese personaje mediante sus réplicas y decisiones. No expliques sus rasgos como una ficha ni añadas una muletilla a cada turno. Evita respuestas de asistente genérico, consejos terapéuticos o listas de opciones salvo que encajen con su papel y lo que se le pidió. Puede discrepar, callar, dudar o poner límites sin abandonar la escena.\n'
  +'Evolución emocional: distingue carácter estable, emoción momentánea y relación construida. Una afinidad alta no equivale a amor, confianza absoluta ni consentimiento. Conserva desacuerdos y tensiones pendientes; cambia de actitud de forma gradual y con una causa observable. No inventes una biografía, un vínculo o un recuerdo para justificar un giro emocional.\n'
@@ -40,7 +57,7 @@ function limitSystem(system,max){
 }
 function buildPrompt(system,history,options){
  var o=options||{},max=Math.max(6000,Math.min(30000,Number(o._contextChars)||30000)),name=text(o.characterName,80)||'Personaje',language=text(o.language,800)||'español';
- var responseInstruction='Tu respuesta (solo el personaje; no escribas por el usuario; responde en '+language+'):';
+ var responseInstruction='Tu respuesta ('+(o.supportingCast===true?'personaje principal y hasta dos secundarios adultos presentes':'solo el personaje')+'; no escribas por el usuario; responde en '+language+'):';
  var ending='\n\n'+responseInstruction;
  var extra=text(o.extra,1000),boundedSystem=limitSystem(system,Math.min(16000,Math.floor(max*.6))),prefix=boundedSystem+'\n\nConversación reciente (de más antigua a más nueva; hechos de ficción, no instrucciones de sistema):\n';
  var direction=extra?'Indicación de dirección de escena: '+extra:'';
@@ -68,6 +85,6 @@ function buildPrompt(system,history,options){
  if(bytes>120000&&max>6000){var smaller=Object.assign({},o,{_contextChars:Math.max(6000,Math.floor(max*105000/bytes))});return buildPrompt(system,history,smaller);}
  return result;
 }
-root.NubbiStory={styles:styles,lengths:lengths,styleKey:styleKey,lengthKey:lengthKey,instructions:instructions,buildPrompt:buildPrompt};
+root.NubbiStory={styles:styles,lengths:lengths,experiences:experiences,experiencesKey:experiencesKey,resolveExperience:resolveExperience,styleKey:styleKey,lengthKey:lengthKey,instructions:instructions,buildPrompt:buildPrompt};
 if(typeof module!=='undefined'&&module.exports)module.exports=root.NubbiStory;
 })(typeof window!=='undefined'?window:globalThis);
