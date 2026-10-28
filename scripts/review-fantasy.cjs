@@ -33,7 +33,7 @@ const output=process.env.NUBBI_REVIEW_OUTPUT||path.join(__dirname,'../review');f
   await page.waitForFunction(()=>document.querySelector('#gp button[aria-pressed="true"]')?.textContent==='Todos');
   await page.locator('.catalog-filters summary').click();
   await page.locator('#grid .card .fav').first().click();
-  await page.evaluate(()=>NubbiApp.go('favs'));assert.equal(await page.locator('#fg .card').count(),1);
+  await page.evaluate(()=>NubbiApp.go('favs'));assert.equal(await page.locator('#profileCollection .card').count(),1);
   for(const view of ['chats','community','prof']){
    await page.evaluate(view=>NubbiApp.go(view),view);await overflow();
    if(view==='prof'){

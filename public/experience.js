@@ -43,7 +43,7 @@ reflectCurrentView();
 function decorateCards(){document.querySelectorAll(".card").forEach(function(card){makeKeyboardClickable(card);var title=card.querySelector("b");if(title)card.setAttribute("aria-label","Ver personaje: "+title.textContent);});}
 var cardsPending=false;
 var catalogObserver=new MutationObserver(function(){if(cardsPending)return;cardsPending=true;requestAnimationFrame(function(){cardsPending=false;decorateCards();renderRecent();});});
-["grid","forYou","rail","fg","commChars","chl","profileCreations","profileCollection"].forEach(function(id){if($(id))catalogObserver.observe($(id),{childList:true});});
+["grid","forYou","rail","commChars","chl","profileCreations","profileCollection"].forEach(function(id){if($(id))catalogObserver.observe($(id),{childList:true});});
 decorateCards();
 
 function characters(){
@@ -174,6 +174,14 @@ var styleList=$('styleDiscoveryList');
 if(styleList&&$('recentStories'))styleList.closest('section').before($('recentStories'));
 if($('styleTitle'))$('styleTitle').textContent='✧ Elegí tu estilo';
 if(styleList)[['realista','Realista','Luz natural · detalle','◒'],['semi-realista','Semi-realista','Entre el arte y lo real','◐'],['anime','Anime','Expresión · color','✧'],['manhwa','Manhwa','Tu propio webtoon','▱'],['furry','Furry','Personajes antropomórficos','♧'],['pintura digital','Fantasía','Mundos por descubrir','✦'],['3d','3D','Dimensión · carácter','◇']].forEach(function(style,index){var card=button('',function(){$('plus').click();$('sty').value=style[0];$('sty').dispatchEvent(new Event('change',{bubbles:true}));});card.className='style-tile style-'+index;var mark=document.createElement('span'),name=document.createElement('b'),caption=document.createElement('small');mark.className='style-mark';mark.textContent=style[3];mark.setAttribute('aria-hidden','true');name.textContent=style[1];caption.textContent=style[2];card.append(mark,name,caption);styleList.appendChild(card);});
+// Stable card widths respond to their container, including a docked chat.
+if(styleList){
+ var styleControls=$('styleCarouselControls'),previousStyle=$('stylePrevious'),nextStyle=$('styleNext');
+ function updateStyleRail(){var overflow=styleList.scrollWidth>styleList.clientWidth+2;styleControls.hidden=!overflow;previousStyle.disabled=styleList.scrollLeft<=2;nextStyle.disabled=styleList.scrollLeft+styleList.clientWidth>=styleList.scrollWidth-2;}
+ function moveStyleRail(direction){var first=styleList.querySelector('.style-tile'),step=first?first.getBoundingClientRect().width+12:200;var quiet=window.matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.dataset.anim==='off';styleList.scrollBy({left:direction*step,behavior:quiet?'auto':'smooth'});}
+ previousStyle.onclick=function(){moveStyleRail(-1);};nextStyle.onclick=function(){moveStyleRail(1);};styleList.addEventListener('scroll',updateStyleRail,{passive:true});window.addEventListener('resize',updateStyleRail);
+ if(window.ResizeObserver)new ResizeObserver(updateStyleRail).observe(styleList);requestAnimationFrame(updateStyleRail);
+}
 /* Keep saved welcome preferences while retaining the R2.5 presentation. */
 var intro=null,introTimer=0,audioTimer=0,stallTimer=0,previousFocus=null,introStarted=0;
 var introAudio=new Audio("nubbi-intro-soft.wav");introAudio.preload="none";introAudio.volume=.55;

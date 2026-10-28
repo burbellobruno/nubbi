@@ -120,3 +120,25 @@ nav .brand small{display:none}
 :root:not([data-theme]) button.g{background:#eee7f7;color:#4c356c}
 :root:not([data-theme]) .hero-actions button.g{background:#111326e6;color:#ead5ff}
 }
+
+/* Text stays inside chat rows; previews never impose their intrinsic width. */
+#chl .row{display:grid;grid-template-columns:56px minmax(0,1fr) max-content;gap:12px;min-width:0;max-width:100%;overflow:hidden}
+#chl .row>.av{width:56px;height:56px;min-width:0;margin:0}
+#chl .chat-row-copy{min-width:0;max-width:100%}
+#chl .chat-row-copy b,#chl .chat-row-copy small{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#chl .row .time{margin-left:0;justify-self:end;max-width:100%;white-space:nowrap}
+/* One horizontal rail at every viewport size: docked panels cannot squeeze seven cards. */
+#v-home .style-discovery{min-width:0;max-width:100%}
+#v-home .style-discovery .section-heading{flex-wrap:wrap;gap:12px}
+#v-home .style-discovery-list{display:flex;grid-template-columns:none;gap:12px;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;scrollbar-width:thin;padding:4px 2px 12px;scroll-padding-inline:2px;overscroll-behavior-inline:contain}
+#v-home .style-tile{display:grid;grid-template-columns:40px minmax(0,1fr);grid-template-rows:auto auto;align-content:center;align-items:center;gap:6px 10px;flex:0 0 clamp(176px,20vw,200px);min-width:176px;min-height:128px;padding:14px;scroll-snap-align:start;text-align:left}
+#v-home .style-tile .style-mark{grid-column:1;grid-row:1/3;width:40px;height:44px}
+#v-home .style-tile>b{grid-column:2;grid-row:1;margin:0;align-self:end;font-size:13px;line-height:1.35}
+#v-home .style-tile>small{grid-column:2;grid-row:2;align-self:start;font-size:11px;line-height:1.5}
+#v-home .style-tile>b,#v-home .style-tile>small{min-width:0;white-space:normal;word-break:normal;overflow-wrap:normal;hyphens:auto}
+.style-carousel-controls{display:flex;justify-content:flex-end;gap:8px;margin:0 0 10px}
+.style-carousel-controls[hidden]{display:none!important}
+.style-carousel-controls button{display:grid;place-items:center;min-width:44px;min-height:44px;padding:8px;font-size:20px}
+.style-carousel-controls button:disabled{opacity:.4}
+@media(max-width:899px){nav{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:400px){#chl .row{grid-template-columns:44px minmax(0,1fr) max-content;gap:8px;padding:12px}#chl .row>.av{width:44px;height:44px}#chl .row .time{font-size:10px}}

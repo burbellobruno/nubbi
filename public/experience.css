@@ -757,7 +757,7 @@ nav .plus span{transition:transform .25s var(--nb-ease),box-shadow .25s var(--nb
 .experience-card-copy{display:grid;gap:7px;min-width:0}.experience-card-copy b{font-size:16px}.experience-card-copy>span{font-size:13px;line-height:1.5;color:var(--mut)}.experience-card-copy small{font-size:11px;color:var(--mut)}
 .experience-picker-footer{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.experience-picker-footer p{flex-basis:100%}.experience-picker-footer button{min-height:44px;white-space:normal}
 .profile-top-actions button:focus-visible,#profileTabs button:focus-visible,.experience-card:focus-visible{outline:3px solid var(--ac3);outline-offset:3px}
-@media(max-width:900px){#settingsNav{display:none!important}.profile-create-bar{bottom:82px}}
+@media(max-width:899px){#settingsNav{display:none!important}.profile-create-bar{bottom:82px}}
 @media(max-width:700px){#v-settings .prof{grid-template-columns:minmax(0,1fr)}#v-settings .profile-card{padding:16px}.profile-identity-main{gap:16px}#v-prof #pav{width:80px;height:80px}.profile-identity-copy h1{font-size:24px}.profile-identity .stats{gap:10px;flex-wrap:wrap}.profile-identity .stats>div{font-size:11px}#experienceCards{grid-template-columns:1fr}#experiencePicker{padding:18px}.experience-card{padding:12px}.experience-mascot{width:48px;height:48px}}
 @media(prefers-reduced-motion:reduce){.experience-card{transition:none}}
 #profileGallery{display:block}.profile-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}.profile-gallery-grid>.empty{grid-column:1/-1}
