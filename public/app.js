@@ -86,7 +86,7 @@ function cfg(id){if(!st.cfg[id])st.cfg[id]={scenario:"",userRole:"",mode:"story"
 function hist(id){if(!st.chats[id]){var c=byId(id);st.chats[id]=c&&c.greeting?[{role:"assistant",content:c.greeting,emo:"feliz",ts:Date.now()}]:[];}return st.chats[id];}
 function portrait(c){return c.img||(/^p\d+$/.test(c.id)?"portraits/"+c.id+".png":"");}
 function av(el,c){el.innerHTML="";el.style.background=grad(c);var src=portrait(c);if(src){var i=document.createElement("img");i.alt="";i.loading="lazy";i.onerror=function(){i.remove();el.textContent=(c.name?c.name.charAt(0).toUpperCase():"?");};i.src=src;el.appendChild(i);}else el.textContent=(c.name?c.name.charAt(0).toUpperCase():"?");}
-function fmt(el,t){el.innerHTML="";String(t||"").split(/\n\s*\n/).forEach(function(paragraph){if(!paragraph.trim())return;var block=document.createElement("p");block.className="story-paragraph";paragraph.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/).forEach(function(p){if(!p)return;if(p.startsWith("**")&&p.endsWith("**")&&p.length>4){var b=document.createElement("b");b.textContent=p.slice(2,-2);block.appendChild(b);}else if(p[0]==="*"&&p.length>2){var i=document.createElement("i");i.className="act";i.textContent=p.slice(1,-1);block.appendChild(i);}else block.appendChild(document.createTextNode(p));});el.appendChild(block);});}
+function fmt(el,t){el.innerHTML="";window.NubbiStory.formatNarrative(t).forEach(function(parts){var block=document.createElement("p");block.className="story-paragraph";parts.forEach(function(part){var node;if(part.kind==="action"){node=document.createElement("i");node.className="act";}else if(part.kind==="strong")node=document.createElement("b");else node=document.createTextNode(part.text);if(part.kind!=="text")node.textContent=part.text;block.appendChild(node);});el.appendChild(block);});}
 
 function mkCard(c){
 var d=document.createElement("div");d.className="card";d.style.background=grad(c);
@@ -324,7 +324,7 @@ return "Sos "+c.name+(c.role?" ("+c.role+")":"")+", un personaje adulto (18+) en
 +"- Mantené coherencia con lo que ya pasó; no contradigas hechos, nombres ni lugares.\n"
 +"- Variá las respuestas: no repitas frases, estructuras ni muletillas.\n"
 +"- No escribas por el usuario, no decidas lo que siente, piensa o hace. Dejá espacio para que responda.\n"
-+"- Las acciones y descripciones van entre *asteriscos*.\n"
++"- Separá acción y voz: acciones/descripciones en párrafos propios entre *asteriscos cerrados*; palabras pronunciadas en otro párrafo, con raya — y fuera de los asteriscos. No presentes gestos o pensamientos como si el personaje los dijera.\n"
 +adultRules
 +"- Cerrá con una oportunidad natural para responder; no es obligatorio terminar cada turno con una pregunta ni un suspenso artificial.\n"
 +"- Extensión: "+lenInstr()+". Escribí al menos 2 oraciones completas; no respondas con una sola frase.\n"

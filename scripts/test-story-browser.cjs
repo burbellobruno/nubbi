@@ -12,7 +12,8 @@ if(new URL(url).hostname!=='127.0.0.1')throw Error('Only local testing is allowe
    if(target.origin!==new URL(url).origin)return route.abort();
    if(target.pathname==='/api/chat'){
     requests.push(req.postDataJSON());
-    return route.fulfill({contentType:'text/event-stream',body:'data: {"choices":[{"delta":{"content":"[neutral]\\n*Luna señala la mochila.* La llave sigue allí. Podemos volver al faro cuando quieras."}}]}\n\ndata: [DONE]\n\n'});
+    const response='[neutral]\n*Luna señala la mochila.\n—La llave sigue allí.\n\n*Su mano se detiene.*\n\n—Podemos volver al faro cuando quieras.*';
+    return route.fulfill({contentType:'text/event-stream',body:'data: '+JSON.stringify({choices:[{delta:{content:response}}]})+'\n\ndata: [DONE]\n\n'});
    }
    return route.continue();
   });
@@ -33,6 +34,10 @@ if(new URL(url).hostname!=='127.0.0.1')throw Error('Only local testing is allowe
   await page.evaluate(()=>{NubbiApp.openChat('p0');st.chats.p0=Array.from({length:80},(_,i)=>({role:i%2?'assistant':'user',content:'Recuerdo '+i+' '+('x'.repeat(4500)),ts:i}));});
   await page.locator('#inp').fill('¿Dónde está la llave?');await page.locator('#f').evaluate(el=>el.requestSubmit());
   await page.waitForFunction(()=>st.chats.p0.at(-1)?.role==='assistant'&&st.chats.p0.at(-1)?.content.includes('La llave sigue allí'));
+  const rendered=page.locator('#msgs .m.b').last();
+  assert.ok(await rendered.locator('i.act').count()>=2);assert.ok(await rendered.locator('i.act').evaluateAll(nodes=>nodes.every(n=>!n.textContent.includes('—'))),'speech cannot inherit an unfinished action');
+  assert.ok(!(await rendered.textContent()).includes('quieras.*'),'orphan speech marker hidden at render time');assert.ok(await page.evaluate(()=>st.chats.p0.at(-1).content.endsWith('*')),'rendering must not rewrite stored history');
+  assert.match(requests[0].prompt,/Separación de acción y voz/);
   assert.equal(requests.length,1);const body=requests[0];
   assert.equal(body.max_tokens,3000);assert.equal(body.stream,true);
   assert.ok(body.prompt.length<=30000);assert.match(body.prompt,/Dirección narrativa: Novela/);

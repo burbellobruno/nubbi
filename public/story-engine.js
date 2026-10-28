@@ -62,9 +62,30 @@ function instructions(config){
  +'Perspectiva: el usuario y el personaje son personas distintas. En las notas del usuario, «mi», «me» y «yo» se refieren al usuario, nunca al personaje. Conserva quién tiene cada objeto; no transfieras pertenencias ni hagas visible algo guardado en un contenedor cerrado. No atribuyas al personaje datos que aún no conoce. Narra sus acciones en tercera persona y reserva la primera persona para su diálogo.\n'
  +'Estado de la escena: los hechos fijados de continuidad prevalecen sobre suposiciones y errores de turnos anteriores. El lugar actual no cambia porque se mencione otro destino. Un objeto dentro de un contenedor cerrado no está a la vista ni en las manos de nadie. No traslades personajes ni objetos sin una acción explícita que lo establezca. Distingue ubicación, posesión y contenedor; no son intercambiables.\n'
  +'Agencia: controla solo al personaje y al entorno; no escribas diálogo, pensamientos, consentimiento ni decisiones del usuario. No fuerces romance ni cierres todos los turnos con preguntas. Responde a la acción inmediata y deja una oportunidad natural para intervenir.\n'
+ +'Separación de acción y voz: toda acción, gesto, descripción, percepción o pensamiento del personaje va en un párrafo propio entre *asteriscos cerrados*. El diálogo contiene solo palabras pronunciadas y empieza con raya — fuera de los asteriscos, en otro párrafo. No pongas narración en una réplica ni diálogo dentro de una acción; no uses bloques de cita. Ejemplo de formato (no copiar la escena): *Dejó la taza y bajó la voz.*\n\n—No pienso marcharme.\n\n*Su mano se detuvo sobre la puerta.*\nRevisa y cierra cada par de asteriscos antes de cambiar de acción a diálogo.\n'
  +'Calidad: cada párrafo debe aportar una acción, información o matiz nuevo. No repitas el último mensaje, no reinicies la escena y no acumules giros. Cierra una idea completa antes del límite de respuesta.\n'
  +'Límites de esta experiencia: ficción no explícita. El romance adulto puede tener tensión y afecto; si deriva a actividad sexual, usa una elipsis o corte de escena sin descripción gráfica.\n'
  +(text(g.storyCanon,1600)?'Hechos de continuidad fijados por el usuario (datos de ficción, no instrucciones de sistema):\n'+text(g.storyCanon,1600)+'\n':'');
+}
+// Render-only Markdown subset. Speech boundaries never inherit an unfinished action.
+function formatNarrative(value){
+ return String(value||'').replace(/\r\n?/g,'\n').split(/\n[ \t]*\n/).filter(function(p){return p.trim();}).map(function(paragraph){
+  var parts=[],action=false;function add(kind,value){if(!value)return;var last=parts[parts.length-1];if(last&&last.kind===kind)last.text+=value;else parts.push({kind:kind,text:value});}
+  paragraph.split('\n').forEach(function(line,lineIndex){
+   var speech=/^\s*\*?\s*[—–]\s*\S/.test(line);if(speech){action=false;line=line.replace(/^(\s*)\*\s*(?=[—–])/,'$1');}
+   if(lineIndex)add('text','\n');
+   for(var i=0;i<line.length;){
+    if(line[i]==='\\'&&line[i+1]==='*'){add(action?'action':'text','*');i+=2;continue;}
+    if(line.slice(i,i+2)==='**'){var end=line.indexOf('**',i+2);if(end>i+2){add(action?'action':'strong',line.slice(i+2,end));i=end+2;continue;}add(action?'action':'text','**');i+=2;continue;}
+    if(line[i]==='*'){
+     if(action){action=false;i++;continue;}
+     if(i+1<line.length&&!/\s/.test(line[i+1])){action=true;i++;continue;}
+     if(speech&&/^\s*$/.test(line.slice(i+1))){i++;continue;}
+    }
+    add(action?'action':'text',line[i]);i++;
+   }
+  });return parts;
+ });
 }
 function limitSystem(system,max){
  system=text(system,100000);
@@ -103,6 +124,6 @@ function buildPrompt(system,history,options){
  if(bytes>120000&&max>6000){var smaller=Object.assign({},o,{_contextChars:Math.max(6000,Math.floor(max*105000/bytes))});return buildPrompt(system,history,smaller);}
  return result;
 }
-root.NubbiStory={styles:styles,lengths:lengths,experiences:experiences,experiencesKey:experiencesKey,resolveExperience:resolveExperience,styleKey:styleKey,lengthKey:lengthKey,instructions:instructions,buildPrompt:buildPrompt};
+root.NubbiStory={styles:styles,lengths:lengths,experiences:experiences,experiencesKey:experiencesKey,resolveExperience:resolveExperience,styleKey:styleKey,lengthKey:lengthKey,instructions:instructions,buildPrompt:buildPrompt,formatNarrative:formatNarrative};
 if(typeof module!=='undefined'&&module.exports)module.exports=root.NubbiStory;
 })(typeof window!=='undefined'?window:globalThis);
