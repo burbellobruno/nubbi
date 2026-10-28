@@ -10,3 +10,5 @@ for(const turns of [30,50]){
  for(const bad of [{...valid,summary:''},{...valid,extra:'injected'},{...valid,scenePlace:''},{...valid,sceneUserItems:{value:'Inventado',evidence:[{message:msg.message,quote:'Nico recibió la llave del usuario.'}]}},{...valid,sceneUserItems:{value:'x'.repeat(301),evidence:valid.sceneUserItems.evidence}},{...valid,sceneUserItems:{value:'Llave',evidence:[{message:9999,quote:'No te la entrego.'}]}}])assert.throws(()=>story.parseMemoryProposal(JSON.stringify(bad),request.sources));
  assert.equal(JSON.stringify(history),original);console.log('PASS proposals: '+turns+' scripted turns, final corrections, source IDs, invalid citations/types/lengths rejected, original history intact');
 }
+
+const prior=story.memoryProposalRequest([{role:'user',content:'Seguimos esperando.'},{role:'assistant',content:'Nico observa el mapa.'}],{summary:'Dato anterior. '.repeat(700)+' CORRECCIÓN FINAL: NO ENTREGUÉ LA LLAVE.'});assert.ok(prior.prompt.includes('CORRECCIÓN FINAL: NO ENTREGUÉ LA LLAVE.'));assert.ok(prior.prompt.includes('Parte central omitida'));console.log('PASS prior summary preserves final corrections under its budget');
