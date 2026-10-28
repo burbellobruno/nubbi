@@ -104,7 +104,7 @@
     }
     function config(value, path) {
       if (!record(value)) bad(path);
-      strings(value, ['memory', 'scenario', 'userRole', 'instructions', 'goal', 'secret', 'arc', 'bg', 'bubble', 'voiceURI', 'visualProfile', 'imageStyle', 'storyExperience', 'chatModel'], path);
+      strings(value, ['memory', 'scenario', 'userRole', 'instructions', 'goal', 'secret', 'arc', 'bg', 'bubble', 'voiceURI', 'visualProfile', 'imageStyle', 'storyExperience', 'chatModel', 'scenePlace', 'sceneUserItems', 'sceneCharacterItems', 'scenePending'], path);
       ['memoryNotes', 'autoMem'].forEach(function (field) {
         if (value[field] == null) return;
         if (!Array.isArray(value[field])) bad(path + '.' + field);

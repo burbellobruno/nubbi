@@ -116,3 +116,11 @@
 #plist .persona-actions button{min-height:44px;padding:8px 12px;font-size:12px}
 #plist .persona-select[aria-pressed=true]{background:var(--ac-soft);color:var(--tx);border-color:var(--ac)}
 @media(max-width:600px){#pdlg{padding:18px}#plist .persona-row{flex-wrap:wrap;padding:14px}#plist .persona-actions{max-width:none;width:100%;padding-top:4px}#plist .persona-actions button{flex:1}.persona-image-editor{padding:14px}}
+/* Private per-chat scene anchors, kept separate from generated summary drafts. */
+#mdlg .scene-state{border:1px solid var(--bd);border-radius:16px;padding:16px;margin:16px 0;min-width:0}
+#mdlg .scene-state legend{padding:0 8px;font-weight:700}
+#mdlg .scene-state label,#mdlg>label{display:block;margin:12px 0 6px;font-size:12px}
+#mdlg .scene-state input,#mdlg .scene-state textarea{width:100%;min-width:0;box-sizing:border-box}
+#relationshipPanel summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700}
+#relationshipPanel details>div{padding-top:12px}
+#mdlg>.drow:last-child{position:sticky;bottom:0;background:var(--bg);padding-top:12px;padding-bottom:6px;margin-bottom:0;z-index:2;box-shadow:0 -8px 18px var(--bg)}
