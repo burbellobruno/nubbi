@@ -107,7 +107,7 @@ function sceneState(config,actors,limit){
  var g=config||{},a=actors||{},cap=Math.max(900,Math.min(2200,Number(limit)||2200));function clean(v,max){return text(v,max).replace(/[\u0000-\u001f\u007f]/g,' ');}
  var data={personaje:clean(a.characterName,80)||'Personaje',usuario:clean(a.userName,80)||'Usuario'},header='Registro de escena fijado por el usuario. Estado de partida: una acción posterior confirmada puede actualizarlo; una propuesta no. No inventes posesiones o movimientos incompatibles. No confundas USUARIO con PERSONAJE. No completes fragmentos omitidos.\n';
  var fields={scenePlace:'lugar_actual',sceneUserItems:'objetos_del_USUARIO',sceneCharacterItems:'objetos_del_PERSONAJE',scenePending:'acuerdos_y_pendientes',storyCanon:'hechos_fijados_por_el_USUARIO'};
- Object.keys(fields).forEach(function(key){var value=clean(g[key],key==='storyCanon'?1600:300);if(!value)return;var label=fields[key],candidate=Object.assign({},data);candidate[label]=value;
+ Object.keys(fields).forEach(function(key){var value=String(g[key]==null?'':g[key]).trim().replace(/[\u0000-\u001f\u007f]/g,' '),fieldLimit=key==='storyCanon'?1600:300;if(!value)return;var label=fields[key],candidate=Object.assign({},data);candidate[label]=value.length>fieldLimit?{extracto:excerpt(value,fieldLimit),incompleto:true}:value;
   if(header.length+JSON.stringify(candidate).length>cap){var room=cap-header.length-JSON.stringify(data).length-label.length-85;if(room<90)return;candidate[label]={extracto:excerpt(value,room),incompleto:true};if(header.length+JSON.stringify(candidate).length>cap)return;}data=candidate;
  });return Object.keys(data).length>2?header+JSON.stringify(data):'';
 }
