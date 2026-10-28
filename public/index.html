@@ -63,7 +63,7 @@
 <section class="view on" id="v-home">
 <div class="top"><span class="logo"><img src="logo.png" alt="">Nubbi</span><span class="note">+18 · personajes de 18 años o más</span></div>
 <div class="hero"><div class="hero-copy"><span class="eyebrow hero-wordmark">Nubbi</span><h1>Cada historia empieza<br>con un <span>encuentro.</span></h1><p>Descubrí personajes, continuá historias<br>o creá a alguien único.</p><div class="hero-actions"><button id="heroNew"><svg class="icon"><use href="#i-plus"></use></svg><span>Crear personaje</span></button><button class="g" id="surprise"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Inspírame</span></button></div></div><div id="heroClouds" class="hero-clouds" aria-hidden="true"></div></div>
-<section class="style-discovery" aria-labelledby="styleTitle"><div class="section-heading"><div><span class="eyebrow">DALE FORMA A TU IMAGINACIÓN</span><h2 id="styleTitle">Tu personaje, tu estilo</h2></div><span class="note">Un punto de partida para crear</span></div><div id="styleDiscoveryList" class="style-discovery-list"></div></section>
+<section class="style-discovery" aria-labelledby="styleTitle"><div class="section-heading"><div><span class="eyebrow">DALE FORMA A TU IMAGINACIÓN</span><h2 id="styleTitle">Tu personaje, tu estilo</h2></div><span class="note">Un punto de partida para crear</span></div><div class="style-carousel-controls" id="styleCarouselControls" hidden><button class="g" id="stylePrevious" type="button" aria-label="Estilo anterior" aria-controls="styleDiscoveryList">←</button><button class="g" id="styleNext" type="button" aria-label="Estilo siguiente" aria-controls="styleDiscoveryList">→</button></div><div id="styleDiscoveryList" class="style-discovery-list" role="group" aria-label="Estilos para crear personajes"></div></section>
 <section id="recentStories" aria-labelledby="recentTitle" hidden><div class="section-heading"><div><span class="eyebrow">TU PRÓXIMO CAPÍTULO</span><h2 id="recentTitle">Continúa tu historia</h2></div><button type="button" class="g" id="recentAll">Ver chats</button></div><div id="recentStoryList"></div></section>
 <div class="section-heading discovery-heading"><h2>✧ Explorá personajes</h2><span class="note">Tu próxima historia te está esperando</span></div>
 <div class="searchbox"><svg class="icon"><use href="#i-search"></use></svg><input id="q" aria-label="Buscar personajes" placeholder="Buscar por nombre, temática o personalidad…"></div>
@@ -101,7 +101,6 @@
 </div>
 <div id="commBlocked"></div>
 </section>
-<section class="view" id="v-favs"><h2>Favoritos</h2><div class="grid" id="fg"></div></section>
 <section class="view" id="v-prof"><div class="prof"><section class="profile-card profile-identity" aria-label="Tu perfil">
 <div class="profile-top-actions"><button id="openPersonas" type="button" class="g">Mis personas</button><button id="openSettings" type="button" class="g icon-btn" aria-label="Configuración" title="Configuración"><svg class="icon"><use href="#i-settings"></use></svg></button></div>
 <div class="profile-identity-main"><button class="av" id="pav" type="button" aria-label="Cambiar imagen de perfil"></button><div class="profile-identity-copy"><span class="eyebrow">TU ESPACIO EN NUBBI</span><h1 id="profileName">Tu perfil</h1><p id="profileBio" class="note">Dale voz a tu próxima historia.</p><div class="stats"><div><b id="s1">0</b>chats</div><div><b id="s2">0</b>creaciones</div><div><b id="s3">0</b>coleccionados</div></div></div></div>
@@ -188,7 +187,6 @@
 <div data-v="chats" aria-label="Chats"><svg class="icon"><use href="#i-chat"></use></svg><span class="l">Chats</span></div>
 <div data-v="community" aria-label="Comunidad"><svg class="icon"><use href="#i-community"></use></svg><span class="l">Comunidad</span></div>
 <div class="plus" id="plus" aria-label="Crear personaje"><span><svg class="icon"><use href="#i-plus"></use></svg></span><em>Crear</em></div>
-<div data-v="favs" aria-label="Favoritos"><svg class="icon"><use href="#i-heart"></use></svg><span class="l">Favoritos</span></div>
 <div data-v="prof" aria-label="Perfil"><svg class="icon"><use href="#i-user"></use></svg><span class="l">Perfil</span></div>
 <div id="settingsNav" data-v="settings" aria-label="Configuración"><svg class="icon"><use href="#i-settings"></use></svg><span class="l">Configuración</span></div>
 </nav>
