@@ -41,7 +41,7 @@ const out=process.env.NUBBI_REVIEW_OUTPUT||path.join(__dirname,'../review/immers
   await page.locator('.story-controls').scrollIntoViewIfNeeded();await overflow();
   await page.screenshot({animations:'disabled',path:path.join(out,'story-controls-'+width+'.png')});
   await page.evaluate(()=>document.querySelector('#cdlg').close());
-  await page.locator('#back').click();await page.evaluate(()=>NubbiApp.go('prof'));await page.locator('#ptheme').selectOption('light');
+  await page.locator('#back').click();await page.evaluate(()=>NubbiApp.go('settings'));await page.locator('#ptheme').selectOption('light');
   await overflow();await page.screenshot({animations:'disabled',path:path.join(out,'profile-light-'+width+'.png')});
   await page.emulateMedia({reducedMotion:'reduce'});await page.evaluate(()=>NubbiApp.go('home'));
   assert.equal(await page.locator('#grid .card').first().evaluate(el=>getComputedStyle(el).animationName),'none');

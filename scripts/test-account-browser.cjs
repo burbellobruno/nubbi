@@ -41,7 +41,7 @@ new (require('node:vm').Script)(sdk); // Fail early if the simulated SDK is inva
    }
   },{legacy:snap('LEGACY'),a:snap('ACCOUNT-A'),b:snap('ACCOUNT-B')});
   async function ready(principal){await page.waitForFunction(p=>window.NubbiApp&&document.documentElement.dataset.nbAccountReady==='1'&&NubbiAccountStore.principal===p,principal);await page.waitForFunction(()=>!document.querySelector('#nb-intro')?.open);}
-  async function profile(){await page.evaluate(()=>NubbiApp.go('prof'));}
+  async function profile(){await page.evaluate(()=>NubbiApp.go('settings'));}
   async function login(id){await profile();await page.locator('#accEmail').fill(id+'@test.invalid');await page.locator('#accPass').fill('test-password');await page.locator('#accLogin').click();await ready('user:'+id);}
   async function logout(){await profile();await page.locator('#accLogout').click();await ready('guest');}
   await page.goto(origin);await ready('guest');

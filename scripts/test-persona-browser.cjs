@@ -27,7 +27,8 @@ const snapshot=name=>({custom:[],chats:{},cfg:{},branches:{},favs:[],persona:'se
   await context.addInitScript(({a,b})=>{localStorage.setItem('nubbi-adult-ok','1');if(!sessionStorage.getItem('persona-test-seed')){localStorage.setItem('nubbi:state:v2:user:A',JSON.stringify(a));localStorage.setItem('nubbi:state:v2:user:B',JSON.stringify(b));sessionStorage.setItem('persona-test-seed','1');}},{a:snapshot('A'),b:snapshot('B')});
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
   const ready=async principal=>{await page.waitForFunction(p=>window.NubbiApp&&document.documentElement.dataset.nbAccountReady==='1'&&NubbiAccountStore.principal===p,principal);await page.waitForFunction(()=>!document.querySelector('#nb-intro')?.open,{},{timeout:12000});};
-  const profile=async()=>page.evaluate(()=>NubbiApp.go('prof'));
+  const profile=async()=>{await page.evaluate(()=>NubbiApp.go('prof'));await page.locator('#openPersonas').click();await page.waitForSelector('#personasdlg[open]');};
+  const accountSettings=async()=>{if(await page.locator('#personasdlg').getAttribute('open')!==null)await page.locator('#closePersonas').click();await page.locator('#openSettings').click();await page.waitForSelector('#v-settings.on');};
   const overflow=async()=>{assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'document overflow '+width);if(await page.locator('#pdlg').getAttribute('open')!==null)assert.ok(await page.locator('#pdlg').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'persona dialog overflow '+width);};
   await page.goto(url.href);await ready('guest');await profile();
   const portrait=async color=>Buffer.from(await page.evaluate(color=>{const c=document.createElement('canvas');c.width=80;c.height=100;const x=c.getContext('2d');x.fillStyle=color;x.fillRect(0,0,80,100);x.fillStyle='#fff';x.fillRect(15,20,35,45);return c.toDataURL('image/png').split(',')[1]},color),'base64');
@@ -62,11 +63,11 @@ const snapshot=name=>({custom:[],chats:{},cfg:{},branches:{},favs:[],persona:'se
   await page.getByRole('button',{name:'Usar persona Luna editada',exact:true}).click();assert.equal(await page.evaluate(()=>st.persona),id);
   await page.reload();await ready('guest');await profile();assert.equal(await page.evaluate(()=>st.persona),id);assert.ok(await page.locator('#plist .persona-avatar img').count());await overflow();await page.screenshot({animations:'disabled',path:path.join(output,'persona-profile-'+width+'.png')});
   const guestFinal=await stored();
-  async function login(uid){await page.locator('#accEmail').fill(uid+'@synthetic.invalid');await page.locator('#accPass').fill('synthetic-password');await page.locator('#accLogin').click();await ready('user:'+uid);await profile();}
+  async function login(uid){await accountSettings();await page.locator('#accEmail').fill(uid+'@synthetic.invalid');await page.locator('#accPass').fill('synthetic-password');await page.locator('#accLogin').click();await ready('user:'+uid);await profile();}
   await login('A');assert.equal(await page.evaluate(()=>st.personas[0].name),'Persona A');await edit('Persona A');await upload(pink);await page.locator('#psave').click();assert.ok(await page.evaluate(()=>st.personas[0].img));
-  await page.locator('#accLogout').click();await ready('guest');await profile();assert.deepEqual(await stored(),guestFinal,'account A must not change guest persona data');
+  await accountSettings();await page.locator('#accLogout').click();await ready('guest');await profile();assert.deepEqual(await stored(),guestFinal,'account A must not change guest persona data');
   await login('B');assert.equal(await page.evaluate(()=>st.personas[0].name),'Persona B');assert.equal(await page.evaluate(()=>st.personas[0].img),'');
-  await page.locator('#accLogout').click();await ready('guest');assert.deepEqual(await stored(),guestFinal);assert.equal(blockedWrites,0,'no provider calls or cloud writes expected');assert.deepEqual(errors,[]);
+  await accountSettings();await page.locator('#accLogout').click();await ready('guest');assert.deepEqual(await stored(),guestFinal);assert.equal(blockedWrites,0,'no provider calls or cloud writes expected');assert.deepEqual(errors,[]);
   await context.close();console.log('PASS personas '+width+': image upload/preview/remove/edit/cancel/reload, quota rollback/late decode, selection/legacy fields, A/B/guest isolation, no overflow/errors');
  }
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});

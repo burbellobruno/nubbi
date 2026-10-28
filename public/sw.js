@@ -1,9 +1,9 @@
 /* Only Nubbi's public, credential-free application shell belongs in Cache Storage. */
-var C="nubbi-v40",SHELL=["./","index.html","style.css","ui-v2.css","experience.css","fantasy.css","immersive.css","immersive.js","story-engine.js","social-auth.css","social-auth.js","fantasy-hero.png","fantasy-portraits.png","account-store.css","account-store.js","account-bootstrap.js","ai-client.js","app.js","community.js","ui-v2.js","experience.js","nubbi-intro.webm","nubbi-intro-soft.wav","catalog.js","logo.png","favicon.png","icon-192.png","icon-512.png","manifest.webmanifest"];
+var C="nubbi-v41",SHELL=["./","index.html","style.css","ui-v2.css","experience.css","fantasy.css","immersive.css","immersive.js","story-engine.js","experience-mascots.svg","social-auth.css","social-auth.js","fantasy-hero.png","fantasy-portraits.png","account-store.css","account-store.js","account-bootstrap.js","ai-client.js","app.js","community.js","ui-v2.js","experience.js","nubbi-intro.webm","nubbi-intro-soft.wav","catalog.js","logo.png","favicon.png","icon-192.png","icon-512.png","manifest.webmanifest"];
 var BASE=new URL(self.registration.scope),PUBLIC_URLS=new Set(SHELL.map(function(file){return new URL(file,BASE).href;}));
 function browserAssetRequest(request,url){
  if(request.mode!=="no-cors"&&request.mode!=="cors")return false;
- var expected=/\.js$/.test(url.pathname)?"script":/\.css$/.test(url.pathname)?"style":/\.png$/.test(url.pathname)?"image":/\.wav$/.test(url.pathname)?"audio":/\.webm$/.test(url.pathname)?"video":/\.webmanifest$/.test(url.pathname)?"manifest":"";
+ var expected=/\.js$/.test(url.pathname)?"script":/\.css$/.test(url.pathname)?"style":/\.(?:png|svg)$/.test(url.pathname)?"image":/\.wav$/.test(url.pathname)?"audio":/\.webm$/.test(url.pathname)?"video":/\.webmanifest$/.test(url.pathname)?"manifest":"";
  return !!expected&&request.destination===expected;
 }
 function publicRequest(request){
@@ -20,6 +20,7 @@ function publicResponse(response,url){
  var type=(response.headers.get("content-type")||"").split(";")[0].trim().toLowerCase(),pathname=new URL(url).pathname;
  if(/\.js$/.test(pathname))return /^(?:application|text)\/(?:x-)?javascript$/.test(type);
  if(/\.css$/.test(pathname))return type==="text/css";
+ if(/\.svg$/.test(pathname))return type==="image/svg+xml";
  if(/\.png$/.test(pathname))return type==="image/png";
  if(/\.webm$/.test(pathname))return type==="video/webm";
  if(/\.wav$/.test(pathname))return /^audio\/(?:x-)?wav(?:e)?$/.test(type);

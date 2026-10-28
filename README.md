@@ -17,7 +17,7 @@
 - Chat de texto: se conserva el límite por IP, sin cuota diaria por usuario.
 - Pruebas: `node scripts/test-v5.js` y `node scripts/test-image-auth.js`.
 
-App de chat con personajes de IA (adultos), para móvil y PC. El catálogo base tiene 27 personajes (p0 a p26).
+App de chat con personajes de IA (adultos), para móvil y PC. El catálogo base tiene 35 personajes (p0 a p34).
 
 ## Desarrollo local
 

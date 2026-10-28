@@ -6,7 +6,15 @@ assert.equal(story.styleKey({mode:'story'}),'cinematic');
 assert.equal(story.styleKey({mode:'chat',storyStyle:'constructor'}),'dialogue');
 assert.equal(story.lengthKey('__proto__'),'normal');
 assert.equal(story.lengths.extended.tokens,3000);
-assert.deepEqual(Object.keys(story.experiences),['pulso','escena','novela','vinculo','aventura','universo']);
+const experienceKeys=['pulso','escena','novela','vinculo','aventura','universo','brisa','chispa','aurora','umbra','saga','orbita','eco','dueto','enigma','cronista','refugio','umbral','neon','marea'];
+assert.deepEqual(Object.keys(story.experiences),experienceKeys);
+assert.equal(new Set(Object.values(story.experiences).map(p=>p.label)).size,20,'profile labels must be distinct');
+assert.equal(new Set(Object.values(story.experiences).map(p=>p.mascot.name)).size,20,'visual mascot identifiers must be distinct');
+assert.equal(new Set(Object.values(story.experiences).map(p=>p.instruction)).size,20,'profiles need distinct narrative instructions');
+const originalPresets={pulso:['Pulso','dialogue','short','openai/gpt-oss-20b'],escena:['Escena','cinematic','normal','openai/gpt-oss-20b'],novela:['Novela','literary','long','openai/gpt-oss-120b'],vinculo:['Vínculo','literary','normal','openai/gpt-oss-120b'],aventura:['Aventura','adventure','long','openai/gpt-oss-120b'],universo:['Universo','adventure','extended','openai/gpt-oss-120b']};
+for(const [key,preset] of Object.entries(originalPresets)){
+ const p=story.experiences[key];assert.deepEqual([p.label,p.style,p.length,p.recommendedModel],preset,'original profile choices stay compatible');
+}
 for(const invalid of [undefined,null,{},[],{storyExperience:''},{storyExperience:'unknown'},{storyExperience:'constructor'},{storyExperience:'__proto__'},{storyExperience:'toString'},{storyExperience:1},Object.create({storyExperience:'pulso'})]){
  assert.equal(story.experiencesKey(invalid),'');
  assert.equal(story.resolveExperience(invalid),null);
@@ -14,6 +22,11 @@ for(const invalid of [undefined,null,{},[],{storyExperience:''},{storyExperience
 }
 assert.equal(story.styleKey({storyExperience:'novela'}),'dialogue','no implicit global style changes from profile metadata');
 for(const [key,profile] of Object.entries(story.experiences)){
+ assert.ok(Object.hasOwn(profile,'label')&&typeof profile.label==='string'&&profile.label.length>0);
+ assert.ok(Object.hasOwn(profile,'description')&&typeof profile.description==='string'&&profile.description.length>10);
+ assert.ok(Object.hasOwn(profile,'instruction')&&typeof profile.instruction==='string'&&profile.instruction.length>60);
+ assert.ok(Object.hasOwn(profile,'mascot'));assert.equal(profile.mascot.icon,key);
+ assert.match(profile.mascot.name,/^[A-Za-zÀ-ÿ ]{2,20}$/);
  assert.ok(Object.hasOwn(story.styles,profile.style));assert.ok(Object.hasOwn(story.lengths,profile.length));
  assert.ok(['openai/gpt-oss-20b','openai/gpt-oss-120b'].includes(profile.recommendedModel));
  const config={storyExperience:key,storyStyle:profile.style,storyLength:profile.length,storyCanon:'El anillo permanece dentro de la caja cerrada. El usuario decide si abrirla.'};
@@ -25,6 +38,7 @@ for(const [key,profile] of Object.entries(story.experiences)){
  assert.match(direction,/no sustituye la personalidad, la continuidad, la agencia ni los límites/);
  assert.match(direction,/no escribas diálogo, pensamientos, consentimiento ni decisiones del usuario/);
  assert.match(direction,/ficción no explícita/);assert.match(direction,/El anillo permanece dentro de la caja cerrada/);
+ assert.ok(!direction.includes(profile.mascot.name),'visual mascot must not become a fictional character or affect the prompt');
  const context=story.buildPrompt('Personaje: Mara, reservada y obstinada.\n'+direction,Array.from({length:100},(_,i)=>({role:i%2?'assistant':'user',content:'Turno '+i+' '+('x'.repeat(2000))})),{characterName:'Mara'});
  assert.ok(context.prompt.length<=30000);assert.ok(context.messages.length<=41);
  assert.ok(context.messages.reduce((n,m)=>n+m.content.length,0)<=30000);
@@ -36,6 +50,9 @@ assert.match(story.experiences.vinculo.instruction,/no establece amor, consentim
 assert.match(story.experiences.universo.instruction,/hasta dos personajes secundarios adultos/);
 assert.match(story.experiences.universo.instruction,/no confundas al usuario con un secundario ni tomes decisiones por él/);
 assert.equal(story.experiences.pulso.length,'short');assert.equal(story.experiences.universo.length,'extended');
+assert.match(story.experiences.eco.instruction,/no una sesión terapéutica/);
+assert.match(story.experiences.dueto.instruction,/no presupone intimidad ni consentimiento/);
+assert.match(story.experiences.marea.instruction,/una escena en tierra no se traslada a un barco/);
 for(const supportingCast of [undefined,false,true,'true']){
  const options={supportingCast,characterName:'Mara',language:'español'};
  const context=story.buildPrompt('Mara, adulta y reservada.\n'+story.instructions({storyExperience:'universo'}),[{role:'user',content:'¿Quién llamó a la puerta?'}],options);
