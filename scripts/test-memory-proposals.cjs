@@ -1,0 +1,12 @@
+const assert=require('node:assert/strict'),story=require('../public/story-engine.js');
+const fields=['scenePlace','sceneUserItems','sceneCharacterItems','scenePending'];
+for(const turns of [30,50]){
+ const history=[];for(let i=0;i<turns;i++){history.push({role:'user',content:i===0?'Estamos en el faro. La llave está en mi mochila cerrada.':i===turns-2?'Abro mi mochila y pongo la llave sobre la mesa. No te la entrego.':'Revisamos el mapa. ¿Y si viajamos al puerto mañana? Aún no acepto viajar.'});history.push({role:'assistant',content:i===turns-2?'Nico deja el mapa en la mesa y observa la llave sin tocarla.':'Nico sigue en el faro, reservado. Espera una decisión sin aceptar por el usuario.'});}
+ const original=JSON.stringify(history),request=story.memoryProposalRequest(history,{userName:'Sol',characterName:'Nico',language:'español',summary:'La llave estaba en la mochila.'});
+ assert.ok(request.sources.length<=50);assert.equal(request.sources.at(-1).message,turns*2);assert.ok(request.sources.some(s=>s.content.includes('No te la entrego.')));assert.ok(Buffer.byteLength(JSON.stringify({prompt:request.prompt}))<128*1024);
+ const msg=request.sources.find(s=>s.content.includes('No te la entrego.'));
+ const valid={summary:'Seguimos en el faro. La llave está sobre la mesa; Nico no la tomó.',scenePlace:null,sceneUserItems:{value:'La mochila; la llave ya no está dentro.',evidence:[{message:msg.message,quote:'Abro mi mochila y pongo la llave sobre la mesa.'}]},sceneCharacterItems:null,scenePending:null,uncertainties:['No se confirmó el viaje.']};
+ assert.equal(story.parseMemoryProposal(JSON.stringify(valid),request.sources).sceneUserItems.value,valid.sceneUserItems.value);
+ for(const bad of [{...valid,summary:''},{...valid,extra:'injected'},{...valid,scenePlace:''},{...valid,sceneUserItems:{value:'Inventado',evidence:[{message:msg.message,quote:'Nico recibió la llave del usuario.'}]}},{...valid,sceneUserItems:{value:'x'.repeat(301),evidence:valid.sceneUserItems.evidence}},{...valid,sceneUserItems:{value:'Llave',evidence:[{message:9999,quote:'No te la entrego.'}]}}])assert.throws(()=>story.parseMemoryProposal(JSON.stringify(bad),request.sources));
+ assert.equal(JSON.stringify(history),original);console.log('PASS proposals: '+turns+' scripted turns, final corrections, source IDs, invalid citations/types/lengths rejected, original history intact');
+}
