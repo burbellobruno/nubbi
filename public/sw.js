@@ -1,5 +1,5 @@
 /* Only Nubbi's public, credential-free application shell belongs in Cache Storage. */
-var C="nubbi-v44",SHELL=["./","index.html","style.css","ui-v2.css","experience.css","fantasy.css","immersive.css","immersive.js","story-engine.js","experience-mascots.svg","social-auth.css","social-auth.js","fantasy-hero.png","fantasy-portraits.png","account-store.css","account-store.js","account-bootstrap.js","ai-client.js","app.js","community.js","ui-v2.js","experience.js","nubbi-intro.webm","nubbi-intro-soft.wav","catalog.js","logo.png","favicon.png","icon-192.png","icon-512.png","manifest.webmanifest"];
+var C="nubbi-v45",SHELL=["./","index.html","style.css","ui-v2.css","experience.css","fantasy.css","immersive.css","immersive.js","story-engine.js","experience-mascots.svg","social-auth.css","social-auth.js","fantasy-hero.png","fantasy-portraits.png","account-store.css","account-store.js","account-bootstrap.js","ai-client.js","app.js","community.js","ui-v2.js","experience.js","nubbi-intro.webm","nubbi-intro-soft.wav","catalog.js","logo.png","favicon.png","icon-192.png","icon-512.png","manifest.webmanifest"];
 var BASE=new URL(self.registration.scope),PUBLIC_URLS=new Set(SHELL.map(function(file){return new URL(file,BASE).href;}));
 function browserAssetRequest(request,url){
  if(request.mode!=="no-cors"&&request.mode!=="cors")return false;
