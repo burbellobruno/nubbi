@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!-- Original Nubbi vector mascots. Each symbol has its own 64 × 64 canvas. -->
+  <symbol id="exp-pulso" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#F699C4" d="M12 31C4 13 12 6 23 18Q32 13 41 18C52 6 60 13 52 31Q59 52 39 56H25Q5 52 12 31Z"/>
+      <path fill="#FFF0BA" d="m30 12 5-5 5 5-5 5Z"/>
+      <path fill="#FFF4F9" stroke="none" d="M19 36q13-12 26 0v12H19Z"/>
+      <path d="M23 34v4m18-4v4m-13 6q4 5 8 0" fill="none"/>
+      <path d="m14 42 4 1m28 0 4-1" stroke="#C13E80"/>
+    </g>
+  </symbol>
+  <symbol id="exp-escena" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#8DD8F5" d="M16 25V10q10 0 12 12h8Q38 10 48 10v15q8 6 7 16-1 16-23 16T9 41q-1-10 7-16Z"/>
+      <path fill="#FFE189" d="m45 13 4-7 4 7 7 3-7 3-4 7-4-7-7-3Z"/>
+      <path d="M23 35v4m18-4v4m-13 5q4 4 8 0" fill="none"/>
+      <path d="M16 17v6m26-6v6" stroke="#37799B"/>
+    </g>
+  </symbol>
+  <symbol id="exp-novela" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#C2A6EF" d="M10 20 6 9l19 8q7-3 14 0L58 9l-4 11q7 13 0 26-7 13-22 13T10 46q-7-13 0-26Z"/>
+      <path fill="#FFF0CF" d="M14 29q9-8 18 3 9-11 18-3 3 17-18 24Q11 46 14 29Z"/>
+      <path d="M23 34v4m18-4v4"/>
+      <path fill="#FFC075" d="m28 40 4 7 4-7Z"/>
+      <path fill="#9BE6CB" d="M26 14 22 6l10 4 10-4-4 8Z"/>
+    </g>
+  </symbol>
+  <symbol id="exp-vinculo" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#E8B98C" d="M17 20C0 7 1 38 12 39q-2 18 20 18t20-18C63 38 64 7 47 20Q32 12 17 20Z"/>
+      <path fill="#FFF1D8" stroke="none" d="M18 41q14-12 28 0v9H18Z"/>
+      <path d="M23 33v4m18-4v4"/>
+      <path fill="#493448" d="m28 41 4 4 4-4Z"/>
+      <path fill="#FF86A9" d="M32 59 23 52q-5-8 3-9 4 0 6 4 2-4 6-4 8 1 3 9Z"/>
+    </g>
+  </symbol>
+  <symbol id="exp-aventura" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#FFA86F" d="m10 30 3-22 16 13h6L51 8l3 22q4 23-22 27Q6 53 10 30Z"/>
+      <path fill="#FFF1CE" stroke="none" d="m12 34 20 9 20-9q0 19-20 20-20-1-20-20Z"/>
+      <path d="M23 31v4m18-4v4"/>
+      <path fill="#493448" d="m28 40 4 4 4-4Z"/>
+      <path fill="#70D9C2" d="m20 51 12 5 12-5-5 10-7-5-7 5Z"/>
+    </g>
+  </symbol>
+  <symbol id="exp-universo" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#92BCFF" d="M11 30q0-17 21-17t21 17v14l-6 10-8-5-7 8-7-8-8 5-6-10Z"/>
+      <path fill="#F7C6F3" d="M16 21 10 10l11 3 5 9m22-1 6-11-11 3-5 9"/>
+      <ellipse fill="none" stroke="#FFE49B" stroke-width="4" cx="32" cy="34" rx="28" ry="9" transform="rotate(-16 32 34)"/>
+      <path d="M24 30v4m16-4v4m-12 5q4 4 8 0" fill="none"/>
+    </g>
+  </symbol>
+  <symbol id="exp-brisa" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#B4E6D3" d="M14 51Q3 48 7 37q-5-13 8-16Q16 7 29 13q10-10 17 3 14-1 12 12 10 11-2 19-2 10-16 7-14 7-26-3Z"/>
+      <path d="M23 32v4m18-4v4m-13 5q4 4 8 0" fill="none"/>
+      <path fill="#FFF0AA" d="M34 16Q27 5 38 4q7 7-4 12Z"/>
+      <path d="M9 43h7m32-1h8" stroke="#4D9B87"/>
+    </g>
+  </symbol>
+  <symbol id="exp-chispa" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#FFCF69" d="M17 28 10 16l14 2 8-14 8 14 14-2-7 12 12 8-10 6q0 15-17 15T15 42L5 36Z"/>
+      <path fill="#FF9F72" d="m29 11-4 13h9l-4 10 14-17H33l3-6Z" stroke="none"/>
+      <path d="M23 35v4m18-4v4m-13 5q4 5 8 0" fill="none"/>
+    </g>
+  </symbol>
+  <symbol id="exp-aurora" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#F3B7DA" d="M15 27Q3 10 14 8q9 1 11 14h14Q41 9 50 8q11 2-1 19 8 7 6 18-3 13-23 13T9 45q-2-11 6-18Z"/>
+      <path fill="#AEF0DC" d="m27 21 5-17 5 17Z"/>
+      <path d="M23 35v4m18-4v4m-13 5q4 4 8 0" fill="none"/>
+      <path fill="#FFE596" stroke="none" d="m11 31 9-5-4 12Z"/>
+    </g>
+  </symbol>
+  <symbol id="exp-umbra" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#9C9BE3" d="M20 27 13 8 5 14l3 24 8 6q0 14 16 14t16-14l8-6 3-24-8-6-7 19Q32 19 20 27Z"/>
+      <path fill="#E3D8FF" d="M39 15q-11-4-9-12-12 8-4 17 8 6 13-5Z"/>
+      <path d="M24 36v4m16-4v4m-12 5q4 4 8 0" fill="none"/>
+      <path d="m12 20 3 13m37-13-3 13" stroke="#514778"/>
+    </g>
+  </symbol>
+  <symbol id="exp-saga" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#91D4AD" d="M13 27 7 12l15 6 10-9 10 9 15-6-6 15q9 7 6 19-4 12-25 12T7 46q-3-12 6-19Z"/>
+      <path fill="#FFE39B" d="m24 19 8-10 8 10-8 8Z"/>
+      <path d="M23 34v4m18-4v4m-13 5q4 4 8 0" fill="none"/>
+      <path fill="#D3F2CF" d="M12 42q-7 0-6 8l10 2m36-10q7 0 6 8l-10 2"/>
+    </g>
+  </symbol>
+  <symbol id="exp-orbita" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#FFBB8D" d="M13 27Q8 12 19 10q10-1 10 12h6q0-13 10-12 11 2 6 17 9 7 5 18-4 13-24 13T8 45q-4-11 5-18Z"/>
+      <path fill="#FFF0D7" stroke="none" d="M19 36q13-11 26 0v14H19Z"/>
+      <path d="M23 33v4m18-4v4m-13 5q4 4 8 0" fill="none"/>
+      <path d="m32 22 6-14" fill="none"/>
+      <circle fill="#A7E3F2" cx="41" cy="8" r="5"/>
+    </g>
+  </symbol>
+  <symbol id="exp-eco" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#A8DAD1" d="M14 24q-2-14 8-13 10-15 20-1 12-1 11 13 8 5 6 14-2 10-13 11l-2 10H20l-2-10Q4 46 5 35q0-8 9-11Z"/>
+      <path fill="#FFE7AC" d="M40 11q-12 0-12 11 0 8 8 8 6 0 6-6 0-4-5-4"/>
+      <path d="M23 36v4m18-4v4m-13 5q4 4 8 0" fill="none"/>
+    </g>
+  </symbol>
+  <symbol id="exp-dueto" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#F9B4BF" d="M8 29 7 13l14 8q17-3 19 13 2 18-16 21Q6 53 7 40Z"/>
+      <path fill="#A6D7F6" d="m30 30 11-9 16-8-1 18q7 22-14 25-17-2-16-14Z"/>
+      <path d="M15 34v4m12-4v4m11-4v4m12-4v4m-31 6 3 2 3-2m15 0 3 2 3-2" fill="none"/>
+      <path fill="#FFE59D" d="M32 21q-12-7-8-12 5-4 8 2 3-6 8-2 4 5-8 12Z"/>
+    </g>
+  </symbol>
+  <symbol id="exp-enigma" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#B3B9EB" d="M8 32q0-20 24-20t24 20v11q-3 15-24 15T8 43Z"/>
+      <path fill="#6C638F" d="M10 29q11-9 22 1 11-10 22-1l-4 13q-9 4-18-2-9 6-18 2Z"/>
+      <path d="M23 31v5m18-5v5" stroke="#FFF5DD" stroke-width="3.5"/>
+      <path d="M28 46q4 3 8 0M30 12q-6-9 2-9 8 0 2 7" fill="none"/>
+      <circle fill="#FFE9A7" cx="32" cy="16" r="2" stroke="none"/>
+    </g>
+  </symbol>
+  <symbol id="exp-cronista" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#D5AF90" d="M14 27q-13-3-9-14 8-10 16 2 11-5 22 0 8-12 16-2 4 11-9 14 9 25-18 30Q5 52 14 27Z"/>
+      <circle fill="#FFF0D8" cx="23" cy="34" r="9"/><circle fill="#FFF0D8" cx="41" cy="34" r="9"/>
+      <path d="M32 33h0m-9-1v4m18-4v4m-13 9q4 4 8 0" fill="none"/>
+      <path fill="#85DBC9" d="M36 17Q33 6 49 4q-2 12-13 13Z"/>
+    </g>
+  </symbol>
+  <symbol id="exp-refugio" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#F0D5AC" d="M13 33Q4 25 9 17q8-9 16 4h14q8-13 16-4 5 8-4 16 8 22-19 24Q5 55 13 33Z"/>
+      <path fill="#E9969E" d="M11 48q21 12 42 0l-3 12H14Z"/>
+      <path d="M23 32v4m18-4v4m-13 5q4 4 8 0" fill="none"/>
+      <path fill="#A8D8E6" d="m22 19 10-9 10 9Z"/>
+    </g>
+  </symbol>
+  <symbol id="exp-umbral" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#C5ADDE" d="M10 40q0-22 22-31 22 9 22 31v8q-5 10-22 10T10 48Z"/>
+      <path fill="#F8DEC2" d="M17 38q0-15 15-20 15 5 15 20v7q-3 8-15 8t-15-8Z"/>
+      <path d="M24 34v4m16-4v4m-12 5q4 4 8 0" fill="none"/>
+      <path fill="#FFE49B" d="M51 18v12m-4-7h8m-8 3h8"/>
+      <path fill="#A7E7D4" d="m26 54 6-5 6 5-6 6Z"/>
+    </g>
+  </symbol>
+  <symbol id="exp-neon" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#A6A5EC" d="M16 21V11h10v8h12v-8h10v10q8 3 8 12v13q0 11-24 11T8 46V33q0-9 8-12Z"/>
+      <path fill="#79E4DD" d="M13 29h38v13H13Z"/>
+      <path d="M23 32v6m18-6v6m-13 10h8" fill="none"/>
+      <path d="M32 18V9" fill="none"/><circle fill="#FFB2DB" cx="32" cy="7" r="4"/>
+      <path d="M4 34v9m56-9v9" stroke="#FFB2DB" stroke-width="4"/>
+    </g>
+  </symbol>
+  <symbol id="exp-marea" viewBox="0 0 64 64">
+    <g stroke="#292342" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#83D9E5" d="M11 36q0-19 21-19 17 0 21 16l7-4-2 14-8 2Q45 58 27 56 9 54 9 43L3 37Z"/>
+      <path fill="#C9F0E7" stroke="none" d="M16 43q14-8 31 2-6 11-20 8-9-1-11-10Z"/>
+      <path d="M24 33v4m17-4v4m-12 5q4 4 8 0" fill="none"/>
+      <path d="M31 16q-9-8-6-11m6 11q9-8 6-11" fill="none" stroke="#6CB9D2"/>
+      <path fill="#F6B7CB" d="m46 19 3-6 3 6 6 2-6 3-3 6-3-6-6-3Z"/>
+    </g>
+  </symbol>
+</svg>

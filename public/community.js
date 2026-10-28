@@ -210,7 +210,7 @@
   }
 
   function goAccount(){
-    var nav = document.querySelector('nav>div[data-v="prof"]');
+    var nav = document.querySelector('nav>div[data-v="settings"]');
     if(nav) nav.click();
     setTimeout(function(){
       var box = $("accBox");
@@ -220,7 +220,7 @@
     }, 120);
   }
   function askAccount(msg){
-    if(confirm(msg + "\n\n¿Querés ir a Perfil para crear una cuenta o iniciar sesión?")) goAccount();
+    if(confirm(msg + "\n\n¿Querés ir a Configuración para crear una cuenta o iniciar sesión?")) goAccount();
   }
 
   function loadCommunity(force){

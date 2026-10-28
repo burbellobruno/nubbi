@@ -43,7 +43,7 @@ if(new URL(url).hostname!=='127.0.0.1')throw Error('Local test server required')
     else assert.ok(await page.evaluate(()=>testMedia.video)>0);
     await page.waitForFunction(()=>!document.querySelector('#nb-intro').open,{},{timeout:6500});
    }
-   await page.evaluate(()=>NubbiApp.go('prof'));await page.locator('.intro-settings summary').click();
+   await page.evaluate(()=>NubbiApp.go('settings'));await page.locator('.intro-settings summary').click();
    await page.locator('#panim').selectOption('on');assert.equal(await page.evaluate(()=>document.documentElement.dataset.anim),'on');
    await page.locator('#panim').selectOption('off');assert.equal(await page.evaluate(()=>document.documentElement.dataset.anim),'off');
    await page.locator('#welcomeSound').check();assert.equal(await page.evaluate(()=>localStorage.getItem('nubbi-intro-audio')),'on');

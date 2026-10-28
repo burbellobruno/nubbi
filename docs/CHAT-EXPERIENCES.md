@@ -1,8 +1,8 @@
 # Experiencias propias de Nubbi
 
-Pulso, Escena, Novela, Vínculo, Aventura y Universo son perfiles de escritura. Ajustan estilo, extensión y dirección narrativa. Se elige por separado uno de los motores realmente permitidos por el servidor (20B/120B), o se hereda la preferencia de Perfil. No son seis modelos entrenados ni una certificación de superioridad frente a Emochi.
+Pulso, Escena, Novela, Vínculo, Aventura, Universo, Brisa, Chispa, Aurora, Umbra, Saga, Órbita, Eco, Dueto, Enigma, Cronista, Refugio, Umbral, Neón y Marea son veinte perfiles de escritura. Ajustan estilo, extensión y dirección narrativa. Se elige por separado uno de los motores realmente permitidos por el servidor (20B/120B), o se hereda la preferencia de Configuración. No son veinte modelos entrenados ni una certificación de superioridad frente a Emochi.
 
-El acceso rápido Experiencia abre los ajustes de la historia. Los cambios pertenecen a ese chat y sus ramas; no modifican la ficha del personaje, otras conversaciones ni el modelo usado para generar personajes. Los chats existentes conservan sus preferencias hasta una elección explícita. Cambiar manualmente estilo o extensión vuelve a Personalizada.
+El acceso rápido Experiencias abre un selector con búsqueda y veinte mascotas originales. Motor y ajustes de la historia abre el panel avanzado. Los cambios pertenecen a ese chat y sus ramas; no modifican la ficha del personaje, otras conversaciones ni el modelo usado para generar personajes. Los chats existentes conservan sus preferencias hasta una elección explícita. Cambiar manualmente estilo o extensión vuelve a Personalizada.
 
 Se verifica la disponibilidad antes de usar un motor explícito. Si no puede verificarse o ya no está permitido, se muestra el error y se conserva la elección. Cuando el servidor informa un modelo diferente al solicitado, se registra esa diferencia en el mensaje y se avisa. Una ruta alternativa configurada tiene su propio motor y se advierte en el panel.
 

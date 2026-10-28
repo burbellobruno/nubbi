@@ -43,7 +43,7 @@ reflectCurrentView();
 function decorateCards(){document.querySelectorAll(".card").forEach(function(card){makeKeyboardClickable(card);var title=card.querySelector("b");if(title)card.setAttribute("aria-label","Ver personaje: "+title.textContent);});}
 var cardsPending=false;
 var catalogObserver=new MutationObserver(function(){if(cardsPending)return;cardsPending=true;requestAnimationFrame(function(){cardsPending=false;decorateCards();renderRecent();});});
-["grid","forYou","rail","fg","commChars","chl"].forEach(function(id){if($(id))catalogObserver.observe($(id),{childList:true});});
+["grid","forYou","rail","fg","commChars","chl","profileCreations","profileCollection"].forEach(function(id){if($(id))catalogObserver.observe($(id),{childList:true});});
 decorateCards();
 
 function characters(){
@@ -249,7 +249,7 @@ soundToggle.type='checkbox';soundToggle.id='welcomeSound';
 soundToggle.checked=read('nubbi-intro-audio',read('nubbi-sound','off'))==='on';
 soundToggle.onchange=function(){store('nubbi-intro-audio',soundToggle.checked?'on':'off');if(!soundToggle.checked)stopIntroAudio();};
 soundLabel.append(soundToggle,document.createTextNode(' Sonido de bienvenida'));settings.appendChild(soundLabel);
-var profile=document.querySelector('#v-prof .prof');if(profile)profile.appendChild(settings);
+var profile=document.querySelector('#v-settings .prof');if(profile)profile.appendChild(settings);
 // Automatic transition remains available on each entry without a required click.
 var pendingIntro=document.hidden;
 if(!pendingIntro)showIntro();

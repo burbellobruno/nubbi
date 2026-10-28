@@ -47,7 +47,7 @@ const report={origin:url.origin,mode:local?'local':'production',syntheticGuest:t
    const check=async()=>assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'horizontal overflow at '+width);
    await check();await page.screenshot({animations:'disabled',path:path.join(output,'home-'+width+'.png')});
    await page.locator('#grid').scrollIntoViewIfNeeded();await page.screenshot({animations:'disabled',path:path.join(output,'catalog-'+width+'.png')});
-   await page.evaluate(()=>NubbiApp.go('prof'));await check();
+   await page.evaluate(()=>NubbiApp.go('settings'));await check();
    await page.locator('#ptheme').selectOption('light');await page.waitForTimeout(250);
    await page.screenshot({animations:'disabled',path:path.join(output,'profile-light-'+width+'.png')});
    await page.locator('#ptheme').selectOption('dark');
@@ -75,8 +75,8 @@ const report={origin:url.origin,mode:local?'local':'production',syntheticGuest:t
     (async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));})(),
     new Promise((_,reject)=>setTimeout(()=>reject(Error('Service worker did not activate')),60000))
    ]));
-   const entries=await page.evaluate(async()=>{const cache=await caches.open('nubbi-v40');return(await cache.keys()).map(r=>new URL(r.url).pathname);});
-   report.offline={cache:'nubbi-v40',entries};
+   const entries=await page.evaluate(async()=>{const cache=await caches.open('nubbi-v41');return(await cache.keys()).map(r=>new URL(r.url).pathname);});
+   report.offline={cache:'nubbi-v41',entries};
    for(const asset of ['/index.html','/app.js','/fantasy.css','/fantasy-hero.png','/fantasy-portraits.png','/immersive.css','/immersive.js','/story-engine.js','/social-auth.js'])assert.ok(entries.includes(asset),'missing cached '+asset+' in '+JSON.stringify(entries));
    assert.ok(entries.every(p=>!p.startsWith('/api/')&&!/firebase|account.*json/i.test(p)),'private cache entry');
    await context.setOffline(true);const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -86,7 +86,7 @@ const report={origin:url.origin,mode:local?'local':'production',syntheticGuest:t
    assert.ok(await page.locator('#grid .card').count()>0);
    assert.equal(await page.locator('#v-home .hero').evaluate(el=>getComputedStyle(el).borderRadius),'24px');
    assert.deepEqual(errors,[]);await page.screenshot({animations:'disabled',path:path.join(output,'offline-390.png')});
-   report.offline={cache:'nubbi-v40',entries:entries.length,reloadStatus:200,pageErrors:errors,blockedWrites:blockedWrites.length};await context.close();console.log('PASS real service-worker install and offline reload v40');
+   report.offline={cache:'nubbi-v41',entries:entries.length,reloadStatus:200,pageErrors:errors,blockedWrites:blockedWrites.length};await context.close();console.log('PASS real service-worker install and offline reload v41');
   }
   if(!local)assert.ok(report.health.every(h=>h.status===200&&h.ok),'Production health endpoint failed; see smoke-report.json');
  }finally{fs.writeFileSync(path.join(output,'smoke-report.json'),JSON.stringify(report,null,2));await browser.close();}

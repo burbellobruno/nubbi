@@ -27,7 +27,7 @@
 <div id="nb-account-loading" role="status" aria-live="polite">Cargando tu espacio privado de Nubbi…</div>
 <svg class="svg-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
 <defs>
-<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="m9 3-.5 2a8 8 0 0 0-1.5.9L5 5.3 3 8.7l1.5 1.4a8 8 0 0 0 0 1.8L3 13.3l2 3.4 2-.6a8 8 0 0 0 1.5.9l.5 2h4l.5-2a8 8 0 0 0 1.5-.9l2 .6 2-3.4-1.5-1.4a8 8 0 0 0 0-1.8L19 8.7l-2-3.4-2 .6a8 8 0 0 0-1.5-.9L13 3Z"/><circle cx="11" cy="11" r="3"/></symbol>
 <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
 <symbol id="i-community" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></symbol>
 <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
@@ -102,26 +102,22 @@
 <div id="commBlocked"></div>
 </section>
 <section class="view" id="v-favs"><h2>Favoritos</h2><div class="grid" id="fg"></div></section>
-<section class="view" id="v-prof"><div class="prof">
-<section class="profile-card profile-identity" aria-label="Tu perfil">
-<div class="av" id="pav" style="background:linear-gradient(135deg,var(--ac),var(--ac2))"></div>
-<input type="file" id="pimg" accept="image/*" style="display:none">
-<input id="pn" placeholder="Tu nombre" style="text-align:center"><br><br>
-<textarea id="pb" rows="2" placeholder="Sobre vos (los personajes lo van a tener en cuenta)"></textarea>
-<div class="stats"><div><b id="s1">0</b>chats</div><div><b id="s2">0</b>creados</div><div><b id="s3">0</b>favoritos</div></div>
+<section class="view" id="v-prof"><div class="prof"><section class="profile-card profile-identity" aria-label="Tu perfil">
+<div class="profile-top-actions"><button id="openPersonas" type="button" class="g">Mis personas</button><button id="openSettings" type="button" class="g icon-btn" aria-label="Configuración" title="Configuración"><svg class="icon"><use href="#i-settings"></use></svg></button></div>
+<div class="profile-identity-main"><button class="av" id="pav" type="button" aria-label="Cambiar imagen de perfil"></button><div class="profile-identity-copy"><span class="eyebrow">TU ESPACIO EN NUBBI</span><h1 id="profileName">Tu perfil</h1><p id="profileBio" class="note">Dale voz a tu próxima historia.</p><div class="stats"><div><b id="s1">0</b>chats</div><div><b id="s2">0</b>creaciones</div><div><b id="s3">0</b>coleccionados</div></div></div></div>
+<input type="file" id="pimg" accept="image/*" hidden>
+<details id="profileEdit"><summary>Editar perfil</summary><label for="pn">Nombre</label><input id="pn" maxlength="80" placeholder="Tu nombre"><label for="pb">Biografía</label><textarea id="pb" rows="2" maxlength="1600" placeholder="Sobre vos"></textarea><p class="note">La edición es local. Tu perfil público se publica por separado desde Configuración.</p></details>
 </section>
-<section class="profile-card" aria-labelledby="personasTitle">
-<h3 id="personasTitle">Tus personas</h3>
-<div id="plist"></div>
-<button class="g" id="newPersona" style="margin:8px 0">+ Nueva persona</button>
-</section>
-<section class="profile-card" aria-labelledby="accountTitle">
+<section class="profile-library" aria-label="Tu biblioteca"><div id="profileTabs" role="tablist" aria-label="Contenido del perfil"><button role="tab" id="profileTab-creations" data-profile-tab="creations" aria-controls="profileCreations" aria-selected="true" type="button">Creaciones</button><button role="tab" id="profileTab-collection" data-profile-tab="collection" aria-controls="profileCollection" aria-selected="false" tabindex="-1" type="button">Colección</button><button role="tab" id="profileTab-gallery" data-profile-tab="gallery" aria-controls="profileGallery" aria-selected="false" tabindex="-1" type="button">Galería</button></div><div id="profileCreations" role="tabpanel" aria-labelledby="profileTab-creations" class="grid"></div><div id="profileCollection" role="tabpanel" aria-labelledby="profileTab-collection" class="grid" hidden></div><div id="profileGallery" role="tabpanel" aria-labelledby="profileTab-gallery" hidden></div></section>
+<div class="profile-create-bar"><button id="profileCreate" type="button"><svg class="icon"><use href="#i-plus"></use></svg><span>Crear personaje</span></button></div>
+</div></section>
+<section class="view" id="v-settings"><div class="settings-heading"><button class="g" id="settingsBack" type="button">← Perfil</button><div><span class="eyebrow">TU NUBBI, A TU MANERA</span><h2>Configuración</h2><p class="note">Cuenta, preferencias y datos, cada cosa en su lugar.</p></div></div><div class="prof settings-layout"><section class="profile-card" aria-labelledby="accountTitle">
 <h3 id="accountTitle">Cuenta</h3>
 <div class="account" id="accBox">
 <div class="acc-status" id="accStatus">Invitado · tus datos se guardan en este dispositivo</div>
 <div id="accGuest">
-<input id="accEmail" type="email" placeholder="Email" autocomplete="email" inputmode="email">
-<input id="accPass" type="password" placeholder="Contraseña (mínimo 6)" autocomplete="current-password">
+<label for="accEmail">Correo electrónico</label><input id="accEmail" type="email" placeholder="Email" autocomplete="email" inputmode="email">
+<label for="accPass">Contraseña</label><input id="accPass" type="password" placeholder="Contraseña (mínimo 6)" autocomplete="current-password">
 <div class="acc-btns">
 <button id="accRegister" type="button">Crear cuenta</button>
 <button class="g" id="accLogin" type="button">Iniciar sesión</button>
@@ -184,9 +180,7 @@
 <label>Leer respuestas automáticamente</label><select id="pvoiceauto"><option value="off">No</option><option value="on">Sí</option></select>
 <button class="g" id="pvoicetest" type="button"><svg class="icon"><use href="#i-speaker"></use></svg><span>Probar voz</span></button>
 </div>
-</section>
-<p class="note">Confirmo que tengo 18 años o más. Todos los personajes son adultos.</p>
-</div></section>
+</section><p class="note">Solo para mayores de 18 años. Todos los personajes son adultos.</p></div></section>
 </div>
 <nav>
 <div class="brand"><img src="logo.png" alt=""><b>Nubbi</b><small>PERSONAJES QUE<br>HACEN SENTIR</small></div>
@@ -196,6 +190,7 @@
 <div class="plus" id="plus" aria-label="Crear personaje"><span><svg class="icon"><use href="#i-plus"></use></svg></span><em>Crear</em></div>
 <div data-v="favs" aria-label="Favoritos"><svg class="icon"><use href="#i-heart"></use></svg><span class="l">Favoritos</span></div>
 <div data-v="prof" aria-label="Perfil"><svg class="icon"><use href="#i-user"></use></svg><span class="l">Perfil</span></div>
+<div id="settingsNav" data-v="settings" aria-label="Configuración"><svg class="icon"><use href="#i-settings"></use></svg><span class="l">Configuración</span></div>
 </nav>
 
 <div id="chat">
@@ -280,6 +275,13 @@
 </div>
 </div>
 </dialog>
+<dialog id="personasdlg" aria-labelledby="personasTitle"><section class="profile-card" aria-labelledby="personasTitle">
+<h3 id="personasTitle">Tus personas</h3>
+<div id="plist"></div>
+<button class="g" id="newPersona" style="margin:8px 0">+ Nueva persona</button>
+</section><button class="g" id="closePersonas" type="button">Listo</button></dialog>
+<dialog id="profileImageViewer" aria-label="Imagen de tu galería"><img id="profileFullImage" alt="Imagen guardada en tu galería"><button class="g" id="closeProfileImage" type="button">Cerrar</button></dialog>
+<dialog id="experiencePicker" aria-labelledby="experiencePickerTitle"><header class="experience-picker-header"><span class="eyebrow">ENCONTRÁ EL RITMO DE TU HISTORIA</span><h2 id="experiencePickerTitle">¿Cómo querés vivir esta escena?</h2><p class="note">Experiencias propias que conservan la personalidad de tu personaje.</p></header><label class="sr-only" for="experienceSearch">Buscar experiencias</label><input id="experienceSearch" type="search" placeholder="Buscá por nombre o tipo de historia…"><div id="experiencePickerStatus" role="status" class="note"></div><div id="experienceCards"></div><footer class="experience-picker-footer"><p class="note">Son perfiles de escritura sobre los motores disponibles; elegir uno no cambia tu motor ni tu historial.</p><button id="experienceAdvanced" type="button" class="g">Motor y ajustes de la historia</button><button id="closeExperiencePicker" type="button" class="g">Cerrar</button></footer></dialog>
 <dialog id="pdlg" aria-labelledby="pdlgTitle" aria-describedby="pdlgDescription">
 <h3 id="pdlgTitle" style="margin:0">Nueva persona</h3><div id="pdlgDescription" class="note">Representás al usuario dentro de la historia</div>
 <div class="persona-image-editor"><div class="persona-image-frame"><img id="pimagePreview" alt="Imagen de esta persona" hidden><span id="pimagePlaceholder" aria-hidden="true">👤</span></div><div class="persona-image-controls"><label for="pimage">Imagen de tu persona</label><input id="pimage" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="pimageHelp pimageStatus"><p class="note" id="pimageHelp">Elegí una imagen tuya o una imagen de IA ya descargada. JPEG, PNG o WebP, hasta 8 MB. Se recorta al centro y se prepara en este dispositivo; no se envía a un generador. Se incluye en tus respaldos si sincronizás manualmente.</p><button class="g" id="premoveimage" type="button" disabled>Quitar imagen</button></div></div>
