@@ -768,3 +768,6 @@ nav .plus span{transition:transform .25s var(--nb-ease),box-shadow .25s var(--nb
 @media(max-width:400px){.profile-identity-main{align-items:flex-start;flex-direction:column;gap:12px}.profile-identity-copy{width:100%}#v-prof .profile-identity .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}#v-prof .profile-identity .stats>div{min-width:0;padding:9px 3px;overflow-wrap:anywhere}}
 #v-settings #accGuest>label{display:block;margin:12px 0 6px;font-size:12px}
 #profileGallery .profile-gallery-item{display:block}#profileGallery .profile-gallery-item img{width:100%;height:auto;aspect-ratio:1;object-fit:cover}
+/* A new profile uses the full library width and one clear creation action. */
+#profileCreations>.empty,#profileCollection>.empty{grid-column:1/-1;width:100%;max-width:none;min-height:180px}
+#profileCreations>.empty button{display:none}
