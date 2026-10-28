@@ -6,7 +6,7 @@ vm.createContext(context);vm.runInContext(source.slice(source.indexOf('function 
 const target=element('div');
 context.fmt(target,'*La lluvia golpeó la ventana.*\n\n«Todavía no», dijo Mara. **Esperó.**\n\n<img src=x onerror=alert(1)>');
 assert.equal(target.children.length,3);
-assert.ok(target.children.every(x=>x.tag==='p'&&x.className==='story-paragraph'));
+assert.ok(target.children.every(x=>x.tag==='p'&&x.className.split(' ').includes('story-paragraph')));
 assert.equal(target.children[0].children[0].tag,'i');
 assert.equal(target.children[1].children[1].tag,'b');
 assert.equal(target.children[2].children[0].tag,'#text','model HTML must remain inert text');
@@ -15,13 +15,13 @@ assert.equal(target.children.length,1,'partial streaming output remains readable
 context.fmt(target,'');assert.equal(target.children.length,0);
 const story=context.window.NubbiStory;
 let blocks=story.formatNarrative('*Se acercó, sin terminar la marca.\n—No sos un fastidio.\n\n*Se reclinó.*\n\n—Dime, ¿qué te molesta?*');
-assert.equal(blocks[0][0].kind,'action');assert.ok(blocks[0].some(p=>p.kind==='text'&&p.text.includes('—No sos un fastidio.')),'speech must escape an unfinished action');
-assert.ok(blocks[0].filter(p=>p.kind==='action').every(p=>!p.text.includes('—No sos')));assert.equal(blocks[2].map(p=>p.text).join(''),'—Dime, ¿qué te molesta?','orphan closing marker on speech is not shown');
+assert.equal(blocks[0][0].kind,'action');assert.ok(blocks[1].some(p=>p.kind==='text'&&p.text.includes('—No sos un fastidio.')),'speech must escape an unfinished action');
+assert.ok(blocks[0].filter(p=>p.kind==='action').every(p=>!p.text.includes('—No sos')));assert.equal(blocks[3].map(p=>p.text).join(''),'—Dime, ¿qué te molesta?','orphan closing marker on speech is not shown');
 assert.deepEqual(story.formatNarrative('*Acción en\nvarias líneas.*')[0],[{kind:'action',text:'Acción en'},{kind:'text',text:'\n'},{kind:'action',text:'varias líneas.'}]);
 assert.equal(story.formatNarrative('2 * 3 = 6')[0].map(p=>p.text).join(''),'2 * 3 = 6','literal multiplication preserved');
 assert.equal(story.formatNarrative('Una estrella literal: \\*')[0].map(p=>p.text).join(''),'Una estrella literal: *');
 assert.equal(story.formatNarrative('Una frase sin marcadores.')[0][0].kind,'text','unmarked prose is not guessed or rewritten');
 const sample='*Lee Whon arqueó una ceja.*\n\n—No, Rvy, no eres un fastidio.\n\n*Se reclinó en la silla, cruzando los brazos.*\n\n—No me gusta dejar cosas sin resolver.';
-context.fmt(target,sample);assert.equal(target.children.length,4);assert.equal(target.children[0].children[0].tag,'i');assert.equal(target.children[1].children[0].tag,'#text');assert.equal(target.children[2].children[0].tag,'i');assert.equal(target.children[3].children[0].tag,'#text');
+context.fmt(target,sample);assert.equal(target.children.length,4);assert.equal(target.children[0].children[0].tag,'i');assert.equal(target.children[1].children[0].tag,'#text');assert.ok(!target.children[1].className.includes('story-action'));assert.equal(target.children[2].children[0].tag,'i');assert.equal(target.children[3].children[0].tag,'#text');
 assert.match(story.instructions({}),/Separación de acción y voz/);assert.match(story.instructions({}),/asteriscos cerrados/);
 console.log('PASS narrative actions/speech boundaries, multiline and malformed markers, inert HTML, literal stars and streaming fragments');

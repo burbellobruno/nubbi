@@ -69,11 +69,11 @@ function instructions(config){
 }
 // Render-only Markdown subset. Speech boundaries never inherit an unfinished action.
 function formatNarrative(value){
- return String(value||'').replace(/\r\n?/g,'\n').split(/\n[ \t]*\n/).filter(function(p){return p.trim();}).map(function(paragraph){
+ var blocks=[];String(value||'').replace(/\r\n?/g,'\n').split(/\n[ \t]*\n/).filter(function(p){return p.trim();}).forEach(function(paragraph){
   var parts=[],action=false;function add(kind,value){if(!value)return;var last=parts[parts.length-1];if(last&&last.kind===kind)last.text+=value;else parts.push({kind:kind,text:value});}
   paragraph.split('\n').forEach(function(line,lineIndex){
-   var speech=/^\s*\*?\s*[—–]\s*\S/.test(line);if(speech){action=false;line=line.replace(/^(\s*)\*\s*(?=[—–])/,'$1');}
-   if(lineIndex)add('text','\n');
+   var speech=/^\s*\*?\s*[—–]\s*\S/.test(line);if(parts.length&&(speech||!action&&/^\s*\*(?!\*)\S/.test(line))){blocks.push(parts);parts=[];}if(speech){action=false;line=line.replace(/^(\s*)\*\s*(?=[—–])/,'$1');}
+   if(lineIndex&&parts.length)add('text','\n');
    for(var i=0;i<line.length;){
     if(line[i]==='\\'&&line[i+1]==='*'){add(action?'action':'text','*');i+=2;continue;}
     if(line.slice(i,i+2)==='**'){var end=line.indexOf('**',i+2);if(end>i+2){add(action?'action':'strong',line.slice(i+2,end));i=end+2;continue;}add(action?'action':'text','**');i+=2;continue;}
@@ -84,8 +84,8 @@ function formatNarrative(value){
     }
     add(action?'action':'text',line[i]);i++;
    }
-  });return parts;
- });
+  });if(parts.length)blocks.push(parts);
+ });return blocks;
 }
 function limitSystem(system,max){
  system=text(system,100000);

@@ -87,7 +87,7 @@
 /* Reading rhythm and the private persona portrait editor. */
 #msgs .story-paragraph{margin:0 0 1em;white-space:pre-wrap;overflow-wrap:anywhere}
 #msgs .story-paragraph:last-child{margin-bottom:0}
-#msgs .story-paragraph:has(>i.act:only-child){padding-left:12px;border-left:2px solid var(--bd)}
+#msgs .story-paragraph.story-action{padding-left:12px;border-left:2px solid var(--bd)}
 #pdlg{width:min(560px,calc(100vw - 28px));padding:24px;box-sizing:border-box;max-height:90dvh;overflow:auto}
 #pdlg :is(input,textarea){box-sizing:border-box;max-width:100%}
 #pdlgTitle,#pdlgDescription{padding-right:42px}
