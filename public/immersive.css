@@ -124,3 +124,4 @@
 #relationshipPanel summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700}
 #relationshipPanel details>div{padding-top:12px}
 #mdlg>.drow:last-child{position:sticky;bottom:0;background:var(--bg);padding-top:12px;padding-bottom:6px;margin-bottom:0;z-index:2;box-shadow:0 -8px 18px var(--bg)}
+#mdlg>h3,#mdlg>h3+.note{padding-right:38px}
