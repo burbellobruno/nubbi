@@ -153,3 +153,9 @@ assert.ok(app.includes('g.storyCanon=$("storyCanon").value.trim().slice(0,1600)'
  assert.equal(captured.storyMessages.length,2);
  console.log('Story engine: character identity/voice/emotional continuity, styles, agency, canon, bounded roles/UTF-8 payload, per-chat lengths and character fallback: OK');
 })().catch(error=>{console.error(error);process.exitCode=1;});
+
+// Per-turn writing focus is allowlisted and does not rewrite the cast/history/model.
+const focusHistory=[{role:'user',content:'Espero junto a la mesa.'}],focusBefore=JSON.stringify(focusHistory);
+const focused=story.buildPrompt('PERSONALIDAD ORIGINAL',focusHistory,{characterName:'Nico',experience:'chispa'});
+assert.ok(focused.messages[0].content.includes('PERSONALIDAD ORIGINAL'));assert.ok(focused.messages[0].content.includes('Foco de escritura (Chispa)'));assert.equal(JSON.stringify(focusHistory),focusBefore);
+for(const experience of ['__proto__','constructor','UNKNOWN',null,{}])assert.ok(!story.buildPrompt('PERSONALIDAD ORIGINAL',focusHistory,{experience}).messages[0].content.includes('Foco de escritura'));

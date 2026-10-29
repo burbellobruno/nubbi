@@ -1,0 +1,38 @@
+{
+  "model": "openai/gpt-oss-120b",
+  "source": "candidate system prompts and current story-engine, same model as baseline",
+  "sourceHashes": {
+    "app.js": "c6aac821fcf75e417a5b3e979fa1cf7fc530fcd9e4a892b7a98ad2273d63d90b",
+    "story-engine.js": "c327c6f73c68e62d3b6c81735e46663d86a7c2a14505c4ae9698e91d6c30844b"
+  },
+  "status": "complete",
+  "cases": [
+    {
+      "id": "replay-turn-5",
+      "profile": "escena",
+      "requestedTokens": 1100,
+      "text": "[neutral]\n\n*Frunce el ceño ligeramente, mirando a Sol con la mirada fija en la lámpara.*  \n—No recuerdo haber venido antes a este faro. Si hubo alguna visita previa, no la tengo anotada en mis registros. Ahora, mientras revisamos la mecha, podemos ir viendo si hay algo que necesite atención.",
+      "words": 49,
+      "serverModel": "openai/gpt-oss-120b",
+      "upstreamModel": "openai/gpt-oss-120b",
+      "usage": {
+        "queue_time": 0.174999007,
+        "prompt_tokens": 3341,
+        "prompt_time": 0.179945581,
+        "completion_tokens": 90,
+        "completion_time": 0.187487393,
+        "total_tokens": 3431,
+        "total_time": 0.367432974,
+        "prompt_tokens_details": {
+          "cached_tokens": 256
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 11
+        }
+      },
+      "finish": "stop",
+      "at": "2026-10-29T02:42:11.284Z"
+    }
+  ],
+  "errors": []
+}

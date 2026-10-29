@@ -1,0 +1,222 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "source": "candidate system prompts and current story-engine, same model as baseline",
+  "sourceHashes": {
+    "app.js": "a7f0ec801c94a83dff5885c72f42a2fab2436e8eac1bf8072e2dff19472bd9d4",
+    "story-engine.js": "df4ae515784412fcc73235668dc10c21d6bc7a63e1f3e99f0eed30305164f22f"
+  },
+  "status": "complete",
+  "cases": [
+    {
+      "id": "replay-turn-4",
+      "profile": "escena",
+      "requestedTokens": 1100,
+      "text": "[neutral]  \n\n*Se inclina sobre la lámpara, con la mano firme sobre el soporte de la mecha, sin tocarla.*\n\n—Podemos comprobar la posición de la mecha y el estado del aceite. Si el aceite está seco o la mecha está demasiado corta, la luz será tenue.  \n\n*Observa la mecha, mide su longitud con el dedo, y revisa el nivel del aceite en el recipiente sin abrirlo.*  \n\n—Así podemos ajustar sin romper nada.  \n",
+      "words": 71,
+      "serverModel": "openai/gpt-oss-20b",
+      "upstreamModel": "openai/gpt-oss-20b",
+      "usage": {
+        "queue_time": 0.179299159,
+        "prompt_tokens": 3383,
+        "prompt_time": 0.242247674,
+        "completion_tokens": 136,
+        "completion_time": 0.15646262,
+        "total_tokens": 3519,
+        "total_time": 0.398710294,
+        "completion_tokens_details": {
+          "reasoning_tokens": 25
+        }
+      },
+      "finish": "stop",
+      "at": "2026-10-29T02:43:36.590Z"
+    },
+    {
+      "id": "replay-turn-12",
+      "profile": "escena",
+      "requestedTokens": 1100,
+      "text": "[neutral]  \n\n—La llave está en tu mano, no la tengo.",
+      "words": 10,
+      "serverModel": "openai/gpt-oss-20b",
+      "upstreamModel": "openai/gpt-oss-20b",
+      "usage": {
+        "queue_time": 0.215537661,
+        "prompt_tokens": 4262,
+        "prompt_time": 0.741103765,
+        "completion_tokens": 52,
+        "completion_time": 0.05371868,
+        "total_tokens": 4314,
+        "total_time": 0.794822445,
+        "prompt_tokens_details": {
+          "cached_tokens": 256
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 27
+        }
+      },
+      "finish": "stop",
+      "at": "2026-10-29T02:44:12.992Z"
+    },
+    {
+      "id": "replay-turn-14",
+      "profile": "escena",
+      "requestedTokens": 1100,
+      "text": "[enojado]  \n\n*Se aparta ligeramente del mapa, con la mano en el codo del mapa.*\n\n—No voy a dar esa información.  \n*Se vuelve a la lámpara, enfocándose en el freno.*  \n\n—Si necesitás que revisemos algo más de la lámpara, dime.",
+      "words": 39,
+      "serverModel": "openai/gpt-oss-20b",
+      "upstreamModel": "openai/gpt-oss-20b",
+      "usage": {
+        "queue_time": 0.062651013,
+        "prompt_tokens": 4379,
+        "prompt_time": 0.297675439,
+        "completion_tokens": 79,
+        "completion_time": 0.088360895,
+        "total_tokens": 4458,
+        "total_time": 0.386036334,
+        "completion_tokens_details": {
+          "reasoning_tokens": 5
+        }
+      },
+      "finish": "stop",
+      "at": "2026-10-29T02:44:48.893Z"
+    },
+    {
+      "id": "replay-turn-16",
+      "profile": "escena",
+      "requestedTokens": 1100,
+      "text": "[neutral]  \n\n—Solo sabemos que está cerrado y que no podemos ver lo que contiene sin abrirlo.  \n*Se queda a la vista de la mochila, sin tocarla.*",
+      "words": 26,
+      "serverModel": "openai/gpt-oss-20b",
+      "upstreamModel": "openai/gpt-oss-20b",
+      "usage": {
+        "queue_time": 0.112371426,
+        "prompt_tokens": 4520,
+        "prompt_time": 0.226457634,
+        "completion_tokens": 70,
+        "completion_time": 0.071725262,
+        "total_tokens": 4590,
+        "total_time": 0.298182896,
+        "completion_tokens_details": {
+          "reasoning_tokens": 24
+        }
+      },
+      "finish": "stop",
+      "at": "2026-10-29T02:45:24.684Z"
+    },
+    {
+      "id": "replay-turn-30",
+      "profile": "enigma",
+      "requestedTokens": 1100,
+      "text": "[neutral]  \n\n*Separa la llave de su mano y la coloca sobre la mesa, sin moverla.*\n\n—Cobre, yo llevo la llave de bronce que me entregaste y el mapa del faro.  \n—Tú tienes la mochila cerrada, el cuaderno azul y el sobre cerrado dentro de la mochila.  \n*Mantiene la lámpara encendida y la puerta cerrada, sin hacer más nada.*",
+      "words": 58,
+      "serverModel": "openai/gpt-oss-20b",
+      "upstreamModel": "openai/gpt-oss-20b",
+      "usage": {
+        "queue_time": 0.083580772,
+        "prompt_tokens": 4637,
+        "prompt_time": 0.233825311,
+        "completion_tokens": 121,
+        "completion_time": 0.153557947,
+        "total_tokens": 4758,
+        "total_time": 0.387383258,
+        "completion_tokens_details": {
+          "reasoning_tokens": 24
+        }
+      },
+      "finish": "stop",
+      "at": "2026-10-29T02:46:00.525Z"
+    },
+    {
+      "id": "profile-pulso",
+      "profile": "pulso",
+      "requestedTokens": 600,
+      "text": "[neutral]  \n—Voy a revisar el mapa y asegurarme de que no haya más fallas antes de que salga el sol.  \n*Se inclina sobre el mapa, trazando con el dedo las líneas marcadas.*",
+      "words": 32,
+      "serverModel": "openai/gpt-oss-20b",
+      "upstreamModel": "openai/gpt-oss-20b",
+      "usage": {
+        "queue_time": 0.111574166,
+        "prompt_tokens": 2839,
+        "prompt_time": 0.141992275,
+        "completion_tokens": 64,
+        "completion_time": 0.065461302,
+        "total_tokens": 2903,
+        "total_time": 0.207453577,
+        "completion_tokens_details": {
+          "reasoning_tokens": 9
+        }
+      },
+      "finish": "stop",
+      "at": "2026-10-29T02:46:36.195Z"
+    },
+    {
+      "id": "profile-chispa",
+      "profile": "chispa",
+      "requestedTokens": 1100,
+      "text": "[neutral]  \n*Separa el mapa del resto de los objetos y lo coloca sobre la mesa, alineando las marcas borradas con la luz que empieza a filtrarse por la ventana.*\n\n—Miro las marcas y veo que corresponden a las rutas de la brújula del faro. Si el tiempo lo permite, puedo marcar la ruta que nos lleve a la salida del agua antes de que el sol nos deje sin sombra. No es urgente, pero me gusta tener un plan.",
+      "words": 79,
+      "serverModel": "openai/gpt-oss-20b",
+      "upstreamModel": "openai/gpt-oss-20b",
+      "usage": {
+        "queue_time": 0.166846604,
+        "prompt_tokens": 2882,
+        "prompt_time": 0.144187329,
+        "completion_tokens": 129,
+        "completion_time": 0.132592295,
+        "total_tokens": 3011,
+        "total_time": 0.276779624,
+        "completion_tokens_details": {
+          "reasoning_tokens": 18
+        }
+      },
+      "finish": "stop",
+      "at": "2026-10-29T02:47:11.998Z"
+    },
+    {
+      "id": "profile-novela",
+      "profile": "novela",
+      "requestedTokens": 1800,
+      "text": "[neutral]  \n*Se ajusta la lámpara de aceite, el brillo ya se percibe en el interior del faro, y el sonido del viento se vuelve más claro. Nico observa el mapa, la tinta aún húmeda, y las tres marcas borradas que aparecen en el margen.*\n\n—Miro las marcas, pero no veo nada que indique una ruta clara.  \n—El tiempo que nos queda es suficiente para revisar la estructura del faro, asegurarnos de que todo esté en orden antes del amanecer.  \n—Si algo no está bien, podríamos perder la oportunidad de mantener la luz en el puerto.  \n\n*Con la mano sobre el mapa, Nico marca suavemente el punto donde la lámpara se alinea con el horizonte, como si estuviera trazando una ruta invisible.*",
+      "words": 121,
+      "serverModel": "openai/gpt-oss-20b",
+      "upstreamModel": "openai/gpt-oss-20b",
+      "usage": {
+        "queue_time": 0.112001087,
+        "prompt_tokens": 2857,
+        "prompt_time": 0.15576659,
+        "completion_tokens": 195,
+        "completion_time": 0.212644644,
+        "total_tokens": 3052,
+        "total_time": 0.368411234,
+        "completion_tokens_details": {
+          "reasoning_tokens": 23
+        }
+      },
+      "finish": "stop",
+      "at": "2026-10-29T02:47:47.898Z"
+    },
+    {
+      "id": "profile-enigma",
+      "profile": "enigma",
+      "requestedTokens": 1800,
+      "text": "[pensativo]  \n\n*Separa la mano del mapa y lo vuelve a colocar sobre la mesa, dejando una ligera sombra sobre las marcas borradas.*  \n\n—Veo esas marcas, pero no sé si son un indicio o solo un accidente. Podría intentar leer el mapa con la luz de la lámpara y ver si algo se revela con el brillo.  \n\n*Levanta la lámpara, ajusta el foco y la dirige hacia las marcas, observando el reflejo en el papel.*  \n\n—Si algo se destaca, podríamos usarlo como guía. Si no, quizá sea mejor esperar a que el amanecer nos dé claridad.  \n\n*Se inclina ligeramente, señalando el borde del mapa donde las marcas están, como si invitara a que el usuario lo inspeccione.*  ",
+      "words": 116,
+      "serverModel": "openai/gpt-oss-20b",
+      "upstreamModel": "openai/gpt-oss-20b",
+      "usage": {
+        "queue_time": 0.111852333,
+        "prompt_tokens": 2879,
+        "prompt_time": 0.154761007,
+        "completion_tokens": 195,
+        "completion_time": 0.200862163,
+        "total_tokens": 3074,
+        "total_time": 0.35562317,
+        "completion_tokens_details": {
+          "reasoning_tokens": 23
+        }
+      },
+      "finish": "stop",
+      "at": "2026-10-29T02:48:23.751Z"
+    }
+  ],
+  "errors": []
+}
