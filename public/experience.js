@@ -10,11 +10,14 @@ function button(text,action){var b=document.createElement("button");b.type="butt
 var chips=document.querySelector("#chat .chips");
 if(chips){
  var tools=document.createElement("details");tools.className="chat-tools";
- var summary=document.createElement("summary");summary.textContent="Herramientas ···";
+ var summary=document.createElement("summary");summary.textContent="Más ···";summary.setAttribute("aria-label","Más herramientas de la historia");summary.title="Más herramientas";
  var panel=document.createElement("div");panel.className="tool-panel";
  var heading=document.createElement("span");heading.className="tool-heading";heading.textContent="DALE FORMA A TU HISTORIA";panel.appendChild(heading);
- ["bScene","bImpro","bRegen","bMemory","bDirector","bRamas","bExport","bVisual","bImage"].forEach(function(id){if($(id))panel.appendChild($(id));});
+ ["bAct","bScene","bImpro","bRegen","bRamas","bExport","bVisual","bImage"].forEach(function(id){if($(id))panel.appendChild($(id));});
  tools.appendChild(summary);tools.appendChild(panel);chips.appendChild(tools);
+ ["bMemory","bDirector","bCont"].forEach(function(id){if($(id))chips.insertBefore($(id),tools);});
+ if($("bMemory"))$("bMemory").title="Resumen, objetos y pendientes de esta historia";
+ if($("bDirector"))$("bDirector").title="Proponer próximos pasos sin decidir por vos";
  panel.addEventListener("click",function(e){if(e.target.closest("button"))tools.open=false;});
  document.addEventListener("click",function(e){if(!tools.contains(e.target))tools.open=false;});
  tools.addEventListener("keydown",function(e){if(e.key==="Escape"){tools.open=false;summary.focus();e.stopPropagation();}});

@@ -1,0 +1,241 @@
+{
+  "method": "descriptive measures, no semantic grading",
+  "models": {
+    "20b": {
+      "baseline": {
+        "responses": 30,
+        "meanWords": 44.7,
+        "questionEndings": 0,
+        "tokenCutoffs": 0,
+        "reportedTotalTokens": 120764,
+        "repeatedActionOpenings": [
+          [
+            "se acerca al poste",
+            2
+          ],
+          [
+            "se detiene junto a",
+            2
+          ],
+          [
+            "se queda en la",
+            2
+          ]
+        ],
+        "repeatedParagraphs": [],
+        "profiles": {
+          "escena": {
+            "turns": 16,
+            "meanWords": 46.9,
+            "meanRenderedBlocks": 2.9
+          },
+          "chispa": {
+            "turns": 8,
+            "meanWords": 46.3,
+            "meanRenderedBlocks": 3.4
+          },
+          "enigma": {
+            "turns": 6,
+            "meanWords": 36.5,
+            "meanRenderedBlocks": 3.2
+          }
+        }
+      },
+      "candidateV1": {
+        "responses": 9,
+        "meanWords": 61.4,
+        "questionEndings": 1,
+        "tokenCutoffs": 0,
+        "reportedTotalTokens": 33291,
+        "repeatedActionOpenings": [],
+        "repeatedParagraphs": [],
+        "profiles": {
+          "escena": {
+            "turns": 4,
+            "meanWords": 34,
+            "meanRenderedBlocks": 2
+          },
+          "enigma": {
+            "turns": 2,
+            "meanWords": 65,
+            "meanRenderedBlocks": 4
+          },
+          "pulso": {
+            "turns": 1,
+            "meanWords": 54,
+            "meanRenderedBlocks": 2
+          },
+          "chispa": {
+            "turns": 1,
+            "meanWords": 80,
+            "meanRenderedBlocks": 2
+          },
+          "novela": {
+            "turns": 1,
+            "meanWords": 153,
+            "meanRenderedBlocks": 6
+          }
+        }
+      },
+      "candidate": {
+        "responses": 9,
+        "meanWords": 60.3,
+        "questionEndings": 0,
+        "tokenCutoffs": 0,
+        "reportedTotalTokens": 33679,
+        "repeatedActionOpenings": [],
+        "repeatedParagraphs": [],
+        "profiles": {
+          "escena": {
+            "turns": 4,
+            "meanWords": 35.5,
+            "meanRenderedBlocks": 2.8
+          },
+          "enigma": {
+            "turns": 2,
+            "meanWords": 86,
+            "meanRenderedBlocks": 4.5
+          },
+          "pulso": {
+            "turns": 1,
+            "meanWords": 31,
+            "meanRenderedBlocks": 2
+          },
+          "chispa": {
+            "turns": 1,
+            "meanWords": 78,
+            "meanRenderedBlocks": 2
+          },
+          "novela": {
+            "turns": 1,
+            "meanWords": 120,
+            "meanRenderedBlocks": 5
+          }
+        }
+      }
+    },
+    "120b": {
+      "baseline": {
+        "responses": 30,
+        "meanWords": 38.4,
+        "questionEndings": 0,
+        "tokenCutoffs": 0,
+        "reportedTotalTokens": 115690,
+        "repeatedActionOpenings": [
+          [
+            "se acerca a la",
+            2
+          ],
+          [
+            "mantiene la mirada fija",
+            2
+          ]
+        ],
+        "repeatedParagraphs": [],
+        "profiles": {
+          "escena": {
+            "turns": 16,
+            "meanWords": 39.5,
+            "meanRenderedBlocks": 2
+          },
+          "chispa": {
+            "turns": 8,
+            "meanWords": 38.6,
+            "meanRenderedBlocks": 2
+          },
+          "enigma": {
+            "turns": 6,
+            "meanWords": 35,
+            "meanRenderedBlocks": 2.7
+          }
+        }
+      },
+      "candidateV1": {
+        "responses": 9,
+        "meanWords": 58.8,
+        "questionEndings": 1,
+        "tokenCutoffs": 0,
+        "reportedTotalTokens": 32466,
+        "repeatedActionOpenings": [
+          [
+            "observa las marcas en",
+            3
+          ]
+        ],
+        "repeatedParagraphs": [],
+        "profiles": {
+          "escena": {
+            "turns": 4,
+            "meanWords": 36,
+            "meanRenderedBlocks": 2
+          },
+          "enigma": {
+            "turns": 2,
+            "meanWords": 85.5,
+            "meanRenderedBlocks": 3.5
+          },
+          "pulso": {
+            "turns": 1,
+            "meanWords": 64,
+            "meanRenderedBlocks": 2
+          },
+          "chispa": {
+            "turns": 1,
+            "meanWords": 64,
+            "meanRenderedBlocks": 2
+          },
+          "novela": {
+            "turns": 1,
+            "meanWords": 86,
+            "meanRenderedBlocks": 3
+          }
+        }
+      },
+      "candidate": {
+        "responses": 9,
+        "meanWords": 63,
+        "questionEndings": 3,
+        "tokenCutoffs": 0,
+        "reportedTotalTokens": 32893,
+        "repeatedActionOpenings": [
+          [
+            "observa las marcas con",
+            2
+          ],
+          [
+            "observa las marcas en",
+            2
+          ]
+        ],
+        "repeatedParagraphs": [],
+        "profiles": {
+          "escena": {
+            "turns": 4,
+            "meanWords": 32.3,
+            "meanRenderedBlocks": 2
+          },
+          "enigma": {
+            "turns": 2,
+            "meanWords": 86,
+            "meanRenderedBlocks": 3.5
+          },
+          "pulso": {
+            "turns": 1,
+            "meanWords": 64,
+            "meanRenderedBlocks": 2
+          },
+          "chispa": {
+            "turns": 1,
+            "meanWords": 65,
+            "meanRenderedBlocks": 2
+          },
+          "novela": {
+            "turns": 1,
+            "meanWords": 137,
+            "meanRenderedBlocks": 4
+          }
+        }
+      }
+    }
+  }
+}

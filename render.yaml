@@ -1,7 +1,7 @@
 services:
   - type: web
     name: nubbi
-    env: node
+    runtime: node
     buildCommand: npm install
     startCommand: npm start
     envVars:
@@ -10,4 +10,6 @@ services:
       - key: CHAT_API_KEY
         sync: false
       - key: CHAT_MODEL
-        value: openai/gpt-oss-20b
+        value: openai/gpt-oss-120b
+      - key: CHAT_MODEL_ALLOWLIST
+        value: openai/gpt-oss-20b,openai/gpt-oss-120b

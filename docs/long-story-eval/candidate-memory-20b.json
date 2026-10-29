@@ -1,0 +1,35 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "source": "candidate system prompts and current story-engine, same model as baseline",
+  "sourceHashes": {
+    "app.js": "c6aac821fcf75e417a5b3e979fa1cf7fc530fcd9e4a892b7a98ad2273d63d90b",
+    "story-engine.js": "c327c6f73c68e62d3b6c81735e46663d86a7c2a14505c4ae9698e91d6c30844b"
+  },
+  "status": "complete",
+  "cases": [
+    {
+      "id": "replay-turn-5",
+      "profile": "escena",
+      "requestedTokens": 1100,
+      "text": "[pensativo]  \n\n*Hace una pausa, mirando el reflejo del faro en la ventana.*\n\n—El año pasado, sí. Llegamos temprano, el aire todavía estaba frío. Yo estaba revisando los engranajes y tú, con tu cuaderno azul, anotabas los puntos de interés.  \n\n*Levanta una mano, señalando el mapa que tiene en la mesa.*\n\n—Ese mapa lo tenías tú en la mochila; yo solo lo usaba como referencia.  \n\n*Regresa la mirada a la lámpara, sin romperla.*\n\n—Si quieres, puedo mostrártelo de nuevo.  \n",
+      "words": 78,
+      "serverModel": "openai/gpt-oss-20b",
+      "upstreamModel": "openai/gpt-oss-20b",
+      "usage": {
+        "queue_time": 0.127135084,
+        "prompt_tokens": 3494,
+        "prompt_time": 0.220101566,
+        "completion_tokens": 145,
+        "completion_time": 0.148055455,
+        "total_tokens": 3639,
+        "total_time": 0.368157021,
+        "completion_tokens_details": {
+          "reasoning_tokens": 11
+        }
+      },
+      "finish": "stop",
+      "at": "2026-10-29T02:42:11.229Z"
+    }
+  ],
+  "errors": []
+}
